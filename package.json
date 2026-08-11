@@ -21,6 +21,7 @@
     "@tailwindcss/postcss": "^4",
     "tailwindcss": "^4",
     "eslint": "^9",
+    "husky": "^9.1.7",
     "eslint-config-next": "15.5.23",
     "@eslint/eslintrc": "^3"
   }
