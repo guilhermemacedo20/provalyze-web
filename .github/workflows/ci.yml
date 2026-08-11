@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  validate - PR:
+  validate_PR:
     runs-on: ubuntu-latest
 
     steps:
