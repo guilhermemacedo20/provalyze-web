@@ -1,4 +1,4 @@
-import { apiRequest } from './api';
+import { apiRequest } from "./api";
 
 export type User = {
   id: string;
@@ -7,11 +7,11 @@ export type User = {
   createdAt: string;
 };
 
-export const usersService = {
-  list() {
-    return apiRequest<User[]>('/users');
+export const authService = {
+  login(data: { user: string; password: string }) {
+    return apiRequest<User>("/auth/login", { method: "POST", body: data });
   },
-  create(data: { name: string; email: string }) {
-    return apiRequest<User>('/users', { method: 'POST', body: data });
+  register(data: { name: string; email: string }) {
+    return apiRequest<User>("/auth/register", { method: "POST", body: data });
   },
 };
