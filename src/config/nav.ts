@@ -33,12 +33,12 @@ export const navItems: NavItemConfig[] = [
     roles: ["TEACHER", "STUDENT"],
   },
   {
-  href: "/cursos",
+  href: "/courses",
   label: "Cursos",
   roles: ["ADMIN"],
   },
   {
-    href: "/turmas-admin",
+    href: "/classes-admin",
     label: "Turmas",
     roles: ["ADMIN"],
   },
