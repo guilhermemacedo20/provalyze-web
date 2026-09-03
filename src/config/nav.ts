@@ -13,6 +13,11 @@ export const navItems: NavItemConfig[] = [
     roles: ["ADMIN", "TEACHER", "STUDENT"],
   },
   {
+    href: "/users",
+    label: "Usuários",
+    roles: ["ADMIN"],
+  },
+  {
     href: "/exams",
     label: "Exames",
     roles: ["TEACHER", "STUDENT"],
@@ -28,6 +33,16 @@ export const navItems: NavItemConfig[] = [
     roles: ["TEACHER", "STUDENT"],
   },
   {
+  href: "/cursos",
+  label: "Cursos",
+  roles: ["ADMIN"],
+  },
+  {
+    href: "/turmas-admin",
+    label: "Turmas",
+    roles: ["ADMIN"],
+  },
+  {
     href: "/analytics",
     label: "Analytics",
     roles: ["TEACHER", "ADMIN"],
@@ -41,11 +56,6 @@ export const navItems: NavItemConfig[] = [
     href: "/reports",
     label: "Relatórios",
     roles: ["TEACHER", "ADMIN"],
-  },
-  {
-    href: "/users",
-    label: "Usuários",
-    roles: ["ADMIN"],
   },
 ];
 
