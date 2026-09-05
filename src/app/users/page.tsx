@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { User, UserRole, usersService } from "@/services/users.service";
 import { Badge } from "@/components/ui/Badge";
 
+// lista todas as abas de filtro dos usuários.
 const TABS: { key: UserRole | "ALL"; label: string }[] = [
   { key: "ALL", label: "Todos" },
   { key: "TEACHER", label: "Professores" },
@@ -11,6 +12,7 @@ const TABS: { key: UserRole | "ALL"; label: string }[] = [
   { key: "ADMIN", label: "Administradores" },
 ];
 
+// mapeia cada tipo de usuário para o texto e cor do badge.
 const ROLE_BADGE: Record<UserRole, { tone: "professor" | "aluno" | "admin"; label: string }> = {
   TEACHER: { tone: "professor", label: "Professor(a)" },
   STUDENT: { tone: "aluno", label: "Aluno(a)" },
@@ -18,11 +20,12 @@ const ROLE_BADGE: Record<UserRole, { tone: "professor" | "aluno" | "admin"; labe
 };
 
 export default function UsersPage() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<UserRole | "ALL">("ALL");
-  const [search, setSearch] = useState("");
+  const [users, setUsers] = useState<User[]>([]); // guarda a lista de usuários.
+  const [loading, setLoading] = useState(true); // controle de espera.
+  const [activeTab, setActiveTab] = useState<UserRole | "ALL">("ALL"); // guarda qual é a aba que está selecionada.
+  const [search, setSearch] = useState(""); // guarda o texto que foi digitado na busca.
 
+  // busca os usuários, roda apenas quando a tela monta pela primeira vez.
   useEffect(() => {
     usersService
       .listUsers()
@@ -30,6 +33,7 @@ export default function UsersPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  // recalcula a lista filtrada quando algo relevante muda.
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
       const matchesTab = activeTab === "ALL" || user.role === activeTab;
@@ -41,6 +45,7 @@ export default function UsersPage() {
     });
   }, [users, activeTab, search]);
 
+  // conta quantos usuários existem em cada aba.
   const countFor = (key: UserRole | "ALL") =>
     key === "ALL" ? users.length : users.filter((u) => u.role === key).length;
 
@@ -94,7 +99,7 @@ export default function UsersPage() {
             </tr>
           </thead>
           <tbody>
-            {loading && (
+            {loading && ( // renderização condicional.
               <tr>
                 <td colSpan={6} className="px-5 py-6 text-center text-muted">
                   Carregando...

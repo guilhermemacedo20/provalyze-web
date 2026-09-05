@@ -1,5 +1,6 @@
 import { apiRequest } from "./api";
 
+// todos são calculados do back-end, o front-end só faz a exibição.
 export type AdminStats = {
   totalUsers: number;
   teachers: number;
@@ -11,7 +12,8 @@ export type AdminStats = {
 };
 
 export const dashboardService = {
-  getAdminStats(): Promise<AdminStats> {
+    // busca os números do painel administrativo.
+  getAdminStats() {
     return apiRequest<AdminStats>("/dashboard/admin");
   },
 };

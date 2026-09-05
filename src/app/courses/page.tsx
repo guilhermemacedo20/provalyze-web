@@ -5,14 +5,17 @@ import Link from "next/link";
 import { Course, coursesService } from "@/services/courses.service";
 
 export default function CoursesPage() {
+  // listagem de cursos.
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
+  // referente ao estado do formulário de criar um novo curso.
   const [name, setName] = useState("");
   const [creating, setCreating] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
+  // busca toda a lista de cursos novamente.
   const fetchCourses = async () => {
     try {
       const data = await coursesService.listCourses();
@@ -25,6 +28,7 @@ export default function CoursesPage() {
     }
   };
 
+  // busca os cursos, roda apenas quando a tela monta pela primeira vez.
   useEffect(() => {
     fetchCourses();
   }, []);
@@ -61,6 +65,7 @@ export default function CoursesPage() {
     }
   };
 
+  // filtra e lista os cursos contendo só os que contém o texto da busca.
   const filteredCourses = courses.filter((course) =>
     course.name.toLowerCase().includes(search.toLowerCase())
   );

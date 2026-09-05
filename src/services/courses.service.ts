@@ -6,20 +6,21 @@ export type Course = {
   createdAt: string;
 };
 
-export const coursesService = {
-  listCourses(): Promise<Course[]> {
+export const coursesService = { // agrupa todas as funções dentro de um único objeto.
+  // busca todos os cursos cadastrados.
+  listCourses() {
     return apiRequest<Course[]>("/courses");
   },
-
-  getCourse(id: string): Promise<Course> {
+  // busca um único curso pelo id.
+  getCourse(id: string) {
     return apiRequest<Course>(`/courses/${id}`);
   },
-
-  createCourse(data: { name: string }): Promise<Course> {
+  // cria um novo curso.
+  createCourse(data: { name: string }) {
     return apiRequest<Course>("/courses", { method: "POST", body: data });
   },
-
-  deleteCourse(id: string): Promise<void> {
+  // deleta um curso.
+  deleteCourse(id: string) {
     return apiRequest<void>(`/courses/${id}`, { method: "DELETE" });
   },
 };

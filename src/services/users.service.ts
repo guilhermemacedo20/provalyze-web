@@ -12,7 +12,8 @@ export type User = {
 };
 
 export const usersService = {
-  listUsers(): Promise<User[]> {
+  // busca todos os usuários.
+  listUsers() {
     return apiRequest<User[]>("/users");
   },
 };
