@@ -6,7 +6,11 @@ export async function apiRequest<T>(
 ): Promise<T> {
   const response = await fetch(`${API_URL}${path}`, {
     method: options.method ?? "GET",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      // TO-DO: Alterar para autenticação real quando o login estiver implementado
+      "x-user-email": process.env.TEACHER_EMAIL ?? "professor@escola.com",
+    },
     body: options.body ? JSON.stringify(options.body) : undefined,
   });
 

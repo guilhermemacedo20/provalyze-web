@@ -2,19 +2,27 @@
 
 import { usePathname } from "next/navigation";
 import { NavItem } from "./NavItem";
-import { canAccessPath, navItemsForRole, settingsItem } from "@/config/nav";
+import {
+  canAccessPath,
+  isQuestionBankPath,
+  navItemsForRole,
+  settingsItem,
+} from "@/config/nav";
 import { getCurrentRole } from "@/lib/role";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-function isActive(pathname: string, href: string) {
+const isActive = (pathname: string, href: string) => {
   if (href === "/") {
     return pathname === "/";
+  }
+  if (href === "/questions") {
+    return isQuestionBankPath(pathname);
   }
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-function roleLabel(role: ReturnType<typeof getCurrentRole>) {
+const roleLabel = (role: ReturnType<typeof getCurrentRole>) => {
   if (role === "ADMIN") {
     return "Administrador(a)";
   }
@@ -75,7 +83,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   ? "Admin"
                   : "Aluno"}
             </p>
-            <button type="button" className="text-[11px] text-muted">
+            <button type="button" className="text-[11px] text-muted cursor-pointer hover:text-foreground">
               Sair
             </button>
           </div>
