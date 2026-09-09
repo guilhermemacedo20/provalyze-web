@@ -13,6 +13,7 @@ Interface do professor, aluno e administrador para utilização da plataforma de
 Versões do repositório.
 
 | Tecnologia | Versão | Uso |
+|---|---|---|
 | Node.js | 20+ | Runtime |
 | Next.js | 15.5.23 | App Router, Turbopack |
 | React | 19.1.0 | UI |
