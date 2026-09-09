@@ -8,10 +8,13 @@ import {
   navItemsForRole,
   settingsItem,
 } from "@/config/nav";
-import { getCurrentRole } from "@/lib/role";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { Role } from "@/lib/auth-role-storage";
+
+const publicPaths = ["/login"];
 
 const isActive = (pathname: string, href: string) => {
   if (href === "/") {
@@ -21,9 +24,9 @@ const isActive = (pathname: string, href: string) => {
     return isQuestionBankPath(pathname);
   }
   return pathname === href || pathname.startsWith(`${href}/`);
-}
+};
 
-const roleLabel = (role: ReturnType<typeof getCurrentRole>) => {
+const roleLabel = (role: Role) => {
   if (role === "ADMIN") {
     return "Administrador(a)";
   }
@@ -31,19 +34,33 @@ const roleLabel = (role: ReturnType<typeof getCurrentRole>) => {
     return "Aluno(a)";
   }
   return "Professor(a)";
-}
+};
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const role = getCurrentRole();
-  const items = navItemsForRole(role);
   const router = useRouter();
+  const { user, logout } = useAuth();
+  const isPublic = publicPaths.includes(pathname);
+  const role = user?.role ?? "STUDENT";
+  const items = navItemsForRole(role);
 
   useEffect(() => {
-    if (!canAccessPath(pathname, role)) {
-      router.push("/");
+    if (!user && !isPublic) {
+      router.replace("/login");
+      return;
     }
-  }, [pathname, role]);
+    if (user && pathname === "/login") {
+      router.replace("/");
+      return;
+    }
+    if (user && !canAccessPath(pathname, user.role)) {
+      router.replace("/");
+    }
+  }, [user, pathname, isPublic, router]);
+
+  if (isPublic || !user) {
+    return <>{children}</>;
+  }
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -52,7 +69,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-2">
             <Image src="/logo.png" alt="Provalyze" width={26} height={35} />
             <div className="flex flex-col">
-              <p className="text-[18px] font-semibold text-primary">Provalyze</p>
+              <p className="text-[18px] font-semibold text-primary">
+                Provalyze
+              </p>
               <p className="text-[12px] text-foreground">{roleLabel(role)}</p>
             </div>
           </div>
@@ -81,17 +100,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         <div className="flex items-center gap-2.5 border-t border-border bg-disabled px-5 py-4">
           <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary-light text-[10px] font-bold text-primary">
-            {role.slice(0, 1)}
+            {user.name.slice(0, 1).toUpperCase()}
           </div>
           <div className="min-w-0">
             <p className="truncate text-[13px] font-semibold text-foreground">
-              {role === "TEACHER"
-                ? "Professor"
-                : role === "ADMIN"
-                  ? "Admin"
-                  : "Aluno"}
+              {user.name}
             </p>
-            <button type="button" className="text-[11px] text-muted cursor-pointer hover:text-foreground">
+            <button
+              type="button"
+              className="cursor-pointer text-[11px] text-muted hover:text-foreground"
+              onClick={() => {
+                logout();
+                router.replace("/login");
+              }}
+            >
               Sair
             </button>
           </div>

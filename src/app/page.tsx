@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getCurrentRole } from "@/lib/role";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { dashboardService, AdminStats } from "@/services/dashboard.service";
 
 function StatCard({ label, value }: { label: string; value: string | number }) {
@@ -100,7 +100,8 @@ function AdminDashboard() {
 }
 
 export default function HomePage() {
-  const role = getCurrentRole();
+  const { user } = useAuth();
+  const role = user?.role ?? "STUDENT";
 
   if (role === "ADMIN") {
     return <AdminDashboard />;
