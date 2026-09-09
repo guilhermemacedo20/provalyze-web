@@ -9,7 +9,7 @@ export async function apiRequest<T>(
     headers: {
       "Content-Type": "application/json",
       // TO-DO: Alterar para autenticação real quando o login estiver implementado
-      "x-user-email": process.env.TEACHER_EMAIL ?? "professor@escola.com",
+      "x-user-email": process.env.NEXT_PUBLIC_TEACHER_EMAIL ?? "professor@escola.com",
     },
     body: options.body ? JSON.stringify(options.body) : undefined,
   });
