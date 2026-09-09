@@ -20,14 +20,18 @@ export default function ThemeQuestionsPage() {
   const [questionToDelete, setQuestionToDelete] = useState<Question | null>(
     null,
   );
+  const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
     try {
+      setLoading(true);
       const themeList = await themesService.getTheme(id);
       const questionsList = await questionsService.listQuestions();
       setTheme(themeList);
       setQuestions(questionsList.filter((question) => question.themeId === id));
+      setLoading(false);
     } catch (error) {
+      setLoading(false);
       console.error("Error loading theme:", error);
       setTheme(null);
     }
@@ -56,6 +60,11 @@ export default function ThemeQuestionsPage() {
     fetchData();
   }, [id]);
 
+  if (loading) {
+    <main className="px-10 pt-9">
+      <p className="text-[13px]">Carregando...</p>
+    </main>;
+  }
   if (!theme) {
     return (
       <main className="px-10 pt-9">

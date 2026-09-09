@@ -38,10 +38,12 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
   );
   const [error, setError] = useState<string | null>(null);
   const [questionToDelete, setQuestionToDelete] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
       try {
+        setLoading(true);
         const themeList = await themesService.listThemes();
         setThemes(themeList);
 
@@ -67,12 +69,14 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
           );
         }
       } catch (err) {
+        setLoading(false);
         console.error("Error loading question:", err);
         setError("Não foi possível carregar os dados da questão.");
       }
     };
 
     load();
+    setLoading(false);
   }, [questionId]);
 
   const updateOption = (index: number, newOption: Partial<QuestionOption>) => {
@@ -193,6 +197,12 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
       setError("Não foi possível excluir a questão.");
     }
   };
+
+  if (loading) {
+    <main>
+      <p>Carregando...</p>
+    </main>;
+  }
 
   return (
     <main className="flex min-h-screen flex-col gap-6 bg-surface px-10 pb-10 pt-9">

@@ -11,6 +11,7 @@ export function ThemeForm({ themeId }: { themeId?: string }) {
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [themeToDelete, setThemeToDelete] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!themeId) {
@@ -19,10 +20,15 @@ export function ThemeForm({ themeId }: { themeId?: string }) {
 
     async function loadTheme() {
       try {
-        if (!themeId) return;
+        if (!themeId) {
+          return;
+        }
+        setLoading(true);
         const theme = await themesService.getTheme(themeId);
         setName(theme.name);
+        setLoading(false);
       } catch (err) {
+        setLoading(false);
         console.error("Error loading theme:", err);
         setError("Não foi possível carregar o tema.");
       }
@@ -75,6 +81,12 @@ export function ThemeForm({ themeId }: { themeId?: string }) {
 
   const fieldClass =
     "w-full rounded-[14px] border border-border bg-surface px-3.5 py-2.5 text-[14px] text-foreground placeholder:text-muted";
+
+  if (loading) {
+    <main className="px-10 pt-9">
+      <p className="text-[13px]">Carregando...</p>
+    </main>;
+  }
 
   return (
     <main className="flex min-h-screen flex-col gap-6 bg-surface px-10 pb-10 pt-9">

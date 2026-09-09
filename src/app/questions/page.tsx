@@ -9,9 +9,11 @@ import { Theme, themesService } from "@/services/themes.service";
 export default function QuestionsPage() {
   const [themes, setThemes] = useState<Theme[]>([]);
   const [themeToDelete, setThemeToDelete] = useState<Theme | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const fetchThemes = async () => {
     try {
+      setLoading(true);
       const themeList = await themesService.listThemes();
       const questions = await questionsService.listQuestions();
 
@@ -21,7 +23,9 @@ export default function QuestionsPage() {
           count: questions.filter((q) => q.themeId === theme.id).length ?? 0,
         })),
       );
+      setLoading(false);
     } catch (error) {
+      setLoading(false);
       console.error("Error fetching themes:", error);
     }
   };
@@ -33,11 +37,17 @@ export default function QuestionsPage() {
     await themesService.deleteTheme(themeToDelete.id);
     setThemeToDelete(null);
     fetchThemes();
-  }
+  };
 
   useEffect(() => {
     fetchThemes();
   }, []);
+
+  if (loading) {
+    <main className="px-10 pt-9">
+      <p className="text-[13px]">Carregando...</p>
+    </main>;
+  }
 
   return (
     <main className="flex min-h-screen flex-col gap-6 bg-background px-10 pb-10 pt-9">
