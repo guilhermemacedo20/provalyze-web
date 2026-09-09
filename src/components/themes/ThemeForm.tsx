@@ -15,6 +15,7 @@ export function ThemeForm({ themeId }: { themeId?: string }) {
 
   useEffect(() => {
     if (!themeId) {
+      setLoading(false);
       return;
     }
 
@@ -26,11 +27,11 @@ export function ThemeForm({ themeId }: { themeId?: string }) {
         setLoading(true);
         const theme = await themesService.getTheme(themeId);
         setName(theme.name);
-        setLoading(false);
       } catch (err) {
-        setLoading(false);
         console.error("Error loading theme:", err);
         setError("Não foi possível carregar o tema.");
+      } finally {
+        setLoading(false);
       }
     }
 
@@ -83,9 +84,11 @@ export function ThemeForm({ themeId }: { themeId?: string }) {
     "w-full rounded-[14px] border border-border bg-surface px-3.5 py-2.5 text-[14px] text-foreground placeholder:text-muted";
 
   if (loading) {
-    <main className="px-10 pt-9">
-      <p className="text-[13px]">Carregando...</p>
-    </main>;
+    return (
+      <main className="px-10 pt-9">
+        <p className="text-[13px] text-muted">Carregando tema...</p>
+      </main>
+    );
   }
 
   return (

@@ -29,11 +29,11 @@ export default function ThemeQuestionsPage() {
       const questionsList = await questionsService.listQuestions();
       setTheme(themeList);
       setQuestions(questionsList.filter((question) => question.themeId === id));
-      setLoading(false);
     } catch (error) {
-      setLoading(false);
       console.error("Error loading theme:", error);
       setTheme(null);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -61,9 +61,11 @@ export default function ThemeQuestionsPage() {
   }, [id]);
 
   if (loading) {
-    <main className="px-10 pt-9">
-      <p className="text-[13px]">Carregando...</p>
-    </main>;
+    return (
+      <main className="px-10 pt-9">
+        <p className="text-[13px] text-muted">Carregando questões...</p>
+      </main>
+    );
   }
   if (!theme) {
     return (

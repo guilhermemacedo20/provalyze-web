@@ -23,10 +23,10 @@ export default function QuestionsPage() {
           count: questions.filter((q) => q.themeId === theme.id).length ?? 0,
         })),
       );
-      setLoading(false);
     } catch (error) {
-      setLoading(false);
       console.error("Error fetching themes:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -44,9 +44,11 @@ export default function QuestionsPage() {
   }, []);
 
   if (loading) {
-    <main className="px-10 pt-9">
-      <p className="text-[13px]">Carregando...</p>
-    </main>;
+    return (
+      <main className="px-10 pt-9">
+        <p className="text-[13px] text-muted">Carregando pastas...</p>
+      </main>
+    );
   }
 
   return (

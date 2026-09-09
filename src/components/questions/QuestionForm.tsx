@@ -69,14 +69,14 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
           );
         }
       } catch (err) {
-        setLoading(false);
         console.error("Error loading question:", err);
         setError("Não foi possível carregar os dados da questão.");
+      } finally {
+        setLoading(false);
       }
     };
 
     load();
-    setLoading(false);
   }, [questionId]);
 
   const updateOption = (index: number, newOption: Partial<QuestionOption>) => {
@@ -199,9 +199,11 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
   };
 
   if (loading) {
-    <main>
-      <p>Carregando...</p>
-    </main>;
+    return (
+      <main className="px-10 pt-9">
+        <p className="text-[13px] text-muted">Carregando questão...</p>
+      </main>
+    );
   }
 
   return (
