@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { User, UserRole, usersService } from "@/services/users.service";
 import { Badge } from "@/components/ui/Badge";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 // lista todas as abas de filtro dos usuários.
 const TABS: { key: UserRole | "ALL"; label: string }[] = [
@@ -25,12 +26,34 @@ export default function UsersPage() {
   const [activeTab, setActiveTab] = useState<UserRole | "ALL">("ALL"); // guarda qual é a aba que está selecionada.
   const [search, setSearch] = useState(""); // guarda o texto que foi digitado na busca.
 
-  // busca os usuários, roda apenas quando a tela monta pela primeira vez.
-  useEffect(() => {
+  // controla o modal: "create" (Novo usuário), "edit" (Editar usuário) ou null (fechado).
+  const [modalMode, setModalMode] = useState<"create" | "edit" | null>(null);
+  const [editingUserId, setEditingUserId] = useState<string | null>(null); // id do usuário sendo editado (null em modo criação).
+  const [newName, setNewName] = useState(""); // nome digitado no formulário do modal.
+  const [newEmail, setNewEmail] = useState(""); // e-mail digitado no formulário do modal.
+  const [newRole, setNewRole] = useState<UserRole>("STUDENT"); // perfil escolhido no formulário do modal.
+  const [creating, setCreating] = useState(false); // controla se o formulário está no meio de um envio.
+  const [formError, setFormError] = useState<string | null>(null); // mensagem de erro do formulário do modal.
+
+  const [deleteTarget, setDeleteTarget] = useState<User | null>(null); // guarda qual usuário será excluído.
+  const [deleting, setDeleting] = useState(false); // controla se a exclusão está em andamento.
+
+  // busca toda a lista de usuários novamente. 
+  const fetchUsers = () => {
+    setLoading(true);
     usersService
       .listUsers()
       .then(setUsers)
+      .catch((error) => {
+        console.error("Erro ao buscar usuários:", error);
+        setUsers([]);
+      })
       .finally(() => setLoading(false));
+  };
+
+  // busca os usuários, roda apenas quando a tela monta pela primeira vez.
+  useEffect(() => {
+    fetchUsers();
   }, []);
 
   // recalcula a lista filtrada quando algo relevante muda.
@@ -49,12 +72,79 @@ export default function UsersPage() {
   const countFor = (key: UserRole | "ALL") =>
     key === "ALL" ? users.length : users.filter((u) => u.role === key).length;
 
+  // limpa o formulário e abre o modal em modo criação.
+  const openNewUserModal = () => {
+    setNewName("");
+    setNewEmail("");
+    setNewRole("STUDENT");
+    setFormError(null);
+    setEditingUserId(null);
+    setModalMode("create");
+  };
+
+  // preenche o formulário com os dados do usuário e abre o modal em modo edição.
+  const openEditUserModal = (user: User) => {
+    setNewName(user.name);
+    setNewEmail(user.email);
+    setNewRole(user.role);
+    setFormError(null);
+    setEditingUserId(user.id);
+    setModalMode("edit");
+  };
+
+  // valida e envia o formulário — cria um usuário novo ou atualiza um existente,dependendo do modalMode.
+  const handleSubmitUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError(null);
+
+    if (!newName.trim() || !newEmail.trim()) {
+      setFormError("Preencha nome e e-mail.");
+      return;
+    }
+
+    setCreating(true);
+    try {
+      const data = { name: newName.trim(), email: newEmail.trim(), role: newRole };
+
+      if (modalMode === "edit" && editingUserId) {
+        await usersService.updateUser(editingUserId, data);
+      } else {
+        await usersService.createUser(data);
+      }
+
+      setModalMode(null);
+      fetchUsers();
+    } catch (error) {
+      console.error("Erro ao salvar usuário:", error);
+      setFormError("Não foi possível salvar o usuário. Tente novamente.");
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  // executa a exclusão de verdade, chamada pelo botão de confirmar do modal.
+  const confirmDeleteUser = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await usersService.deleteUser(deleteTarget.id);
+      setDeleteTarget(null);
+      fetchUsers();
+    } catch (error) {
+      console.error("Erro ao excluir usuário:", error);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
-    <div className="px-10 py-9">
+    // "relative" é necessário pro modal (fixed inset-0) se posicionar corretamente.
+    <div className="relative px-10 py-9">
       <div className="mb-5 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-foreground">Usuários</h1>
         <button
           type="button"
+          onClick={openNewUserModal}
           className="rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-hover"
         >
           + Novo usuário
@@ -128,15 +218,117 @@ export default function UsersPage() {
                   </td>
                   <td className="px-5 py-3.5 text-muted">{user.createdAt}</td>
                   <td className="px-5 py-3.5">
-                    <button type="button" className="font-medium text-primary hover:underline">
-                      Editar
-                    </button>
+                    <div className="flex items-center gap-4">
+                      <button
+                        type="button"
+                        onClick={() => openEditUserModal(user)}
+                        className="font-medium text-primary hover:underline"
+                      >
+                        Editar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeleteTarget(user)}
+                        className="font-medium text-muted hover:text-danger"
+                      >
+                        Excluir
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
           </tbody>
         </table>
       </div>
+
+      {modalMode !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <form
+            onSubmit={handleSubmitUser}
+            className="w-[420px] rounded-lg bg-surface p-8 shadow-lg"
+          >
+            <h2 className="mb-6 text-center text-lg font-semibold text-foreground">
+              {modalMode === "edit" ? "Editar usuário" : "Novo usuário"}
+            </h2>
+
+            <div className="mb-4 flex flex-col gap-1.5">
+              <label htmlFor="new-name" className="text-[13px] font-medium text-foreground">
+                Nome
+              </label>
+              <input
+                id="new-name"
+                type="text"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                className="rounded-md border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground"
+              />
+            </div>
+
+            <div className="mb-4 flex flex-col gap-1.5">
+              <label htmlFor="new-email" className="text-[13px] font-medium text-foreground">
+                E-mail
+              </label>
+              <input
+                id="new-email"
+                type="email"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                className="rounded-md border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground"
+              />
+            </div>
+
+            <div className="mb-2 flex flex-col gap-1.5">
+              <label htmlFor="new-role" className="text-[13px] font-medium text-foreground">
+                Perfil
+              </label>
+              <select
+                id="new-role"
+                value={newRole}
+                // "as UserRole": o <select> sempre entrega texto puro (string).
+                onChange={(e) => setNewRole(e.target.value as UserRole)}
+                className="rounded-md border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground"
+              >
+                <option value="STUDENT">Aluno(a)</option>
+                <option value="TEACHER">Professor(a)</option>
+                <option value="ADMIN">Administrador(a)</option>
+              </select>
+            </div>
+
+            {formError && <p className="mb-2 text-[13px] text-danger">{formError}</p>}
+
+            <div className="mt-6 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setModalMode(null)}
+                className="rounded-md border border-border px-[18px] py-2.5 text-[13px] font-semibold text-foreground hover:bg-background"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={creating}
+                className="rounded-md bg-primary px-[18px] py-2.5 text-[13px] font-semibold text-white hover:bg-primary-hover disabled:opacity-60"
+              >
+                {creating
+                  ? "Salvando..."
+                  : modalMode === "edit"
+                    ? "Salvar alterações"
+                    : "Criar usuário"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* modal de confirmação de exclusão — abre quando deleteTarget não é nulo. */}
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="Excluir usuário"
+        message={`Tem certeza que deseja excluir o usuário "${deleteTarget?.name}"?`}
+        confirming={deleting}
+        onConfirm={confirmDeleteUser}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }
