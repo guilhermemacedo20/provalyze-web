@@ -2,28 +2,19 @@
 
 import { usePathname } from "next/navigation";
 import { NavItem } from "./NavItem";
-import {
-  canAccessPath,
-  isQuestionBankPath,
-  navItemsForRole,
-  settingsItem,
-} from "@/config/nav";
+import { canAccessPath, navItemsForRole, settingsItem } from "@/config/nav";
 import { getCurrentRole } from "@/lib/role";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 
-const isActive = (pathname: string, href: string) => {
+function isActive(pathname: string, href: string) {
   if (href === "/") {
     return pathname === "/";
-  }
-  if (href === "/questions") {
-    return isQuestionBankPath(pathname);
   }
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-const roleLabel = (role: ReturnType<typeof getCurrentRole>) => {
+function roleLabel(role: ReturnType<typeof getCurrentRole>) {
   if (role === "ADMIN") {
     return "Administrador(a)";
   }
@@ -49,13 +40,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen bg-background">
       <aside className="flex w-64 shrink-0 flex-col border-r border-border bg-surface">
         <div className="border-b border-border px-5 py-5">
-          <div className="flex items-center gap-2">
-            <Image src="/logo.png" alt="Provalyze" width={26} height={35} />
-            <div className="flex flex-col">
-              <p className="text-[18px] font-semibold text-primary">Provalyze</p>
-              <p className="text-[12px] text-foreground">{roleLabel(role)}</p>
-            </div>
-          </div>
+          <p className="text-[18px] font-semibold text-primary">Provalyze</p>
+          <p className="mt-1 text-[12px] text-foreground">{roleLabel(role)}</p>
         </div>
 
         <nav className="flex flex-1 flex-col gap-0.5 p-3">
@@ -64,7 +50,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               key={item.href}
               href={item.href}
               label={item.label}
-              icon={item.icon}
               active={isActive(pathname, item.href)}
             />
           ))}
@@ -74,7 +59,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <NavItem
             href={settingsItem.href}
             label={settingsItem.label}
-            icon={settingsItem.icon}
             variant="config"
           />
         </div>
@@ -91,7 +75,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   ? "Admin"
                   : "Aluno"}
             </p>
-            <button type="button" className="text-[11px] text-muted cursor-pointer hover:text-foreground">
+            <button type="button" className="text-[11px] text-muted">
               Sair
             </button>
           </div>

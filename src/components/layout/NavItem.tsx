@@ -1,10 +1,8 @@
 import Link from "next/link";
-import type { LucideIcon } from "lucide-react";
 
 type NavItemProps = {
   href: string;
   label: string;
-  icon: LucideIcon;
   active?: boolean;
   variant?: "default" | "config";
 };
@@ -12,7 +10,6 @@ type NavItemProps = {
 export function NavItem({
   href,
   label,
-  icon: Icon,
   active = false,
   variant = "default",
 }: NavItemProps) {
@@ -28,7 +25,6 @@ export function NavItem({
       href={href}
       className={`flex items-center gap-2 rounded-[8px] px-3 py-[9px] text-[14px] ${styles}`}
     >
-      <Icon size={18} strokeWidth={2} />
       {label}
     </Link>
   );
