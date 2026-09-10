@@ -1,25 +1,58 @@
 import { apiRequest } from "./api";
 
-export type SchoolClass = { // representa dados apenas de leitura, o tipo só vai carregar aquilo que a tela realmente usa.
+export type SchoolClass = {
   id: string;
   name: string;
+  joinCode: string;
   teacherName: string;
   subjectName: string;
   courseName: string;
   studentsCount: number;
-  averageScore: number | null; 
+  averageScore: number | null;
 };
 
-export const classesService = { // agrupa todas as funções dentro de um único objeto.
-    // busca todas as turmas.
-    listClasses() {
+export type ClassStudent = {
+  id: string;
+  name: string;
+  email: string;
+};
+
+export type ClassDetail = {
+  id: string;
+  name: string;
+  joinCode: string;
+  teacherName: string;
+  subjectName: string;
+  courseName: string;
+  students: ClassStudent[];
+};
+
+export const classesService = {
+  listClasses() {
     return apiRequest<SchoolClass[]>("/classes");
   },
-    // cria uma turma nova.
-  createClass(data: {name: string;subjectId: string;teacherId: string;}) {
+
+  getClass(id: string) {
+    return apiRequest<ClassDetail>(`/classes/${id}`);
+  },
+
+  createClass(data: { name: string; subjectId: string; teacherId: string }) {
     return apiRequest<SchoolClass>("/classes", { method: "POST", body: data });
   },
-    // remove uma turma.
+
+  addStudent(classId: string, studentId: string) {
+    return apiRequest<void>(`/classes/${classId}/students`, {
+      method: "POST",
+      body: { studentId },
+    });
+  },
+
+  removeStudent(classId: string, studentId: string) {
+    return apiRequest<void>(`/classes/${classId}/students/${studentId}`, {
+      method: "DELETE",
+    });
+  },
+
   deleteClass(id: string) {
     return apiRequest<void>(`/classes/${id}`, { method: "DELETE" });
   },

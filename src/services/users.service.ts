@@ -16,4 +16,13 @@ export const usersService = {
   listUsers() {
     return apiRequest<User[]>("/users");
   },
+    createUser(data: { name: string; email: string; role: UserRole }) {
+    return apiRequest<User>("/users", { method: "POST", body: data });
+  },
+    updateUser(id: string, data: { name: string; email: string; role: UserRole }) {
+    return apiRequest<User>(`/users/${id}`, { method: "PATCH", body: data });
+  },
+    deleteUser(id: string) {
+    return apiRequest<void>(`/users/${id}`, { method: "DELETE" });
+  },
 };

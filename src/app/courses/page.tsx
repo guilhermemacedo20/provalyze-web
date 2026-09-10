@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Course, coursesService } from "@/services/courses.service";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 export default function CoursesPage() {
   // listagem de cursos.
@@ -14,6 +15,10 @@ export default function CoursesPage() {
   const [name, setName] = useState("");
   const [creating, setCreating] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  // referente ao modal de confirmação de exclusão.
+  const [deleteTarget, setDeleteTarget] = useState<Course | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   // busca toda a lista de cursos novamente.
   const fetchCourses = async () => {
@@ -55,13 +60,21 @@ export default function CoursesPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Tem certeza que deseja excluir este curso?")) return;
+  // abre o modal de confirmação, guardando qual curso será excluído.
+  const requestDelete = (course: Course) => setDeleteTarget(course);
+
+  // executa a exclusão de verdade, chamada pelo botão de confirmar do modal.
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      await coursesService.deleteCourse(id);
+      await coursesService.deleteCourse(deleteTarget.id);
+      setDeleteTarget(null);
       await fetchCourses();
     } catch (error) {
       console.error("Erro ao excluir curso:", error);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -71,7 +84,8 @@ export default function CoursesPage() {
   );
 
   return (
-    <div className="px-10 py-9">
+    // "relative" é necessário pro modal (fixed inset-0) se posicionar corretamente.
+    <div className="relative px-10 py-9">
       <h1 className="mb-5 text-2xl font-bold text-foreground">Cursos</h1>
 
       {/* Card de criação */}
@@ -155,7 +169,7 @@ export default function CoursesPage() {
                       </Link>
                       <button
                         type="button"
-                        onClick={() => handleDelete(course.id)}
+                        onClick={() => requestDelete(course)}
                         className="text-muted hover:text-danger"
                       >
                         Excluir
@@ -167,6 +181,15 @@ export default function CoursesPage() {
           </tbody>
         </table>
       </div>
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="Excluir curso"
+        message={`Tem certeza que deseja excluir o curso "${deleteTarget?.name}"? Essa ação também remove todas as matérias e turmas vinculadas a ele.`}
+        confirming={deleting}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

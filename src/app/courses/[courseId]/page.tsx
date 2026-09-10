@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Course, coursesService } from "@/services/courses.service";
 import { Subject, subjectsService } from "@/services/subjects.service";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 export default function CourseSubjectsPage() {
   const { courseId } = useParams<{ courseId: string }>();
@@ -19,6 +20,9 @@ export default function CourseSubjectsPage() {
   const [name, setName] = useState("");
   const [creating, setCreating] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  const [deleteTarget, setDeleteTarget] = useState<Subject | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchCourse = async () => {
     try {
@@ -69,13 +73,19 @@ export default function CourseSubjectsPage() {
     }
   };
 
-  const handleDelete = async (subjectId: string) => {
-    if (!confirm("Tem certeza que deseja excluir esta matéria?")) return;
+  const requestDelete = (subject: Subject) => setDeleteTarget(subject);
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      await subjectsService.deleteSubject(courseId, subjectId);
+      await subjectsService.deleteSubject(courseId, deleteTarget.id);
+      setDeleteTarget(null);
       await fetchSubjects();
     } catch (error) {
       console.error("Erro ao excluir matéria:", error);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -95,7 +105,7 @@ export default function CourseSubjectsPage() {
   }
 
   return (
-    <div className="px-10 py-9">
+    <div className="relative px-10 py-9">
       <p className="mb-5 text-xs text-muted">
         <Link href="/courses" className="hover:underline">
           Cursos
@@ -107,6 +117,7 @@ export default function CourseSubjectsPage() {
         {course?.name ?? "Carregando..."}
       </h1>
 
+      {/* Card de criação */}
       <form
         onSubmit={handleCreate}
         className="mb-5 flex flex-col gap-3.5 rounded-lg border border-[#d3e0fb] bg-[#f4f7fe] px-[22px] py-5"
@@ -138,6 +149,7 @@ export default function CourseSubjectsPage() {
         </button>
       </form>
 
+      {/* Busca */}
       <input
         type="text"
         placeholder="Pesquisar..."
@@ -146,6 +158,7 @@ export default function CourseSubjectsPage() {
         className="mb-5 w-full rounded-md border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted"
       />
 
+      {/* Lista */}
       <div className="overflow-hidden rounded-lg border border-border bg-surface shadow-sm">
         <table className="w-full text-left text-[13px]">
           <thead>
@@ -178,7 +191,7 @@ export default function CourseSubjectsPage() {
                   <td className="px-5 py-3.5 text-right">
                     <button
                       type="button"
-                      onClick={() => handleDelete(subject.id)}
+                      onClick={() => requestDelete(subject)}
                       className="text-muted hover:text-danger"
                     >
                       Excluir
@@ -189,6 +202,22 @@ export default function CourseSubjectsPage() {
           </tbody>
         </table>
       </div>
+      
+      <Link
+        href="/courses"
+        className="mt-6 inline-block text-sm font-medium text-muted hover:text-foreground"
+      >
+        ← Voltar
+      </Link>
+      
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="Excluir matéria"
+        message={`Tem certeza que deseja excluir a matéria "${deleteTarget?.name}"?`}
+        confirming={deleting}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

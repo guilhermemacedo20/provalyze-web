@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { SchoolClass, classesService } from "@/services/classes.service";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 function formatAverage(value: number | null) {
   if (value === null) return "—";
@@ -12,6 +13,9 @@ function formatAverage(value: number | null) {
 export default function ClassesAdminPage() {
   const [classes, setClasses] = useState<SchoolClass[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const [deleteTarget, setDeleteTarget] = useState<SchoolClass | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchClasses = async () => {
     try {
@@ -29,18 +33,24 @@ export default function ClassesAdminPage() {
     fetchClasses();
   }, []);
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Tem certeza que deseja excluir esta turma?")) return;
+  const requestDelete = (schoolClass: SchoolClass) => setDeleteTarget(schoolClass);
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      await classesService.deleteClass(id);
+      await classesService.deleteClass(deleteTarget.id);
+      setDeleteTarget(null);
       await fetchClasses();
     } catch (error) {
       console.error("Erro ao excluir turma:", error);
+    } finally {
+      setDeleting(false);
     }
   };
 
   return (
-    <div className="px-10 py-9">
+    <div className="relative px-10 py-9">
       <div className="mb-5 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Turmas</h1>
@@ -61,24 +71,25 @@ export default function ClassesAdminPage() {
           <thead>
             <tr className="border-b border-border text-[11px] font-semibold text-muted">
               <th className="px-5 py-3">TURMA</th>
+              <th className="px-5 py-3">CÓDIGO</th>
               <th className="px-5 py-3">PROFESSOR(A)</th>
               <th className="px-5 py-3">MATÉRIA</th>
               <th className="px-5 py-3">ALUNOS</th>
               <th className="px-5 py-3">MÉDIA</th>
-              <th className="px-5 py-3">AÇÕES</th>
+              <th className="px-5 py-3" />
             </tr>
           </thead>
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={6} className="px-5 py-6 text-center text-muted">
+                <td colSpan={7} className="px-5 py-6 text-center text-muted">
                   Carregando...
                 </td>
               </tr>
             )}
             {!loading && classes.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-5 py-6 text-center text-muted">
+                <td colSpan={7} className="px-5 py-6 text-center text-muted">
                   Nenhuma turma encontrada.
                 </td>
               </tr>
@@ -89,6 +100,7 @@ export default function ClassesAdminPage() {
                   <td className="px-5 py-3.5 font-semibold text-foreground">
                     {schoolClass.name}
                   </td>
+                  <td className="px-5 py-3.5 font-mono text-muted">{schoolClass.joinCode}</td>
                   <td className="px-5 py-3.5 text-muted">{schoolClass.teacherName}</td>
                   <td className="px-5 py-3.5 text-muted">
                     {schoolClass.subjectName} - {schoolClass.courseName}
@@ -107,7 +119,7 @@ export default function ClassesAdminPage() {
                       </Link>
                       <button
                         type="button"
-                        onClick={() => handleDelete(schoolClass.id)}
+                        onClick={() => requestDelete(schoolClass)}
                         className="text-muted hover:text-danger"
                       >
                         Excluir
@@ -119,6 +131,15 @@ export default function ClassesAdminPage() {
           </tbody>
         </table>
       </div>
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="Excluir turma"
+        message={`Tem certeza que deseja excluir a turma "${deleteTarget?.name}"?`}
+        confirming={deleting}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }
