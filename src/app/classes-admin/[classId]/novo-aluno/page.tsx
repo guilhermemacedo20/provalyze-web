@@ -3,13 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { classesService } from "@/services/classes.service";
+import { classesService, ClassDetail } from "@/services/classes.service";
 import { User, usersService } from "@/services/users.service";
 
 export default function AddStudentPage() {
   const { classId } = useParams<{ classId: string }>();
   const router = useRouter();
 
+  const [classInfo, setClassInfo] = useState<ClassDetail | null>(null);
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -18,12 +19,20 @@ export default function AddStudentPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    usersService
-      .listUsers()
-      .then(setAllUsers)
-      .catch(() => setAllUsers([]))
+    Promise.all([classesService.getClass(classId), usersService.listUsers()])
+      .then(([classData, usersData]) => {
+        setClassInfo(classData);
+        setAllUsers(usersData);
+        // pré-preenche addedIds com quem JÁ está matriculado na turma,
+        // pra essa lista não aparecer de novo como "disponível pra adicionar".
+        setAddedIds(classData.students.map((student) => student.id));
+      })
+      .catch((error) => {
+        console.error("Erro ao buscar dados:", error);
+        setAllUsers([]);
+      })
       .finally(() => setLoading(false));
-  }, []);
+  }, [classId]);
 
   const students = useMemo(() => {
     return allUsers.filter((user) => {
@@ -59,11 +68,13 @@ export default function AddStudentPage() {
         </Link>{" "}
         /{" "}
         <Link href={`/classes-admin/${classId}`} className="hover:underline">
-          Turma
+          {classInfo?.name ?? "..."}
         </Link>{" "}
         / Adicionar Aluno
       </p>
-      <h1 className="mb-5 text-2xl font-bold text-foreground">Adicionar alunos</h1>
+      <h1 className="mb-5 text-2xl font-bold text-foreground">
+        {classInfo?.name ?? "Carregando..."}
+      </h1>
 
       <div className="mb-5 rounded-lg border border-border bg-surface px-[22px] py-5 shadow-sm">
         <div className="mb-4 flex flex-col gap-1.5">
@@ -136,12 +147,6 @@ export default function AddStudentPage() {
           </tbody>
         </table>
       </div>
-
-      {addedIds.length > 0 && (
-        <p className="mt-4 text-[13px] text-success">
-          {addedIds.length} aluno(s) adicionado(s) com sucesso.
-        </p>
-      )}
 
       <button
         type="button"

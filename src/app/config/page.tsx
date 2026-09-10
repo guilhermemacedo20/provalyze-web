@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authService, User } from "@/services/auth.service";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 export default function ConfigPage() {
   const router = useRouter();
@@ -15,6 +16,9 @@ export default function ConfigPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [savingPassword, setSavingPassword] = useState(false);
+
+  const [confirmingDeleteAccount, setConfirmingDeleteAccount] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   useEffect(() => {
     authService
@@ -59,19 +63,14 @@ export default function ConfigPage() {
     }
   };
 
-  const handleDeleteAccount = async () => {
-    if (
-      !confirm(
-        "Tem certeza que deseja excluir sua conta? Essa ação não pode ser desfeita."
-      )
-    )
-      return;
-
+  const confirmDeleteAccount = async () => {
+    setDeletingAccount(true);
     try {
       await authService.deleteAccount();
       router.push("/");
     } catch (error) {
       console.error("Erro ao excluir conta:", error);
+      setDeletingAccount(false);
     }
   };
 
@@ -113,7 +112,7 @@ export default function ConfigPage() {
       <div className="flex justify-end">
         <button
           type="button"
-          onClick={handleDeleteAccount}
+          onClick={() => setConfirmingDeleteAccount(true)}
           className="rounded-md bg-danger px-[18px] py-2.5 text-[13px] font-semibold text-white hover:opacity-90"
         >
           Excluir conta
@@ -179,6 +178,15 @@ export default function ConfigPage() {
           </form>
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmingDeleteAccount}
+        title="Excluir conta"
+        message="Tem certeza que deseja excluir sua conta? Essa ação não pode ser desfeita."
+        confirming={deletingAccount}
+        onConfirm={confirmDeleteAccount}
+        onCancel={() => setConfirmingDeleteAccount(false)}
+      />
     </div>
   );
 }
