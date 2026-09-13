@@ -14,8 +14,9 @@ export default function AddStudentPage() {
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [addingId, setAddingId] = useState<string | null>(null);
-  const [addedIds, setAddedIds] = useState<string[]>([]);
+  const [existingIds, setExistingIds] = useState<string[]>([]); // já matriculados na turma
+  const [selectedIds, setSelectedIds] = useState<string[]>([]); // marcados nesta sessão
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -23,9 +24,7 @@ export default function AddStudentPage() {
       .then(([classData, usersData]) => {
         setClassInfo(classData);
         setAllUsers(usersData);
-        // pré-preenche addedIds com quem JÁ está matriculado na turma,
-        // pra essa lista não aparecer de novo como "disponível pra adicionar".
-        setAddedIds(classData.students.map((student) => student.id));
+        setExistingIds(classData.students.map((s) => s.id));
       })
       .catch((error) => {
         console.error("Erro ao buscar dados:", error);
@@ -34,71 +33,117 @@ export default function AddStudentPage() {
       .finally(() => setLoading(false));
   }, [classId]);
 
-  const students = useMemo(() => {
+  // Alunos que já foram marcados nesta sessão sempre visíveis em ordem alfabética.
+  const selectedStudents = useMemo(() => {
+    return selectedIds
+      .map((id) => allUsers.find((u) => u.id === id))
+      .filter((u): u is User => Boolean(u))
+      .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+  }, [allUsers, selectedIds]);
+
+  // Alunos ainda disponíveis pra escolher respeitam a busca.
+  const availableStudents = useMemo(() => {
     return allUsers.filter((user) => {
       if (user.role !== "STUDENT") return false;
-      if (addedIds.includes(user.id)) return false;
+      if (existingIds.includes(user.id)) return false;
+      if (selectedIds.includes(user.id)) return false; // já aparece na lista de selecionados
       if (search.trim() === "") return true;
       return (
         user.name.toLowerCase().includes(search.toLowerCase()) ||
         user.email.toLowerCase().includes(search.toLowerCase())
       );
     });
-  }, [allUsers, search, addedIds]);
+  }, [allUsers, search, existingIds, selectedIds]);
 
-  const handleAdd = async (studentId: string) => {
-    setError(null);
-    setAddingId(studentId);
-    try {
-      await classesService.addStudent(classId, studentId);
-      setAddedIds((prev) => [...prev, studentId]);
-    } catch (err) {
-      console.error("Erro ao adicionar aluno:", err);
-      setError("Não foi possível adicionar esse aluno. Tente novamente.");
-    } finally {
-      setAddingId(null);
+  // Enquanto tem busca digitada, mostra só o resultado dela. 
+  const orderedStudents = useMemo(() => {
+    if (search.trim() !== "") {
+      return availableStudents;
     }
+    return [...selectedStudents, ...availableStudents];
+  }, [search, selectedStudents, availableStudents]);
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+    setSearch("");
+  };
+
+  const handleConcluir = async () => {
+    if (selectedIds.length === 0) {
+      router.push(`/classes-admin/${classId}`);
+      return;
+    }
+
+    setError(null);
+    setSubmitting(true);
+
+    const results = await Promise.allSettled(
+      selectedIds.map((id) => classesService.addStudent(classId, id))
+    );
+
+    const failedIds = selectedIds.filter((_, index) => results[index].status === "rejected");
+
+    if (failedIds.length === 0) {
+      router.push(`/classes-admin/${classId}`);
+      return;
+    }
+
+    setError(
+      `${selectedIds.length - failedIds.length} aluno(s) adicionado(s) com sucesso. ${failedIds.length} falharam — tente novamente.`
+    );
+    setSelectedIds(failedIds);
+    setSubmitting(false);
   };
 
   return (
     <div className="px-10 py-9">
-      <p className="mb-2 text-xs text-muted">
-        <Link href="/classes-admin" className="hover:underline">
-          Turmas
-        </Link>{" "}
-        /{" "}
-        <Link href={`/classes-admin/${classId}`} className="hover:underline">
-          {classInfo?.name ?? "..."}
-        </Link>{" "}
-        / Adicionar Aluno
-      </p>
-      <h1 className="mb-5 text-2xl font-bold text-foreground">
-        {classInfo?.name ?? "Carregando..."}
-      </h1>
+      <div className="mb-5 flex items-start justify-between">
+        <div>
+          <p className="mb-2 text-xs text-muted">
+            <Link href="/classes-admin" className="hover:underline">
+              Turmas
+            </Link>{" "}
+            /{" "}
+            <Link href={`/classes-admin/${classId}`} className="hover:underline">
+              {classInfo?.name ?? "..."}
+            </Link>{" "}
+            / Adicionar Aluno
+          </p>
+          <h1 className="text-2xl font-bold text-foreground">
+            {classInfo?.name ?? "Carregando..."}
+          </h1>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleConcluir}
+          disabled={submitting}
+          className="rounded-md bg-primary px-[18px] py-2.5 text-[13px] font-semibold text-white hover:bg-primary-hover disabled:opacity-60"
+        >
+          {submitting
+            ? "Adicionando..."
+            : selectedIds.length > 0
+              ? `Concluir (${selectedIds.length})`
+              : "Concluir"}
+        </button>
+      </div>
 
       <div className="mb-5 rounded-lg border border-border bg-surface px-[22px] py-5 shadow-sm">
-        <div className="mb-4 flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1.5">
           <label htmlFor="student-search" className="text-[13px] font-medium text-foreground">
-            Buscar aluno ou importar lista
+            Buscar aluno
           </label>
           <input
             id="student-search"
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Digite um nome, e-mail, ou clique em importar CSV"
+            placeholder="Digite um nome ou e-mail"
             className="rounded-md border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted"
           />
         </div>
-
-        <button
-          type="button"
-          disabled
-          title="Importação de CSV ainda não implementada"
-          className="rounded-md border border-border px-4 py-2 text-[13px] font-semibold text-muted opacity-60"
-        >
-          Importar lista (CSV)
-        </button>
       </div>
 
       {error && <p className="mb-4 text-[13px] text-danger">{error}</p>}
@@ -107,9 +152,9 @@ export default function AddStudentPage() {
         <table className="w-full text-left text-[13px]">
           <thead>
             <tr className="border-b border-border text-[11px] font-semibold text-muted">
+              <th className="px-5 py-3" />
               <th className="px-5 py-3">ALUNO</th>
               <th className="px-5 py-3">E-MAIL</th>
-              <th className="px-5 py-3" />
             </tr>
           </thead>
           <tbody>
@@ -120,7 +165,7 @@ export default function AddStudentPage() {
                 </td>
               </tr>
             )}
-            {!loading && students.length === 0 && (
+            {!loading && orderedStudents.length === 0 && (
               <tr>
                 <td colSpan={3} className="px-5 py-6 text-center text-muted">
                   Nenhum aluno encontrado.
@@ -128,33 +173,31 @@ export default function AddStudentPage() {
               </tr>
             )}
             {!loading &&
-              students.map((student) => (
-                <tr key={student.id} className="border-b border-border last:border-b-0">
-                  <td className="px-5 py-3.5 font-medium text-foreground">{student.name}</td>
-                  <td className="px-5 py-3.5 text-muted">{student.email}</td>
-                  <td className="px-5 py-3.5 text-right">
-                    <button
-                      type="button"
-                      onClick={() => handleAdd(student.id)}
-                      disabled={addingId === student.id}
-                      className="font-medium text-primary hover:underline disabled:opacity-60"
-                    >
-                      {addingId === student.id ? "Adicionando..." : "Adicionar"}
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              orderedStudents.map((student) => {
+                const isSelected = selectedIds.includes(student.id);
+                return (
+                  <tr
+                    key={student.id}
+                    className={`border-b border-border last:border-b-0 ${
+                      isSelected ? "bg-primary-light" : ""
+                    }`}
+                  >
+                    <td className="px-5 py-3.5">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleSelect(student.id)}
+                        className="size-4 accent-primary"
+                      />
+                    </td>
+                    <td className="px-5 py-3.5 font-medium text-foreground">{student.name}</td>
+                    <td className="px-5 py-3.5 text-muted">{student.email}</td>
+                  </tr>
+                );
+              })}
           </tbody>
         </table>
       </div>
-
-      <button
-        type="button"
-        onClick={() => router.push(`/classes-admin/${classId}`)}
-        className="mt-6 rounded-md bg-primary px-[18px] py-2.5 text-[13px] font-semibold text-white hover:bg-primary-hover"
-      >
-        Concluir
-      </button>
     </div>
   );
 }

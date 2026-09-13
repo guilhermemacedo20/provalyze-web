@@ -4,6 +4,7 @@ type ConfirmDialogProps = {
   open: boolean;
   title: string;
   message: string;
+  error?: string | null;
   confirmLabel?: string;
   confirming?: boolean;
   onConfirm: () => void;
@@ -14,6 +15,7 @@ export function ConfirmDialog({
   open,
   title,
   message,
+  error,
   confirmLabel = "Excluir",
   confirming = false,
   onConfirm,
@@ -25,7 +27,8 @@ export function ConfirmDialog({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="w-[420px] rounded-lg bg-surface p-8 shadow-lg">
         <h2 className="mb-3 text-lg font-semibold text-foreground">{title}</h2>
-        <p className="mb-6 text-sm text-muted">{message}</p>
+        <p className="mb-3 text-sm text-muted">{message}</p>
+        {error && <p className="mb-3 text-[13px] text-danger">{error}</p>}
         <div className="flex items-center justify-between">
           <button
             type="button"
