@@ -27,22 +27,22 @@ const ROLE_BADGE: Record<
 };
 
 export default function UsersPage() {
-  const [users, setUsers] = useState<User[]>([]); // guarda a lista de usuários.
-  const [loading, setLoading] = useState(true); // controle de espera.
-  const [activeTab, setActiveTab] = useState<Role | "ALL">("ALL"); // guarda qual é a aba que está selecionada.
-  const [search, setSearch] = useState(""); // guarda o texto que foi digitado na busca.
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<Role | "ALL">("ALL");
+  const [search, setSearch] = useState("");
 
-  // controla o modal: "create" (Novo usuário), "edit" (Editar usuário) ou null (fechado).
   const [modalMode, setModalMode] = useState<"create" | "edit" | null>(null);
-  const [editingUserId, setEditingUserId] = useState<string | null>(null); // id do usuário sendo editado (null em modo criação).
-  const [newName, setNewName] = useState(""); // nome digitado no formulário do modal.
-  const [newEmail, setNewEmail] = useState(""); // e-mail digitado no formulário do modal.
-  const [newRole, setNewRole] = useState<Role>("STUDENT"); // perfil escolhido no formulário do modal.
-  const [creating, setCreating] = useState(false); // controla se o formulário está no meio de um envio.
-  const [formError, setFormError] = useState<string | null>(null); // mensagem de erro do formulário do modal.
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [newName, setNewName] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [newRole, setNewRole] = useState<Role>("STUDENT");
+  const [creating, setCreating] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
-  const [deleteTarget, setDeleteTarget] = useState<User | null>(null); // guarda qual usuário será excluído.
-  const [deleting, setDeleting] = useState(false); // controla se a exclusão está em andamento.
+  const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // busca toda a lista de usuários novamente.
   const fetchUsers = () => {
@@ -57,12 +57,10 @@ export default function UsersPage() {
       .finally(() => setLoading(false));
   };
 
-  // busca os usuários, roda apenas quando a tela monta pela primeira vez.
   useEffect(() => {
     fetchUsers();
   }, []);
 
-  // recalcula a lista filtrada quando algo relevante muda.
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
       const matchesTab = activeTab === "ALL" || user.role === activeTab;
@@ -74,11 +72,30 @@ export default function UsersPage() {
     });
   }, [users, activeTab, search]);
 
-  // conta quantos usuários existem em cada aba.
+  const extractErrorMessage = (error: unknown): string => {
+    if (error instanceof Error) {
+      try {
+        const parsed = JSON.parse(error.message);
+        if (parsed?.message) return parsed.message;
+      } catch {}
+      return error.message;
+    }
+    return "Não foi possível concluir a ação.";
+  };
+
+  const deleteUserMessage = (user: User | null): string => {
+    if (!user) return "";
+
+    if (user.role === "ADMIN") {
+      return `Tem certeza que deseja excluir o usuário "${user.name}"? Os dados pessoais dele serão anonimizados.`;
+    }
+
+    return `Tem certeza que deseja excluir o usuário "${user.name}"? Os dados pessoais dele serão anonimizados, mas o histórico de turmas é preservado.`;
+  };
+
   const countFor = (key: Role | "ALL") =>
     key === "ALL" ? users.length : users.filter((u) => u.role === key).length;
 
-  // limpa o formulário e abre o modal em modo criação.
   const openNewUserModal = () => {
     setNewName("");
     setNewEmail("");
@@ -88,7 +105,6 @@ export default function UsersPage() {
     setModalMode("create");
   };
 
-  // preenche o formulário com os dados do usuário e abre o modal em modo edição.
   const openEditUserModal = (user: User) => {
     setNewName(user.name);
     setNewEmail(user.email);
@@ -98,7 +114,6 @@ export default function UsersPage() {
     setModalMode("edit");
   };
 
-  // valida e envia o formulário — cria um usuário novo ou atualiza um existente,dependendo do modalMode.
   const handleSubmitUser = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
@@ -126,15 +141,15 @@ export default function UsersPage() {
       fetchUsers();
     } catch (error) {
       console.error("Erro ao salvar usuário:", error);
-      setFormError("Não foi possível salvar o usuário. Tente novamente.");
+      setFormError(extractErrorMessage(error));
     } finally {
       setCreating(false);
     }
   };
 
-  // executa a exclusão de verdade, chamada pelo botão de confirmar do modal.
   const confirmDeleteUser = async () => {
     if (!deleteTarget) return;
+    setDeleteError(null);
     setDeleting(true);
     try {
       await usersService.deleteUser(deleteTarget.id);
@@ -142,13 +157,13 @@ export default function UsersPage() {
       fetchUsers();
     } catch (error) {
       console.error("Erro ao excluir usuário:", error);
+      setDeleteError(extractErrorMessage(error));
     } finally {
       setDeleting(false);
     }
   };
 
   return (
-    // "relative" é necessário pro modal (fixed inset-0) se posicionar corretamente.
     <div className="relative px-10 py-9">
       <div className="mb-5 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-foreground">Usuários</h1>
@@ -243,7 +258,10 @@ export default function UsersPage() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => setDeleteTarget(user)}
+                        onClick={() => {
+                          setDeleteError(null);
+                          setDeleteTarget(user);
+                        }}
                         className="font-medium text-muted hover:text-danger"
                       >
                         Excluir
@@ -347,11 +365,11 @@ export default function UsersPage() {
         </div>
       )}
 
-      {/* modal de confirmação de exclusão — abre quando deleteTarget não é nulo. */}
       <ConfirmDialog
         open={deleteTarget !== null}
         title="Excluir usuário"
-        message={`Tem certeza que deseja excluir o usuário "${deleteTarget?.name}"?`}
+        message={deleteUserMessage(deleteTarget)}
+        error={deleteError}
         confirming={deleting}
         onConfirm={confirmDeleteUser}
         onCancel={() => setDeleteTarget(null)}
