@@ -21,17 +21,20 @@ const isActive = (pathname: string, href: string) => {
     return isQuestionBankPath(pathname);
   }
   return pathname === href || pathname.startsWith(`${href}/`);
-}
+};
 
 const roleLabel = (role: ReturnType<typeof getCurrentRole>) => {
   if (role === "ADMIN") {
     return "Administrador(a)";
   }
+  if (role === "COORDINATOR") {
+    return "Coordenador(a)";
+  }
   if (role === "STUDENT") {
     return "Aluno(a)";
   }
   return "Professor(a)";
-}
+};
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -52,7 +55,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-2">
             <Image src="/logo.png" alt="Provalyze" width={26} height={35} />
             <div className="flex flex-col">
-              <p className="text-[18px] font-semibold text-primary">Provalyze</p>
+              <p className="text-[18px] font-semibold text-primary">
+                Provalyze
+              </p>
               <p className="text-[12px] text-foreground">{roleLabel(role)}</p>
             </div>
           </div>
@@ -89,9 +94,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 ? "Professor"
                 : role === "ADMIN"
                   ? "Admin"
-                  : "Aluno"}
+                  : role === "COORDINATOR"
+                    ? "Coordenador"
+                    : "Aluno"}
             </p>
-            <button type="button" className="text-[11px] text-muted cursor-pointer hover:text-foreground">
+            <button
+              type="button"
+              className="text-[11px] text-muted cursor-pointer hover:text-foreground"
+            >
               Sair
             </button>
           </div>

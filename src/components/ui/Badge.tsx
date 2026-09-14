@@ -1,9 +1,10 @@
-type BadgeTone = "professor" | "aluno" | "admin" | "success";
+type BadgeTone = "professor" | "aluno" | "admin" | "coordenador" | "success";
 
 const TONE_STYLES: Record<BadgeTone, string> = {
   professor: "bg-[#e0e9fc] text-primary",
   aluno: "bg-[#efe8fe] text-[#8b5cf6]",
   admin: "bg-[#fef1dd] text-warning",
+  coordenador: "bg-[#D8F5DD] text-[#3CAE63]",
   success: "bg-[#def2e6] text-success",
 };
 

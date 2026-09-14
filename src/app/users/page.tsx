@@ -1,29 +1,35 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { User, UserRole, usersService } from "@/services/users.service";
+import { User, usersService } from "@/services/users.service";
 import { Badge } from "@/components/ui/Badge";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { Role } from "@/lib/role";
 
 // lista todas as abas de filtro dos usuários.
-const TABS: { key: UserRole | "ALL"; label: string }[] = [
+const TABS: { key: Role | "ALL"; label: string }[] = [
   { key: "ALL", label: "Todos" },
   { key: "TEACHER", label: "Professores" },
   { key: "STUDENT", label: "Alunos" },
   { key: "ADMIN", label: "Administradores" },
+  { key: "COORDINATOR", label: "Coordenadores" },
 ];
 
 // mapeia cada tipo de usuário para o texto e cor do badge.
-const ROLE_BADGE: Record<UserRole, { tone: "professor" | "aluno" | "admin"; label: string }> = {
+const ROLE_BADGE: Record<
+  Role,
+  { tone: "professor" | "aluno" | "admin" | "coordenador"; label: string }
+> = {
   TEACHER: { tone: "professor", label: "Professor(a)" },
   STUDENT: { tone: "aluno", label: "Aluno(a)" },
   ADMIN: { tone: "admin", label: "Administrador(a)" },
+  COORDINATOR: { tone: "coordenador", label: "Coordenador(a)" },
 };
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]); // guarda a lista de usuários.
   const [loading, setLoading] = useState(true); // controle de espera.
-  const [activeTab, setActiveTab] = useState<UserRole | "ALL">("ALL"); // guarda qual é a aba que está selecionada.
+  const [activeTab, setActiveTab] = useState<Role | "ALL">("ALL"); // guarda qual é a aba que está selecionada.
   const [search, setSearch] = useState(""); // guarda o texto que foi digitado na busca.
 
   // controla o modal: "create" (Novo usuário), "edit" (Editar usuário) ou null (fechado).
@@ -31,14 +37,14 @@ export default function UsersPage() {
   const [editingUserId, setEditingUserId] = useState<string | null>(null); // id do usuário sendo editado (null em modo criação).
   const [newName, setNewName] = useState(""); // nome digitado no formulário do modal.
   const [newEmail, setNewEmail] = useState(""); // e-mail digitado no formulário do modal.
-  const [newRole, setNewRole] = useState<UserRole>("STUDENT"); // perfil escolhido no formulário do modal.
+  const [newRole, setNewRole] = useState<Role>("STUDENT"); // perfil escolhido no formulário do modal.
   const [creating, setCreating] = useState(false); // controla se o formulário está no meio de um envio.
   const [formError, setFormError] = useState<string | null>(null); // mensagem de erro do formulário do modal.
 
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null); // guarda qual usuário será excluído.
   const [deleting, setDeleting] = useState(false); // controla se a exclusão está em andamento.
 
-  // busca toda a lista de usuários novamente. 
+  // busca toda a lista de usuários novamente.
   const fetchUsers = () => {
     setLoading(true);
     usersService
@@ -69,7 +75,7 @@ export default function UsersPage() {
   }, [users, activeTab, search]);
 
   // conta quantos usuários existem em cada aba.
-  const countFor = (key: UserRole | "ALL") =>
+  const countFor = (key: Role | "ALL") =>
     key === "ALL" ? users.length : users.filter((u) => u.role === key).length;
 
   // limpa o formulário e abre o modal em modo criação.
@@ -104,7 +110,11 @@ export default function UsersPage() {
 
     setCreating(true);
     try {
-      const data = { name: newName.trim(), email: newEmail.trim(), role: newRole };
+      const data = {
+        name: newName.trim(),
+        email: newEmail.trim(),
+        role: newRole,
+      };
 
       if (modalMode === "edit" && editingUserId) {
         await usersService.updateUser(editingUserId, data);
@@ -205,8 +215,13 @@ export default function UsersPage() {
             )}
             {!loading &&
               filteredUsers.map((user) => (
-                <tr key={user.id} className="border-b border-border last:border-b-0">
-                  <td className="px-5 py-3.5 font-medium text-foreground">{user.name}</td>
+                <tr
+                  key={user.id}
+                  className="border-b border-border last:border-b-0"
+                >
+                  <td className="px-5 py-3.5 font-medium text-foreground">
+                    {user.name}
+                  </td>
                   <td className="px-5 py-3.5 text-muted">{user.email}</td>
                   <td className="px-5 py-3.5">
                     <Badge tone={ROLE_BADGE[user.role].tone}>
@@ -252,7 +267,10 @@ export default function UsersPage() {
             </h2>
 
             <div className="mb-4 flex flex-col gap-1.5">
-              <label htmlFor="new-name" className="text-[13px] font-medium text-foreground">
+              <label
+                htmlFor="new-name"
+                className="text-[13px] font-medium text-foreground"
+              >
                 Nome
               </label>
               <input
@@ -265,7 +283,10 @@ export default function UsersPage() {
             </div>
 
             <div className="mb-4 flex flex-col gap-1.5">
-              <label htmlFor="new-email" className="text-[13px] font-medium text-foreground">
+              <label
+                htmlFor="new-email"
+                className="text-[13px] font-medium text-foreground"
+              >
                 E-mail
               </label>
               <input
@@ -278,23 +299,29 @@ export default function UsersPage() {
             </div>
 
             <div className="mb-2 flex flex-col gap-1.5">
-              <label htmlFor="new-role" className="text-[13px] font-medium text-foreground">
+              <label
+                htmlFor="new-role"
+                className="text-[13px] font-medium text-foreground"
+              >
                 Perfil
               </label>
               <select
                 id="new-role"
                 value={newRole}
                 // "as UserRole": o <select> sempre entrega texto puro (string).
-                onChange={(e) => setNewRole(e.target.value as UserRole)}
+                onChange={(e) => setNewRole(e.target.value as Role)}
                 className="rounded-md border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground"
               >
                 <option value="STUDENT">Aluno(a)</option>
                 <option value="TEACHER">Professor(a)</option>
+                <option value="COORDINATOR">Coordenador(a)</option>
                 <option value="ADMIN">Administrador(a)</option>
               </select>
             </div>
 
-            {formError && <p className="mb-2 text-[13px] text-danger">{formError}</p>}
+            {formError && (
+              <p className="mb-2 text-[13px] text-danger">{formError}</p>
+            )}
 
             <div className="mt-6 flex items-center justify-between">
               <button
