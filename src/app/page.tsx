@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getCurrentRole } from "@/lib/role";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { dashboardService, AdminStats } from "@/services/dashboard.service";
 
 function StatCard({ label, value }: { label: string; value: string | number }) {
@@ -115,9 +115,11 @@ function AdminDashboard() {
 }
 
 export default function HomePage() {
-  const role = getCurrentRole();
+  const { user } = useAuth();
 
-  if (role === "ADMIN" || role === "COORDINATOR") {
+  if (!user) return null; // o AppShell já redireciona pro /login nesse caso
+
+  if (user.role === "ADMIN" || user.role === "COORDINATOR") {
     return <AdminDashboard />;
   }
 
