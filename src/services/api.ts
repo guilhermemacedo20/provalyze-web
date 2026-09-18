@@ -17,7 +17,7 @@ export async function apiRequest<T>(
     body: options.body ? JSON.stringify(options.body) : undefined,
   });
 
-  if (response.status === 401) {
+  if (response.status === 401 && token) {
     clearSession();
     if (typeof window !== "undefined") {
       window.location.href = "/login";

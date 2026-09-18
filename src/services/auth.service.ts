@@ -20,12 +20,12 @@ export const authService = {
     role: "TEACHER" | "STUDENT";
     password: string;
   }) {
-    return apiRequest<AuthUser>("/auth/register", {
+    return apiRequest<AuthUser>("/users/register", {
       method: "POST",
       body: data,
     });
   },
-
+  
   forgotPassword(email: string) {
     return apiRequest<{ message: string }>("/auth/forgot-password", {
       method: "POST",
