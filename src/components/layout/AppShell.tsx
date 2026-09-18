@@ -12,7 +12,7 @@ import {
 } from "@/config/nav";
 import { useAuth } from "@/components/auth/AuthProvider";
 
-const PUBLIC_PATHS = ["/login", "/register", "/esqueci-senha", "/nova-senha"];
+const PUBLIC_PATHS = ["/login", "/register", "/esqueci-senha"];
 
 const isActive = (pathname: string, href: string) => {
   if (href === "/") return pathname === "/";
