@@ -62,7 +62,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-2">
             <Image src="/logo.png" alt="Provalyze" width={26} height={35} />
             <div className="flex flex-col">
-              <p className="text-[18px] font-semibold text-primary">Provalyze</p>
+              <p className="text-[18px] font-semibold text-primary font-[family-name:var(--font-anta)]">
+                Provalyze
+              </p>
               <p className="text-[12px] text-foreground">{roleLabel(user.role)}</p>
             </div>
           </div>
