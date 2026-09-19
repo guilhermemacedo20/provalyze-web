@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { authService } from "@/services/auth.service";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { extractErrorMessage } from "@/lib/extract-error-message";
-import { User } from "@/services/users.service";
+import { User, usersService } from "@/services/users.service";
+import { clearSession } from "@/lib/auth-role-storage";
 
 export default function ConfigPage() {
   const router = useRouter();
@@ -78,8 +79,14 @@ export default function ConfigPage() {
   const confirmDeleteAccount = async () => {
     setDeletingAccount(true);
     try {
-      await authService.deleteAccount();
-      router.push("/");
+      if (!profile) {
+        return;
+      }
+      await usersService.deleteUser(profile.id);
+      clearSession();
+      setTimeout(() => {
+        router.push("/login");
+      }, 1500);
     } catch (error) {
       console.error("Erro ao excluir conta:", error);
       setDeletingAccount(false);

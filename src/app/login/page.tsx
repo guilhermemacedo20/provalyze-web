@@ -37,7 +37,13 @@ function SuccessModal() {
           <X size={20} />
         </button>
         <div className="mb-4 flex justify-center">
-          <Image src="/logo.png" alt="Provalyze" width={48} height={65} quality={100} />
+          <Image
+            src="/logo.png"
+            alt="Provalyze"
+            width={48}
+            height={65}
+            quality={100}
+          />
         </div>
         <p className="text-base font-bold text-foreground">{message}</p>
       </div>
@@ -68,9 +74,19 @@ export default function LoginPage() {
     try {
       await login(email.trim(), password);
       router.push("/");
-    } catch (err) {
+    } catch (err: any) {
       console.error("Erro ao fazer login:", err);
-      setError("E-mail ou senha inválidos.");
+
+      let message = "Ocorreu um erro ao realizar o login";
+
+      try {
+        const parsedError = JSON.parse(err.message);
+        message = parsedError.message ?? message;
+      } catch {
+        message = err?.message ?? message;
+      }
+
+      setError(message);
     } finally {
       setSubmitting(false);
     }
@@ -93,16 +109,27 @@ export default function LoginPage() {
       <div className="flex w-full items-center justify-center bg-background px-6 md:w-1/2">
         <form onSubmit={handleSubmit} className="w-full max-w-[360px]">
           <div className="mb-6 flex justify-center">
-            <Image src="/logo.png" alt="Provalyze" width={48} height={65} quality={100} />
+            <Image
+              src="/logo.png"
+              alt="Provalyze"
+              width={48}
+              height={65}
+              quality={100}
+            />
           </div>
 
-          <h1 className="mb-2 text-2xl font-bold text-foreground">Bem-vindo de volta</h1>
+          <h1 className="mb-2 text-2xl font-bold text-foreground">
+            Bem-vindo de volta
+          </h1>
           <p className="mb-6 text-sm text-muted">
             Entre com sua conta institucional para continuar.
           </p>
 
           <div className="mb-4 flex flex-col gap-1.5">
-            <label htmlFor="email" className="text-[13px] font-medium text-foreground">
+            <label
+              htmlFor="email"
+              className="text-[13px] font-medium text-foreground"
+            >
               E-mail institucional
             </label>
             <input
@@ -116,7 +143,10 @@ export default function LoginPage() {
           </div>
 
           <div className="mb-3 flex flex-col gap-1.5">
-            <label htmlFor="password" className="text-[13px] font-medium text-foreground">
+            <label
+              htmlFor="password"
+              className="text-[13px] font-medium text-foreground"
+            >
               Senha
             </label>
             <div className="relative">
@@ -141,7 +171,10 @@ export default function LoginPage() {
 
           <div className="mb-6 flex items-center justify-between">
             <label className="flex items-center gap-2 text-[13px] text-muted">
-              <input type="checkbox" className="size-4 rounded accent-primary" />
+              <input
+                type="checkbox"
+                className="size-4 rounded accent-primary"
+              />
               Lembrar acesso
             </label>
             <Link
@@ -164,7 +197,10 @@ export default function LoginPage() {
 
           <p className="mt-4 text-center text-[13px] text-muted">
             Não possui uma conta?{" "}
-            <Link href="/register" className="font-semibold text-primary hover:underline">
+            <Link
+              href="/register"
+              className="font-semibold text-primary hover:underline"
+            >
               Criar conta
             </Link>
           </p>
