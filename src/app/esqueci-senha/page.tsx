@@ -2,7 +2,8 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
-import { Check, Eye, EyeOff, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Eye, EyeOff, Check, X as XIcon } from "lucide-react";
 import { authService } from "@/services/auth.service";
 import { extractErrorMessage } from "@/lib/extract-error-message";
 
@@ -17,7 +18,10 @@ function getPasswordChecks(password: string) {
   ];
 }
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function ForgotPasswordPage() {
+  const router = useRouter();
   const [step, setStep] = useState<Step>("email");
 
   const [email, setEmail] = useState("");
@@ -33,7 +37,6 @@ export default function ForgotPasswordPage() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [resetError, setResetError] = useState<string | null>(null);
   const [resetting, setResetting] = useState(false);
-  const [success, setSuccess] = useState(false);
 
   const passwordChecks = getPasswordChecks(newPassword);
   const allChecksMet = passwordChecks.every((check) => check.met);
@@ -44,6 +47,10 @@ export default function ForgotPasswordPage() {
 
     if (!email.trim()) {
       setEmailError("Informe seu e-mail.");
+      return;
+    }
+    if (!EMAIL_REGEX.test(email.trim())) {
+      setEmailError("Informe um e-mail válido.");
       return;
     }
 
@@ -102,7 +109,7 @@ export default function ForgotPasswordPage() {
     setResetting(true);
     try {
       await authService.resetPassword({ email: email.trim(), code, newPassword });
-      setSuccess(true);
+      router.push("/login?success=password");
     } catch (err) {
       console.error("Erro ao redefinir senha:", err);
       setResetError(extractErrorMessage(err));
@@ -110,24 +117,6 @@ export default function ForgotPasswordPage() {
       setResetting(false);
     }
   };
-
-  if (success) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background px-6">
-        <div className="w-full max-w-[400px] rounded-lg bg-primary-light px-8 py-10 text-center">
-          <p className="mb-6 text-base font-bold text-foreground">
-            Senha atualizada com sucesso!
-          </p>
-          <Link
-            href="/login"
-            className="inline-block w-full rounded-md bg-primary py-3 text-sm font-semibold text-white hover:bg-primary-hover"
-          >
-            Ir para o login
-          </Link>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-6">
@@ -229,7 +218,7 @@ export default function ForgotPasswordPage() {
                   {check.met ? (
                     <Check size={14} className="text-success" />
                   ) : (
-                    <X size={14} className="text-muted" />
+                    <XIcon size={14} className="text-muted" />
                   )}
                   <span className={check.met ? "text-success" : "text-muted"}>
                     {check.label}
@@ -268,7 +257,25 @@ export default function ForgotPasswordPage() {
                 onChange={(e) => setAcceptedTerms(e.target.checked)}
                 className="mt-0.5 size-4 shrink-0 rounded accent-primary"
               />
-              Li e aceito os Termos de Uso e a Política de Privacidade (LGPD).
+              <span>
+                Li e aceito os{" "}
+                <Link
+                  href="/termos#termos-de-uso"
+                  target="_blank"
+                  className="font-medium text-primary hover:underline"
+                >
+                  Termos de Uso
+                </Link>{" "}
+                e a{" "}
+                <Link
+                  href="/termos#politica-de-privacidade"
+                  target="_blank"
+                  className="font-medium text-primary hover:underline"
+                >
+                  Política de Privacidade
+                </Link>{" "}
+                (LGPD).
+              </span>
             </label>
 
             {resetError && <p className="mb-4 text-[13px] text-danger">{resetError}</p>}
