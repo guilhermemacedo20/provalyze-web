@@ -4,13 +4,13 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authService } from "@/services/auth.service";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
-import type { AuthUser } from "@/lib/auth-role-storage";
 import { extractErrorMessage } from "@/lib/extract-error-message";
+import { User } from "@/services/users.service";
 
 export default function ConfigPage() {
   const router = useRouter();
 
-  const [profile, setProfile] = useState<AuthUser | null>(null);
+  const [profile, setProfile] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   const [isPasswordModalOpen, setPasswordModalOpen] = useState(false);
@@ -78,7 +78,7 @@ export default function ConfigPage() {
   const confirmDeleteAccount = async () => {
     setDeletingAccount(true);
     try {
-      await authService.deleteAccount(profile.id);
+      await authService.deleteAccount();
       router.push("/");
     } catch (error) {
       console.error("Erro ao excluir conta:", error);

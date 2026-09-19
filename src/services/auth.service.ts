@@ -51,10 +51,9 @@ export const authService = {
     });
   },
 
-  deleteAccount(data: { id: string }) {
-    return apiRequest<{ message: string }>("/auth/change-password", {
-      method: "POST",
-      body: data,
+  deleteAccount() {
+    return apiRequest<{ message: string }>("/user/delete", {
+      method: "DELETE"
     });
   },
 
