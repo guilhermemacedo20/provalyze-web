@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Modal } from "@/components/layout/Modal";
@@ -89,16 +90,24 @@ export default function QuestionsPage() {
                   className="absolute right-6 top-6 cursor-pointer"
                   onClick={() => setThemeToDelete(theme)}
                 >
-                  <img
+                  <Image
                     src="/icons/trash.png"
                     alt=""
+                    width={20}
+                    height={20}
                     className="size-5 object-contain opacity-70 hover:opacity-100"
                   />
                 </button>
 
                 <Link href={`/themes/${theme.id}`} className="block pr-8">
                   <div className="mb-5 flex size-10 items-center justify-center rounded-[10px] bg-primary-light">
-                    <img src="/icons/folder.svg" alt="" className="size-5" />
+                    <Image
+                      src="/icons/folder.svg"
+                      alt=""
+                      width={20}
+                      height={20}
+                      className="size-5"
+                    />
                   </div>
 
                   <div className="flex items-baseline justify-between gap-3">

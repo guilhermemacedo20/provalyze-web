@@ -1,9 +1,9 @@
 import { apiRequest } from "./api";
-import type { AuthUser } from "@/lib/auth-role-storage";
+import { User } from "./users.service";
 
 export type LoginResponse = {
   accessToken: string;
-  user: AuthUser;
+  user: User;
 };
 
 export const authService = {
@@ -20,12 +20,12 @@ export const authService = {
     role: "TEACHER" | "STUDENT";
     password: string;
   }) {
-    return apiRequest<AuthUser>("/users/register", {
+    return apiRequest<User>("/users/register", {
       method: "POST",
       body: data,
     });
   },
-  
+
   forgotPassword(email: string) {
     return apiRequest<{ message: string }>("/auth/forgot-password", {
       method: "POST",
@@ -51,7 +51,14 @@ export const authService = {
     });
   },
 
+  deleteAccount(data: { id: string }) {
+    return apiRequest<{ message: string }>("/auth/change-password", {
+      method: "POST",
+      body: data,
+    });
+  },
+
   me() {
-    return apiRequest<AuthUser>("/auth/me");
+    return apiRequest<User>("/auth/me");
   },
 };
