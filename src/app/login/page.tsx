@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, X } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { extractErrorMessage } from "@/lib/extract-error-message";
 
 const SUCCESS_MESSAGES: Record<string, string> = {
   account: "Conta criada com sucesso!",
@@ -74,19 +75,9 @@ export default function LoginPage() {
     try {
       await login(email.trim(), password);
       router.push("/");
-    } catch (err: any) {
+    } catch (err) {
       console.error("Erro ao fazer login:", err);
-
-      let message = "Ocorreu um erro ao realizar o login";
-
-      try {
-        const parsedError = JSON.parse(err.message);
-        message = parsedError.message ?? message;
-      } catch {
-        message = err?.message ?? message;
-      }
-
-      setError(message);
+      setError(extractErrorMessage(err));
     } finally {
       setSubmitting(false);
     }
