@@ -14,25 +14,19 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
 }
 
 function TeacherDashboardPlaceholder() {
-  return (
-    <p className="text-muted">
-      Painel do Professor — em construção.
-    </p>
-  );
+  return <p className="text-muted">Painel do Professor — em construção.</p>;
 }
 
 function StudentDashboardPlaceholder() {
-  return (
-    <p className="text-muted">
-      Painel do Aluno — em construção.
-    </p>
-  );
+  return <p className="text-muted">Painel do Aluno — em construção.</p>;
 }
 
 function AdminDashboard() {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"ADMIN" | "TEACHER" | "STUDENT">("ADMIN");
+  const [activeTab, setActiveTab] = useState<
+    "ADMIN" | "TEACHER" | "STUDENT" | "COORDINATOR"
+  >("STUDENT");
 
   useEffect(() => {
     dashboardService
@@ -46,44 +40,65 @@ function AdminDashboard() {
   }, []);
 
   const fmt = (value: number | undefined | null) =>
-    loading || value === undefined || value === null ? "..." : value.toLocaleString("pt-BR");
+    loading || value === undefined || value === null
+      ? "..."
+      : value.toLocaleString("pt-BR");
 
   return (
     <div className="px-10 py-9">
       <div className="mb-8 flex items-center justify-between">
-        <h1 className="text-[26px] font-bold text-foreground">Painel administrativo</h1>
+        <h1 className="text-[26px] font-bold text-foreground">
+          Painel administrativo
+        </h1>
 
         <div className="flex gap-1 rounded-md border border-border bg-surface p-1">
-          {(["ADMIN", "TEACHER", "STUDENT"] as const).map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              onClick={() => setActiveTab(tab)}
-              className={`rounded-sm px-4 py-2 text-[13px] font-medium transition-colors ${
-                activeTab === tab
-                  ? "bg-primary text-white"
-                  : "text-muted hover:text-foreground"
-              }`}
-            >
-              {tab === "ADMIN" ? "Admin" : tab === "TEACHER" ? "Professor" : "Aluno"}
-            </button>
-          ))}
+          {(["ADMIN", "TEACHER", "STUDENT", "COORDINATOR"] as const).map(
+            (tab) => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setActiveTab(tab)}
+                className={`rounded-sm px-4 py-2 text-[13px] font-medium transition-colors ${
+                  activeTab === tab
+                    ? "bg-primary text-white"
+                    : "text-muted hover:text-foreground"
+                }`}
+              >
+                {tab === "ADMIN"
+                  ? "Admin"
+                  : tab === "COORDINATOR"
+                    ? "Coordenador"
+                    : tab === "TEACHER"
+                      ? "Professor"
+                      : "Aluno"}
+              </button>
+            ),
+          )}
         </div>
       </div>
 
       {activeTab === "TEACHER" && <TeacherDashboardPlaceholder />}
       {activeTab === "STUDENT" && <StudentDashboardPlaceholder />}
-      {activeTab === "ADMIN" && (
+      {(activeTab === "ADMIN" || activeTab === "COORDINATOR") && (
         <>
           <div className="mb-4 flex gap-4">
-            <StatCard label="TOTAL DE USUÁRIOS" value={fmt(stats?.totalUsers)} />
+            <StatCard
+              label="TOTAL DE USUÁRIOS"
+              value={fmt(stats?.totalUsers)}
+            />
             <StatCard label="PROFESSORES" value={fmt(stats?.teachers)} />
             <StatCard label="ALUNOS" value={fmt(stats?.students)} />
             <StatCard label="TURMAS" value={fmt(stats?.classes)} />
           </div>
           <div className="flex gap-4">
-            <StatCard label="AVALIAÇÕES CRIADAS" value={fmt(stats?.examsCreated)} />
-            <StatCard label="AVALIAÇÕES REALIZADAS" value={fmt(stats?.examsTaken)} />
+            <StatCard
+              label="AVALIAÇÕES CRIADAS"
+              value={fmt(stats?.examsCreated)}
+            />
+            <StatCard
+              label="AVALIAÇÕES REALIZADAS"
+              value={fmt(stats?.examsTaken)}
+            />
             <StatCard
               label="MÉDIA GERAL DA ESCOLA"
               value={
@@ -102,7 +117,7 @@ function AdminDashboard() {
 export default function HomePage() {
   const role = getCurrentRole();
 
-  if (role === "ADMIN") {
+  if (role === "ADMIN" || role === "COORDINATOR") {
     return <AdminDashboard />;
   }
 

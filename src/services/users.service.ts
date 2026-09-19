@@ -1,12 +1,11 @@
+import { Role } from "@/lib/role";
 import { apiRequest } from "./api";
-
-export type UserRole = "ADMIN" | "TEACHER" | "STUDENT";
 
 export type User = {
   id: string;
   name: string;
   email: string;
-  role: UserRole;
+  role: Role;
   classes: string[]; // nomes das turmas, ex: ["1º A", "7º A"]
   createdAt: string; // formato "DD/MM/AAAA"
 };
@@ -16,13 +15,13 @@ export const usersService = {
   listUsers() {
     return apiRequest<User[]>("/users");
   },
-    createUser(data: { name: string; email: string; role: UserRole }) {
+  createUser(data: { name: string; email: string; role: Role }) {
     return apiRequest<User>("/users", { method: "POST", body: data });
   },
-    updateUser(id: string, data: { name: string; email: string; role: UserRole }) {
+  updateUser(id: string, data: { name: string; email: string; role: Role }) {
     return apiRequest<User>(`/users/${id}`, { method: "PATCH", body: data });
   },
-    deleteUser(id: string) {
+  deleteUser(id: string) {
     return apiRequest<void>(`/users/${id}`, { method: "DELETE" });
   },
 };

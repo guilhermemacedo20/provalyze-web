@@ -25,7 +25,7 @@ export const navItems: NavItemConfig[] = [
   {
     href: "/",
     label: "Dashboard",
-    roles: ["ADMIN", "TEACHER", "STUDENT"],
+    roles: ["ADMIN", "TEACHER", "STUDENT", "COORDINATOR"],
     icon: LayoutDashboard,
   },
   {
@@ -55,19 +55,19 @@ export const navItems: NavItemConfig[] = [
   {
     href: "/courses",
     label: "Cursos",
-    roles: ["ADMIN"],
+    roles: ["ADMIN", "COORDINATOR"],
     icon: Layers,
   },
   {
     href: "/classes-admin",
     label: "Turmas",
-    roles: ["ADMIN"],
+    roles: ["ADMIN", "COORDINATOR"],
     icon: School,
   },
   {
     href: "/analytics",
     label: "Analytics",
-    roles: ["TEACHER", "ADMIN"],
+    roles: ["TEACHER", "ADMIN", "COORDINATOR"],
     icon: BarChart3,
   },
   {
@@ -79,7 +79,7 @@ export const navItems: NavItemConfig[] = [
   {
     href: "/reports",
     label: "Relatórios",
-    roles: ["TEACHER", "ADMIN"],
+    roles: ["TEACHER", "ADMIN", "COORDINATOR"],
     icon: FileBarChart,
   },
 ];
@@ -87,7 +87,7 @@ export const navItems: NavItemConfig[] = [
 export const settingsItem: NavItemConfig = {
   href: "/config",
   label: "Configurações",
-  roles: ["ADMIN", "TEACHER", "STUDENT"],
+  roles: ["ADMIN", "TEACHER", "STUDENT", "COORDINATOR"],
   icon: Settings,
 };
 
