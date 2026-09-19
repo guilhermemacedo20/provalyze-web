@@ -1,30 +1,63 @@
 import { apiRequest } from "./api";
+import { User } from "./users.service";
 
-export type User = {
-  id: string;
-  name: string;
-  email: string;
-  createdAt: string;
+export type LoginResponse = {
+  accessToken: string;
+  user: User;
 };
 
-export const authService = { // agrupa todas as funções dentro de um único objeto.
-  login(data: { user: string; password: string }) {
-    return apiRequest<User>("/auth/login", { method: "POST", body: data });
+export const authService = {
+  login(email: string, password: string) {
+    return apiRequest<LoginResponse>("/auth/login", {
+      method: "POST",
+      body: { email, password },
+    });
   },
-  // cadastro de um novo usuário.
-  register(data: { name: string; email: string }) {
-    return apiRequest<User>("/auth/register", { method: "POST", body: data });
+
+  register(data: {
+    name: string;
+    email: string;
+    role: "TEACHER" | "STUDENT";
+    password: string;
+  }) {
+    return apiRequest<User>("/users/register", {
+      method: "POST",
+      body: data,
+    });
   },
-  // busca os dados do usuário logado.
-  getProfile() {
-    return apiRequest<User>("/auth/me");
+
+  forgotPassword(email: string) {
+    return apiRequest<{ message: string }>("/auth/forgot-password", {
+      method: "POST",
+      body: { email },
+    });
   },
-  // altera a senha do usuário logado.
-  changePassword(data: { newPassword: string }) {
-    return apiRequest<void>("/auth/change-password", { method: "POST", body: data });
+
+  resetPassword(data: { email: string; code: string; newPassword: string }) {
+    return apiRequest<{ message: string }>("/auth/reset-password", {
+      method: "POST",
+      body: data,
+    });
   },
-  // deleta a conta do usuário logado.
+
+  changePassword(data: {
+    email: string;
+    actualPassword: string;
+    newPassword: string;
+  }) {
+    return apiRequest<{ message: string }>("/auth/change-password", {
+      method: "POST",
+      body: data,
+    });
+  },
+
   deleteAccount() {
-    return apiRequest<void>("/auth/me", { method: "DELETE" });
+    return apiRequest<{ message: string }>("/user/delete", {
+      method: "DELETE"
+    });
+  },
+
+  me() {
+    return apiRequest<User>("/auth/me");
   },
 };
