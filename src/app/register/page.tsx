@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { authService } from "@/services/auth.service";
 import { extractErrorMessage } from "@/lib/extract-error-message";
+import { TermsPolicyModal } from "@/components/ui/TermsPolicyModal";
 
 type ProfileRole = "TEACHER" | "STUDENT";
 
@@ -18,6 +19,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [termsSection, setTermsSection] = useState<"terms" | "privacy" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -61,6 +63,7 @@ export default function RegisterPage() {
 
   return (
     <div className="flex min-h-screen">
+      {/* Painel de marca */}
       <div className="relative hidden w-1/2 items-center justify-center overflow-hidden bg-[#1d4ed8] md:flex">
         <div className="absolute -right-20 -top-45 size-[480px] rounded-full bg-white/10" />
         <div className="absolute -bottom-20 -left-25 size-[280px] rounded-full bg-white/10" />
@@ -69,6 +72,7 @@ export default function RegisterPage() {
         </p>
       </div>
 
+      {/* Painel do formulário */}
       <div className="flex w-full items-center justify-center bg-background px-6 py-10 md:w-1/2">
         <form onSubmit={handleSubmit} className="w-full max-w-[360px]">
           <div className="mb-6 flex justify-center">
@@ -173,21 +177,21 @@ export default function RegisterPage() {
             />
             <span>
               Li e aceito os{" "}
-              <Link
-                href="/termos#termos-de-uso"
-                target="_blank"
+              <button
+                type="button"
+                onClick={() => setTermsSection("terms")}
                 className="font-medium text-primary hover:underline"
               >
                 Termos de Uso
-              </Link>{" "}
+              </button>{" "}
               e a{" "}
-              <Link
-                href="/termos#politica-de-privacidade"
-                target="_blank"
+              <button
+                type="button"
+                onClick={() => setTermsSection("privacy")}
                 className="font-medium text-primary hover:underline"
               >
                 Política de Privacidade
-              </Link>{" "}
+              </button>{" "}
               (LGPD).
             </span>
           </label>
@@ -210,6 +214,13 @@ export default function RegisterPage() {
           </p>
         </form>
       </div>
+
+      <TermsPolicyModal
+        open={termsSection !== null}
+        section={termsSection ?? "terms"}
+        onSectionChange={setTermsSection}
+        onClose={() => setTermsSection(null)}
+      />
     </div>
   );
 }
