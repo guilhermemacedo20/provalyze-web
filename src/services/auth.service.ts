@@ -20,7 +20,7 @@ export const authService = {
     role: "TEACHER" | "STUDENT";
     password: string;
   }) {
-    return apiRequest<User>("/users/register", {
+    return apiRequest<User>("/auth/register", {
       method: "POST",
       body: data,
     });
@@ -53,7 +53,7 @@ export const authService = {
 
   deleteAccount() {
     return apiRequest<{ message: string }>("/user/delete", {
-      method: "DELETE"
+      method: "DELETE",
     });
   },
 
