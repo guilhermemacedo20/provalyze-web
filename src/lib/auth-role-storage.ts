@@ -1,4 +1,3 @@
-import type { Role } from "@/lib/role";
 import { User } from "@/services/users.service";
 
 const TOKEN_KEY = "accessToken";
@@ -29,10 +28,4 @@ export function clearSession() {
   if (typeof window === "undefined") return;
   window.localStorage.removeItem(TOKEN_KEY);
   window.localStorage.removeItem(USER_KEY);
-}
-
-export function getCurrentRole(): Role {
-  const stored = getStoredUser();
-  if (stored) return stored.role;
-  return "STUDENT";
 }
