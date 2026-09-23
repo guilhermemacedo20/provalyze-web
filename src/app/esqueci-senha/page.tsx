@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { authService } from "@/services/auth.service";
 import { extractErrorMessage } from "@/lib/extract-error-message";
+import { TermsPolicyModal } from "@/components/ui/TermsPolicyModal";
 import { isPasswordStrong } from "@/lib/password-validate";
 import { PasswordChecks } from "@/components/auth/PasswordChecks";
 
@@ -28,6 +29,7 @@ export default function ForgotPasswordPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [termsSection, setTermsSection] = useState<"terms" | "privacy" | null>(null);
   const [resetError, setResetError] = useState<string | null>(null);
   const [resetting, setResetting] = useState(false);
 
@@ -240,21 +242,21 @@ export default function ForgotPasswordPage() {
               />
               <span>
                 Li e aceito os{" "}
-                <Link
-                  href="/termos#termos-de-uso"
-                  target="_blank"
+                <button
+                  type="button"
+                  onClick={() => setTermsSection("terms")}
                   className="font-medium text-primary hover:underline"
                 >
                   Termos de Uso
-                </Link>{" "}
+                </button>{" "}
                 e a{" "}
-                <Link
-                  href="/termos#politica-de-privacidade"
-                  target="_blank"
+                <button
+                  type="button"
+                  onClick={() => setTermsSection("privacy")}
                   className="font-medium text-primary hover:underline"
                 >
                   Política de Privacidade
-                </Link>{" "}
+                </button>{" "}
                 (LGPD).
               </span>
             </label>
@@ -280,6 +282,13 @@ export default function ForgotPasswordPage() {
           </form>
         )}
       </div>
+
+      <TermsPolicyModal
+        open={termsSection !== null}
+        section={termsSection ?? "terms"}
+        onSectionChange={setTermsSection}
+        onClose={() => setTermsSection(null)}
+      />
     </div>
   );
 }
