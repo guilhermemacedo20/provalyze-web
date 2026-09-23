@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ClassDetail, classesService } from "@/services/classes.service";
@@ -21,7 +21,7 @@ export default function ClassDetailPage() {
   const [removeTarget, setRemoveTarget] = useState<{ id: string; name: string } | null>(null);
   const [removing, setRemoving] = useState(false);
 
-  const fetchClass = async () => {
+  const fetchClass = useCallback(async () => {
     try {
       setSchoolClass(await classesService.getClass(classId));
     } catch (error) {
@@ -30,11 +30,11 @@ export default function ClassDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [classId]);
 
   useEffect(() => {
     fetchClass();
-  }, [classId]);
+  }, [fetchClass]);
 
   const confirmDeleteClass = async () => {
     setDeleting(true);

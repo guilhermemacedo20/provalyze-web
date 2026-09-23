@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Question, questionsService } from "@/services/questions.service";
 import { Theme, themesService } from "@/services/themes.service";
 import { Modal } from "@/components/layout/Modal";
@@ -22,7 +22,7 @@ export default function ThemeQuestionsPage() {
   );
   const [loading, setLoading] = useState(true);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       const themeList = await themesService.getTheme(id);
@@ -35,7 +35,7 @@ export default function ThemeQuestionsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
   const confirmDelete = async () => {
     if (!questionToDelete || !questionToDelete.id) {
@@ -58,7 +58,7 @@ export default function ThemeQuestionsPage() {
 
   useEffect(() => {
     fetchData();
-  }, [id]);
+  }, [fetchData]);
 
   if (loading) {
     return (

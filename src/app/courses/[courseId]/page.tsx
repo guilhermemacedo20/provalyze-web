@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Course, coursesService } from "@/services/courses.service";
@@ -24,7 +24,7 @@ export default function CourseSubjectsPage() {
   const [deleteTarget, setDeleteTarget] = useState<Subject | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  const fetchCourse = async () => {
+  const fetchCourse = useCallback(async () => {
     try {
       setCourse(await coursesService.getCourse(courseId));
     } catch (error) {
@@ -33,9 +33,9 @@ export default function CourseSubjectsPage() {
     } finally {
       setCourseLoading(false);
     }
-  };
+  }, [courseId]);
 
-  const fetchSubjects = async () => {
+  const fetchSubjects = useCallback(async () => {
     try {
       setSubjects(await subjectsService.listSubjects(courseId));
     } catch (error) {
@@ -44,12 +44,12 @@ export default function CourseSubjectsPage() {
     } finally {
       setSubjectsLoading(false);
     }
-  };
+  }, [courseId]);
 
   useEffect(() => {
     fetchCourse();
     fetchSubjects();
-  }, [courseId]);
+  }, [fetchCourse, fetchSubjects]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
