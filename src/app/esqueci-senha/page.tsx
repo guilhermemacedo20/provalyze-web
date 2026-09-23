@@ -3,20 +3,13 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Check, X as XIcon } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { authService } from "@/services/auth.service";
 import { extractErrorMessage } from "@/lib/extract-error-message";
+import { isPasswordStrong } from "@/lib/password-validate";
+import { PasswordChecks } from "@/components/auth/PasswordChecks";
 
 type Step = "email" | "reset";
-
-function getPasswordChecks(password: string) {
-  return [
-    { label: "Mínimo de 8 caracteres", met: password.length >= 8 },
-    { label: "Uma letra maiúscula", met: /[A-Z]/.test(password) },
-    { label: "Uma letra minúscula", met: /[a-z]/.test(password) },
-    { label: "Um número", met: /[0-9]/.test(password) },
-  ];
-}
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -38,8 +31,7 @@ export default function ForgotPasswordPage() {
   const [resetError, setResetError] = useState<string | null>(null);
   const [resetting, setResetting] = useState(false);
 
-  const passwordChecks = getPasswordChecks(newPassword);
-  const allChecksMet = passwordChecks.every((check) => check.met);
+  const allChecksMet = isPasswordStrong(newPassword);
 
   const handleSendEmail = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -212,20 +204,9 @@ export default function ForgotPasswordPage() {
               </div>
             </div>
 
-            <ul className="mb-4 flex flex-col gap-1">
-              {passwordChecks.map((check) => (
-                <li key={check.label} className="flex items-center gap-1.5 text-[12px]">
-                  {check.met ? (
-                    <Check size={14} className="text-success" />
-                  ) : (
-                    <XIcon size={14} className="text-muted" />
-                  )}
-                  <span className={check.met ? "text-success" : "text-muted"}>
-                    {check.label}
-                  </span>
-                </li>
-              ))}
-            </ul>
+            <div className="mb-4">
+              <PasswordChecks password={newPassword} />
+            </div>
 
             <div className="mb-4 flex flex-col gap-1.5">
               <label htmlFor="confirm-password" className="text-[13px] font-medium text-foreground">

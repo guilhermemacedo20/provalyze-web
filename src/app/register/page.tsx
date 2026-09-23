@@ -6,6 +6,8 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { authService } from "@/services/auth.service";
 import { extractErrorMessage } from "@/lib/extract-error-message";
+import { isPasswordStrong } from "@/lib/password-validate";
+import { PasswordChecks } from "@/components/auth/PasswordChecks";
 
 type ProfileRole = "TEACHER" | "STUDENT";
 
@@ -29,8 +31,8 @@ export default function RegisterPage() {
       setError("Preencha todos os campos.");
       return;
     }
-    if (password.length < 8) {
-      setError("A senha precisa ter pelo menos 8 caracteres.");
+    if (!isPasswordStrong(password)) {
+      setError("A senha não atende aos requisitos listados abaixo.");
       return;
     }
     if (password !== confirmPassword) {
@@ -38,7 +40,9 @@ export default function RegisterPage() {
       return;
     }
     if (!acceptedTerms) {
-      setError("Você precisa aceitar os Termos de Uso e a Política de Privacidade.");
+      setError(
+        "Você precisa aceitar os Termos de Uso e a Política de Privacidade.",
+      );
       return;
     }
 
@@ -72,16 +76,27 @@ export default function RegisterPage() {
       <div className="flex w-full items-center justify-center bg-background px-6 py-10 md:w-1/2">
         <form onSubmit={handleSubmit} className="w-full max-w-[360px]">
           <div className="mb-6 flex justify-center">
-            <Image src="/logo.png" alt="Provalyze" width={48} height={65} quality={100} />
+            <Image
+              src="/logo.png"
+              alt="Provalyze"
+              width={48}
+              height={65}
+              quality={100}
+            />
           </div>
 
-          <h1 className="mb-2 text-2xl font-bold text-foreground">Criar conta</h1>
+          <h1 className="mb-2 text-2xl font-bold text-foreground">
+            Criar conta
+          </h1>
           <p className="mb-6 text-sm text-muted">
             Preencha seus dados para começar a usar o Provalyze.
           </p>
 
           <div className="mb-4 flex flex-col gap-1.5">
-            <label htmlFor="name" className="text-[13px] font-medium text-foreground">
+            <label
+              htmlFor="name"
+              className="text-[13px] font-medium text-foreground"
+            >
               Nome completo
             </label>
             <input
@@ -95,7 +110,10 @@ export default function RegisterPage() {
           </div>
 
           <div className="mb-4 flex flex-col gap-1.5">
-            <label htmlFor="email" className="text-[13px] font-medium text-foreground">
+            <label
+              htmlFor="email"
+              className="text-[13px] font-medium text-foreground"
+            >
               E-mail institucional
             </label>
             <input
@@ -109,7 +127,9 @@ export default function RegisterPage() {
           </div>
 
           <div className="mb-4 flex flex-col gap-1.5">
-            <label className="text-[13px] font-medium text-foreground">Perfil</label>
+            <label className="text-[13px] font-medium text-foreground">
+              Perfil
+            </label>
             <div className="flex gap-2">
               <button
                 type="button"
@@ -137,7 +157,10 @@ export default function RegisterPage() {
           </div>
 
           <div className="mb-4 flex flex-col gap-1.5">
-            <label htmlFor="password" className="text-[13px] font-medium text-foreground">
+            <label
+              htmlFor="password"
+              className="text-[13px] font-medium text-foreground"
+            >
               Senha
             </label>
             <input
@@ -148,10 +171,14 @@ export default function RegisterPage() {
               placeholder="••••••••"
               className="rounded-md border border-border bg-surface px-3.5 py-3 text-sm text-foreground placeholder:text-muted"
             />
+            <PasswordChecks password={password} />
           </div>
 
           <div className="mb-4 flex flex-col gap-1.5">
-            <label htmlFor="confirm-password" className="text-[13px] font-medium text-foreground">
+            <label
+              htmlFor="confirm-password"
+              className="text-[13px] font-medium text-foreground"
+            >
               Confirmar senha
             </label>
             <input
@@ -204,7 +231,10 @@ export default function RegisterPage() {
 
           <p className="mt-4 text-center text-[13px] text-muted">
             Já possui uma conta?{" "}
-            <Link href="/login" className="font-semibold text-primary hover:underline">
+            <Link
+              href="/login"
+              className="font-semibold text-primary hover:underline"
+            >
               Entrar
             </Link>
           </p>

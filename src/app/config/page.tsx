@@ -7,6 +7,8 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { extractErrorMessage } from "@/lib/extract-error-message";
 import { User, usersService } from "@/services/users.service";
 import { clearSession } from "@/lib/auth-role-storage";
+import { isPasswordStrong } from "@/lib/password-validate";
+import { PasswordChecks } from "@/components/auth/PasswordChecks";
 
 export default function ConfigPage() {
   const router = useRouter();
@@ -51,8 +53,16 @@ export default function ConfigPage() {
       setPasswordError("Não foi possível identificar o e-mail da conta.");
       return;
     }
-    if (currentPassword.length < 8 || newPassword.length < 8) {
-      setPasswordError("A senha precisa ter pelo menos 8 caracteres.");
+    if (currentPassword.length < 8) {
+      setPasswordError("A senha atual precisa ter pelo menos 8 caracteres.");
+      return;
+    }
+    if (!isPasswordStrong(newPassword)) {
+      setPasswordError("A senha não atende aos requisitos listados abaixo.");
+      return;
+    }
+    if (newPassword === currentPassword) {
+      setPasswordError("A nova senha deve ser diferente da atual.");
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -178,6 +188,7 @@ export default function ConfigPage() {
                 onChange={(e) => setNewPassword(e.target.value)}
                 className="rounded-md border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground"
               />
+              <PasswordChecks password={newPassword} />
             </div>
 
             <div className="mb-2 flex flex-col gap-1.5">
