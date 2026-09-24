@@ -12,6 +12,7 @@ export type QuestionOption = {
 export type QuestionPayload = {
   statement: string;
   type: QuestionType;
+  imageUrl?: string;
   themeId: string;
   correctOption?: string;
   options?: QuestionOption[];
