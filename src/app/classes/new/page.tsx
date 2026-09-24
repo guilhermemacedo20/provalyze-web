@@ -6,6 +6,7 @@ import Link from "next/link";
 import { subjectsService, SubjectOption } from "@/services/subjects.service";
 import { usersService, User } from "@/services/users.service";
 import { classesService } from "@/services/classes.service";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 export default function NewClassPage() {
   const router = useRouter();
@@ -15,6 +16,7 @@ export default function NewClassPage() {
   const [optionsLoading, setOptionsLoading] = useState(true);
 
   const [name, setName] = useState("");
+  const { user } = useAuth();
   const [subjectId, setSubjectId] = useState("");
   const [teacherId, setTeacherId] = useState("");
   const [creating, setCreating] = useState(false);
@@ -50,7 +52,7 @@ export default function NewClassPage() {
         subjectId,
         teacherId,
       });
-      router.push("/classes-admin");
+      router.push("/classes");
     } catch (error) {
       console.error("Erro ao criar turma:", error);
       setFormError("Não foi possível criar a turma. Tente novamente.");
@@ -61,7 +63,7 @@ export default function NewClassPage() {
   return (
     <div className="px-10 py-9">
       <p className="mb-2 text-xs text-muted">
-        <Link href="/classes-admin" className="hover:underline">
+        <Link href="/classes" className="hover:underline">
           Turmas
         </Link>{" "}
         / Nova turma
@@ -73,7 +75,10 @@ export default function NewClassPage() {
         className="mb-5 flex flex-col gap-5 rounded-lg border border-border bg-surface px-[22px] py-6 shadow-sm"
       >
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="class-name" className="text-[13px] font-medium text-foreground">
+          <label
+            htmlFor="class-name"
+            className="text-[13px] font-medium text-foreground"
+          >
             Nome da turma
           </label>
           <input
@@ -88,7 +93,10 @@ export default function NewClassPage() {
 
         <div className="flex gap-5">
           <div className="flex flex-1 flex-col gap-1.5">
-            <label htmlFor="class-subject" className="text-[13px] font-medium text-foreground">
+            <label
+              htmlFor="class-subject"
+              className="text-[13px] font-medium text-foreground"
+            >
               Matéria
             </label>
             <select
@@ -108,22 +116,31 @@ export default function NewClassPage() {
           </div>
 
           <div className="flex flex-1 flex-col gap-1.5">
-            <label htmlFor="class-teacher" className="text-[13px] font-medium text-foreground">
+            <label
+              htmlFor="class-teacher"
+              className="text-[13px] font-medium text-foreground"
+            >
               Professor(a) responsável
             </label>
             <select
               id="class-teacher"
               value={teacherId}
               onChange={(e) => setTeacherId(e.target.value)}
-              disabled={optionsLoading}
+              disabled={optionsLoading && user?.role === "TEACHER"}
               className="rounded-md border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground disabled:opacity-60"
             >
               <option value="">Selecione um(a) professor(a)</option>
-              {teachers.map((teacher) => (
-                <option key={teacher.id} value={teacher.id}>
-                  {teacher.name}
+              {user?.role === "TEACHER" ? (
+                <option key={user.id} value={user.id}>
+                  {user.name}
                 </option>
-              ))}
+              ) : (
+                teachers.map((teacher) => (
+                  <option key={teacher.id} value={teacher.id}>
+                    {teacher.name}
+                  </option>
+                ))
+              )}
             </select>
           </div>
         </div>
@@ -132,7 +149,7 @@ export default function NewClassPage() {
 
         <div className="flex items-center justify-between pt-2">
           <Link
-            href="/classes-admin"
+            href="/classes"
             className="text-sm font-medium text-muted hover:text-foreground"
           >
             Cancelar
