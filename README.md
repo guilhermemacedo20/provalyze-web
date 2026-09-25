@@ -1,36 +1,68 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+<h1 align="center">Provalyze - Web</h1>
 
-## Getting Started
+<p align="center">
+  Front-end do Provalyze, plataforma de provas online, banco de questões e acompanhamento pedagógico.
+</p>
 
-First, run the development server:
+## Sobre
+
+Interface do professor, aluno e administrador para utilização da plataforma de maneira visual.
+
+## Tecnologias e versões
+
+Versões do repositório.
+
+| Tecnologia | Versão | Uso |
+|---|---|---|
+| Node.js | 20+ | Runtime |
+| Next.js | 15.5.23 | App Router, Turbopack |
+| React | 19.1.0 | UI |
+| TypeScript | 5.x | Tipagem |
+| Tailwind CSS | 4.x | Estilização |
+| ESLint | 9.x | Lint |
+| lucide-react | 1.41.0 | Ícones do menu |
+
+Chamadas HTTP: `src/services/api.ts`.
+
+## Pré-requisitos
+
+- Node.js 20+
+- API rodando (`npm run start:dev` no `pfc-api`, em geral `http://localhost:3333`)
+
+## Como rodar
+
+```bash
+npm install
+```
+
+Crie o `.env.local` na raiz:
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:3333/api
+```
+
+Variáveis com `NEXT_PUBLIC_`
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abra [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Estrutura
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/
+  app/              # rotas (login, dashboard, questions, themes, …)
+  components/       # shell, modal, forms
+  config/           # menu por role
+  lib/              # sessão e helpers
+  services/         # cliente HTTP e serviços de domínio
+public/             # logo e ícones
+```
 
-## Learn More
+## Deploy (Vercel)
 
-To learn more about Next.js, take a look at the following resources:
+No projeto **web**, as envs do client precisam do prefixo:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `NEXT_PUBLIC_API_URL` — URL pública da API, já com `/api`

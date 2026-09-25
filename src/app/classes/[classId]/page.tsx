@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ClassDetail, classesService } from "@/services/classes.service";
@@ -21,7 +21,7 @@ export default function ClassDetailPage() {
   const [removeTarget, setRemoveTarget] = useState<{ id: string; name: string } | null>(null);
   const [removing, setRemoving] = useState(false);
 
-  const fetchClass = async () => {
+  const fetchClass = useCallback(async () => {
     try {
       setSchoolClass(await classesService.getClass(classId));
     } catch (error) {
@@ -30,17 +30,17 @@ export default function ClassDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [classId]);
 
   useEffect(() => {
     fetchClass();
-  }, [classId]);
+  }, [fetchClass]);
 
   const confirmDeleteClass = async () => {
     setDeleting(true);
     try {
       await classesService.deleteClass(classId);
-      router.push("/classes-admin");
+      router.push("/classes");
     } catch (error) {
       console.error("Erro ao excluir turma:", error);
       setDeleting(false);
@@ -65,7 +65,7 @@ export default function ClassDetailPage() {
     return (
       <div className="px-10 py-9">
         <p className="text-muted">Turma não encontrada.</p>
-        <Link href="/classes-admin" className="font-medium text-primary hover:underline">
+        <Link href="/classes" className="font-medium text-primary hover:underline">
           Voltar para Turmas
         </Link>
       </div>
@@ -75,7 +75,7 @@ export default function ClassDetailPage() {
   return (
     <div className="relative px-10 py-9">
       <p className="mb-2 text-xs text-muted">
-        <Link href="/classes-admin" className="hover:underline">
+        <Link href="/classes" className="hover:underline">
           Turmas
         </Link>{" "}
         / {schoolClass?.name ?? "..."}
@@ -87,7 +87,7 @@ export default function ClassDetailPage() {
         </h1>
         <div className="flex items-center gap-3">
           <Link
-            href={`/classes-admin/${classId}/novo-aluno`}
+            href={`/classes/${classId}/novo-aluno`}
             className="rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-hover"
           >
             + Adicionar aluno
@@ -155,7 +155,7 @@ export default function ClassDetailPage() {
       </div>
 
       <Link
-        href="/classes-admin"
+        href="/classes"
         className="mt-6 inline-block text-sm font-medium text-muted hover:text-foreground"
       >
         ← Voltar

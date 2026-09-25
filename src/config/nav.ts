@@ -25,7 +25,7 @@ export const navItems: NavItemConfig[] = [
   {
     href: "/",
     label: "Dashboard",
-    roles: ["ADMIN", "TEACHER", "STUDENT"],
+    roles: ["ADMIN", "TEACHER", "STUDENT", "COORDINATOR"],
     icon: LayoutDashboard,
   },
   {
@@ -49,25 +49,19 @@ export const navItems: NavItemConfig[] = [
   {
     href: "/classes",
     label: "Turmas",
-    roles: ["TEACHER", "STUDENT"],
+    roles: ["ADMIN", "COORDINATOR", "TEACHER", "STUDENT"],
     icon: GraduationCap,
   },
   {
     href: "/courses",
     label: "Cursos",
-    roles: ["ADMIN"],
+    roles: ["ADMIN", "COORDINATOR"],
     icon: Layers,
-  },
-  {
-    href: "/classes-admin",
-    label: "Turmas",
-    roles: ["ADMIN"],
-    icon: School,
   },
   {
     href: "/analytics",
     label: "Analytics",
-    roles: ["TEACHER", "ADMIN"],
+    roles: ["TEACHER", "ADMIN", "COORDINATOR"],
     icon: BarChart3,
   },
   {
@@ -79,7 +73,7 @@ export const navItems: NavItemConfig[] = [
   {
     href: "/reports",
     label: "Relatórios",
-    roles: ["TEACHER", "ADMIN"],
+    roles: ["TEACHER", "ADMIN", "COORDINATOR"],
     icon: FileBarChart,
   },
 ];
@@ -87,7 +81,7 @@ export const navItems: NavItemConfig[] = [
 export const settingsItem: NavItemConfig = {
   href: "/config",
   label: "Configurações",
-  roles: ["ADMIN", "TEACHER", "STUDENT"],
+  roles: ["ADMIN", "TEACHER", "STUDENT", "COORDINATOR"],
   icon: Settings,
 };
 
@@ -95,7 +89,20 @@ export function navItemsForRole(role: Role) {
   return navItems.filter((item) => item.roles.includes(role));
 }
 
+export function isQuestionBankPath(pathname: string) {
+  return (
+    pathname === "/questions" ||
+    pathname.startsWith("/questions/") ||
+    pathname === "/themes" ||
+    pathname.startsWith("/themes/")
+  );
+}
+
 export function canAccessPath(pathname: string, role: Role) {
+  if (isQuestionBankPath(pathname)) {
+    return role === "TEACHER";
+  }
+
   const match = [...navItems, settingsItem].find((item) =>
     item.href === "/"
       ? pathname === "/"

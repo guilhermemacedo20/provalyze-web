@@ -1,18 +1,29 @@
+import { clearSession, getAccessToken } from "@/lib/auth-role-storage";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3333/api";
 
 export async function apiRequest<T>(
   path: string,
   options: { method?: string; body?: unknown } = {},
 ): Promise<T> {
+  const token = getAccessToken();
+
   const response = await fetch(`${API_URL}${path}`, {
     method: options.method ?? "GET",
     headers: {
       "Content-Type": "application/json",
-      // TO-DO: Alterar para autenticação real quando o login estiver implementado
-      "x-user-email": process.env.TEACHER_EMAIL ?? "professor@escola.com",
+      ...(token && { Authorization: `Bearer ${token}` }),
     },
     body: options.body ? JSON.stringify(options.body) : undefined,
   });
+
+  if (response.status === 401 && token) {
+    clearSession();
+    if (typeof window !== "undefined") {
+      window.location.href = "/login";
+    }
+    throw new Error("Sessão expirada. Faça login novamente.");
+  }
 
   if (!response.ok) {
     throw new Error(await response.text());
