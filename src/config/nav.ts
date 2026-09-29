@@ -49,7 +49,13 @@ export const navItems: NavItemConfig[] = [
   {
     href: "/classes",
     label: "Turmas",
-    roles: ["ADMIN", "COORDINATOR", "TEACHER", "STUDENT"],
+    roles: ["ADMIN", "COORDINATOR", "TEACHER"],
+    icon: GraduationCap,
+  },
+  {
+    href: "/my-classes",
+    label: "Turmas",
+    roles: ["STUDENT"],
     icon: GraduationCap,
   },
   {

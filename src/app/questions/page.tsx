@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Modal } from "@/components/layout/Modal";
+import { extractErrorMessage } from "@/lib/extract-error-message";
 import { questionsService } from "@/services/questions.service";
 import { Theme, themesService } from "@/services/themes.service";
 
@@ -11,10 +12,14 @@ export default function QuestionsPage() {
   const [themes, setThemes] = useState<Theme[]>([]);
   const [themeToDelete, setThemeToDelete] = useState<Theme | null>(null);
   const [loading, setLoading] = useState(true);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
 
-  const fetchThemes = async () => {
+  const fetchThemes = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const themeList = await themesService.listThemes();
       const questions = await questionsService.listQuestions();
 
@@ -37,7 +42,34 @@ export default function QuestionsPage() {
     }
     await themesService.deleteTheme(themeToDelete.id);
     setThemeToDelete(null);
-    fetchThemes();
+    fetchThemes(true);
+  };
+
+  const closeCreate = () => {
+    setCreateOpen(false);
+    setName("");
+    setCreateError(null);
+  };
+
+  const handleCreate = async () => {
+    const trimmed = name.trim();
+    if (!trimmed) {
+      setCreateError("Informe o nome da pasta.");
+      return;
+    }
+
+    setCreating(true);
+    setCreateError(null);
+    try {
+      await themesService.createTheme({ name: trimmed });
+      closeCreate();
+      await fetchThemes(true);
+    } catch (error) {
+      console.error("Error creating theme:", error);
+      setCreateError(extractErrorMessage(error));
+    } finally {
+      setCreating(false);
+    }
   };
 
   useEffect(() => {
@@ -63,12 +95,13 @@ export default function QuestionsPage() {
             Suas questões organizadas por tema
           </p>
         </div>
-        <Link
-          href="/themes/create"
-          className="rounded-[14px] bg-primary px-4 py-2.5 text-[13px] font-semibold text-white hover:bg-primary-hover"
+        <button
+          type="button"
+          onClick={() => setCreateOpen(true)}
+          className="cursor-pointer rounded-[14px] bg-primary px-4 py-2.5 text-[13px] font-semibold text-white hover:bg-primary-hover"
         >
           + Nova pasta
-        </Link>
+        </button>
       </div>
 
       {themes.length === 0 ? (
@@ -146,6 +179,37 @@ export default function QuestionsPage() {
         }
         onConfirm={confirmDelete}
       />
+
+      <Modal
+        isOpen={createOpen}
+        setIsOpen={(open) => {
+          if (!open) closeCreate();
+        }}
+        title="Nova pasta"
+        description=""
+        confirmLabel={creating ? "Criando..." : "Criar"}
+        confirmClassName="rounded-[14px] bg-primary px-4 py-2.5 text-[13px] font-semibold text-white hover:bg-primary-hover cursor-pointer"
+        confirming={creating}
+        onConfirm={handleCreate}
+      >
+        <div className="mb-6 flex flex-col gap-1.5">
+          <label htmlFor="theme-name" className="text-sm font-medium text-foreground">
+            Nome
+          </label>
+          <input
+            id="theme-name"
+            value={name}
+            maxLength={120}
+            onChange={(event) => setName(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") handleCreate();
+            }}
+            placeholder="Nome da pasta"
+            className="rounded-md border border-border px-3 py-2 text-sm text-foreground"
+          />
+          {createError && <p className="text-sm text-danger">{createError}</p>}
+        </div>
+      </Modal>
     </main>
   );
 }
