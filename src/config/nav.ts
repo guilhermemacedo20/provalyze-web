@@ -31,7 +31,7 @@ export const navItems: NavItemConfig[] = [
   {
     href: "/users",
     label: "Usuários",
-    roles: ["ADMIN"],
+    roles: ["ADMIN", "COORDINATOR"],
     icon: Users,
   },
   {

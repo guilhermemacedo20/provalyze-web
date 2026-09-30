@@ -5,6 +5,7 @@ import { User, usersService } from "@/services/users.service";
 import { Badge } from "@/components/ui/Badge";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Role } from "@/lib/role";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 // lista todas as abas de filtro dos usuários.
 const TABS: { key: Role | "ALL"; label: string }[] = [
@@ -26,7 +27,11 @@ const ROLE_BADGE: Record<
   COORDINATOR: { tone: "coordenador", label: "Coordenador(a)" },
 };
 
+const COORDINATOR_ROLES: Role[] = ["TEACHER", "STUDENT"];
+
 export default function UsersPage() {
+  const { user: currentUser } = useAuth();
+  const isCoordinator = currentUser?.role === "COORDINATOR";
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Role | "ALL">("ALL");
@@ -61,8 +66,21 @@ export default function UsersPage() {
     fetchUsers();
   }, []);
 
+  const visibleTabs = isCoordinator
+    ? TABS.filter((tab) => tab.key === "ALL" || COORDINATOR_ROLES.includes(tab.key as Role))
+    : TABS;
+
+  const roleOptions: Role[] = isCoordinator
+    ? COORDINATOR_ROLES
+    : ["STUDENT", "TEACHER", "COORDINATOR", "ADMIN"];
+
+  const scopedUsers = useMemo(() => {
+    if (!isCoordinator) return users;
+    return users.filter((user) => COORDINATOR_ROLES.includes(user.role));
+  }, [users, isCoordinator]);
+
   const filteredUsers = useMemo(() => {
-    return users.filter((user) => {
+    return scopedUsers.filter((user) => {
       const matchesTab = activeTab === "ALL" || user.role === activeTab;
       const matchesSearch =
         search.trim() === "" ||
@@ -70,7 +88,7 @@ export default function UsersPage() {
         user.email.toLowerCase().includes(search.toLowerCase());
       return matchesTab && matchesSearch;
     });
-  }, [users, activeTab, search]);
+  }, [scopedUsers, activeTab, search]);
 
   const extractErrorMessage = (error: unknown): string => {
     if (error instanceof Error) {
@@ -94,7 +112,9 @@ export default function UsersPage() {
   };
 
   const countFor = (key: Role | "ALL") =>
-    key === "ALL" ? users.length : users.filter((u) => u.role === key).length;
+    key === "ALL"
+      ? scopedUsers.length
+      : scopedUsers.filter((u) => u.role === key).length;
 
   const openNewUserModal = () => {
     setNewName("");
@@ -120,6 +140,10 @@ export default function UsersPage() {
 
     if (!newName.trim() || !newEmail.trim()) {
       setFormError("Preencha nome e e-mail.");
+      return;
+    }
+    if (isCoordinator && !COORDINATOR_ROLES.includes(newRole)) {
+      setFormError("O coordenador só pode cadastrar alunos e professores.");
       return;
     }
 
@@ -177,7 +201,7 @@ export default function UsersPage() {
       </div>
 
       <div className="mb-5 inline-flex gap-1 rounded-md border border-border bg-surface p-1">
-        {TABS.map((tab) => (
+        {visibleTabs.map((tab) => (
           <button
             key={tab.key}
             type="button"
@@ -330,10 +354,11 @@ export default function UsersPage() {
                 onChange={(e) => setNewRole(e.target.value as Role)}
                 className="rounded-md border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground"
               >
-                <option value="STUDENT">Aluno(a)</option>
-                <option value="TEACHER">Professor(a)</option>
-                <option value="COORDINATOR">Coordenador(a)</option>
-                <option value="ADMIN">Administrador(a)</option>
+                {roleOptions.map((role) => (
+                  <option key={role} value={role}>
+                    {ROLE_BADGE[role].label}
+                  </option>
+                ))}
               </select>
             </div>
 
