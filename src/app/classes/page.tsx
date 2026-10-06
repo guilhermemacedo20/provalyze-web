@@ -55,11 +55,11 @@ export default function ClassesAdminPage() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Turmas</h1>
           <p className="mt-1 text-sm text-muted">
-            Todas as turmas da instituição, de todos os professores
+            Todas as turmas
           </p>
         </div>
         <Link
-          href="/classes-admin/new"
+          href="/classes/new"
           className="rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-hover"
         >
           + Nova turma
@@ -112,7 +112,7 @@ export default function ClassesAdminPage() {
                   <td className="px-5 py-3.5 text-right">
                     <div className="flex items-center justify-end gap-4">
                       <Link
-                        href={`/classes-admin/${schoolClass.id}`}
+                        href={`/classes/${schoolClass.id}`}
                         className="font-medium text-primary hover:underline"
                       >
                         Ver detalhes

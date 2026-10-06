@@ -30,6 +30,7 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
   const router = useRouter();
   const isEdit = !!questionId;
   const [statement, setStatement] = useState("");
+  const [image, setImage] = useState("");
   const [themeId, setThemeId] = useState("");
   const [themes, setThemes] = useState<Theme[]>([]);
   const [type, setType] = useState<QuestionType>("MULTIPLE_CHOICE");
@@ -59,6 +60,7 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
 
         const question = await questionsService.getQuestion(questionId);
         setStatement(question.statement);
+        setImage(question.imageUrl || "");
         setThemeId(question.themeId);
         setType(question.type);
         if (question.type === "MULTIPLE_CHOICE") {
@@ -149,6 +151,7 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
     const payload: QuestionPayload = {
       statement: statement.trim(),
       themeId,
+      ...(image ? { imageUrl: image } : {}),
       type,
       ...(type === "MULTIPLE_CHOICE"
         ? {
@@ -170,6 +173,7 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
       }
       if (keepOnPage) {
         setStatement("");
+        setImage("");
         setType("MULTIPLE_CHOICE");
         setOptions(withLabels(emptyOptions));
       } else {
@@ -235,6 +239,32 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
             className="w-full rounded-[14px] border border-border bg-surface px-3.5 py-2.5 text-[14px] text-foreground placeholder:text-muted"
           />
         </div>
+
+        <div className="space-y-1.5">
+          <label htmlFor="image" className="block text-[13px] font-medium">
+            Tem imagem?
+          </label>
+          <input
+            id="image"
+            value={image}
+            placeholder={"URL da imagem"}
+            onChange={(event) => setImage(event.target.value)}
+            className="w-full rounded-[14px] border border-border bg-surface px-3.5 py-2.5 text-[14px] text-foreground placeholder:text-muted"
+          />
+        </div>
+
+        {image && (
+          <div>
+            A imagem será exibida dessa forma:
+            <img
+              src={image}
+              alt={"Question image"}
+              className="max-w-md max-h-md"
+              width={450}
+              height={450}
+            />
+          </div>
+        )}
 
         <div className="space-y-1.5">
           <label htmlFor="themeId" className="block text-[13px] font-medium">

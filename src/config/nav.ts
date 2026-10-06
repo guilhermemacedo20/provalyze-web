@@ -49,7 +49,7 @@ export const navItems: NavItemConfig[] = [
   {
     href: "/classes",
     label: "Turmas",
-    roles: ["TEACHER", "STUDENT"],
+    roles: ["ADMIN", "COORDINATOR", "TEACHER", "STUDENT"],
     icon: GraduationCap,
   },
   {
@@ -57,12 +57,6 @@ export const navItems: NavItemConfig[] = [
     label: "Cursos",
     roles: ["ADMIN", "COORDINATOR"],
     icon: Layers,
-  },
-  {
-    href: "/classes-admin",
-    label: "Turmas",
-    roles: ["ADMIN", "COORDINATOR"],
-    icon: School,
   },
   {
     href: "/analytics",

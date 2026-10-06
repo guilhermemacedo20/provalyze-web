@@ -2,25 +2,25 @@
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import {
-  AuthUser,
   clearSession,
   getAccessToken,
   getStoredUser,
   saveSession,
 } from "@/lib/auth-role-storage";
 import { authService } from "@/services/auth.service";
+import { User } from "@/services/users.service";
 
 type AuthContextValue = {
-  user: AuthUser | null;
+  user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<AuthUser>;
+  login: (email: string, password: string) => Promise<User>;
   logout: () => void;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

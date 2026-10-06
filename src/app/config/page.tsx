@@ -2,8 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { authService, User } from "@/services/auth.service";
+import { authService } from "@/services/auth.service";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { extractErrorMessage } from "@/lib/extract-error-message";
+import { User, usersService } from "@/services/users.service";
+import { clearSession } from "@/lib/auth-role-storage";
+import { isPasswordStrong } from "@/lib/password-validate";
+import { PasswordChecks } from "@/components/auth/PasswordChecks";
 
 export default function ConfigPage() {
   const router = useRouter();
@@ -12,6 +17,7 @@ export default function ConfigPage() {
   const [loading, setLoading] = useState(true);
 
   const [isPasswordModalOpen, setPasswordModalOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState<string | null>(null);
@@ -22,7 +28,7 @@ export default function ConfigPage() {
 
   useEffect(() => {
     authService
-      .getProfile()
+      .me()
       .then(setProfile)
       .catch((error) => {
         console.error("Erro ao buscar perfil:", error);
@@ -32,6 +38,7 @@ export default function ConfigPage() {
   }, []);
 
   const openPasswordModal = () => {
+    setCurrentPassword("");
     setNewPassword("");
     setConfirmPassword("");
     setPasswordError(null);
@@ -42,8 +49,20 @@ export default function ConfigPage() {
     e.preventDefault();
     setPasswordError(null);
 
-    if (newPassword.length < 6) {
-      setPasswordError("A senha precisa ter pelo menos 6 caracteres.");
+    if (!profile?.email) {
+      setPasswordError("Não foi possível identificar o e-mail da conta.");
+      return;
+    }
+    if (currentPassword.length < 8) {
+      setPasswordError("A senha atual precisa ter pelo menos 8 caracteres.");
+      return;
+    }
+    if (!isPasswordStrong(newPassword)) {
+      setPasswordError("A senha não atende aos requisitos listados abaixo.");
+      return;
+    }
+    if (newPassword === currentPassword) {
+      setPasswordError("A nova senha deve ser diferente da atual.");
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -53,11 +72,15 @@ export default function ConfigPage() {
 
     setSavingPassword(true);
     try {
-      await authService.changePassword({ newPassword });
+      await authService.changePassword({
+        email: profile.email,
+        actualPassword: currentPassword,
+        newPassword,
+      });
       setPasswordModalOpen(false);
     } catch (error) {
       console.error("Erro ao alterar senha:", error);
-      setPasswordError("Não foi possível alterar a senha. Tente novamente.");
+      setPasswordError(extractErrorMessage(error));
     } finally {
       setSavingPassword(false);
     }
@@ -66,8 +89,14 @@ export default function ConfigPage() {
   const confirmDeleteAccount = async () => {
     setDeletingAccount(true);
     try {
-      await authService.deleteAccount();
-      router.push("/");
+      if (!profile) {
+        return;
+      }
+      await usersService.deleteUser(profile.id);
+      clearSession();
+      setTimeout(() => {
+        router.push("/login");
+      }, 1500);
     } catch (error) {
       console.error("Erro ao excluir conta:", error);
       setDeletingAccount(false);
@@ -82,7 +111,7 @@ export default function ConfigPage() {
         <div className="mb-4 flex items-center gap-4">
           <div className="size-16 shrink-0 rounded-full bg-primary-light" />
           <p className="text-lg font-semibold text-foreground">
-            {loading ? "Carregando..." : profile?.name ?? "—"}
+            {loading ? "Carregando..." : (profile?.name ?? "—")}
           </p>
         </div>
 
@@ -90,7 +119,7 @@ export default function ConfigPage() {
           <div className="mb-3 flex items-center justify-between text-[13px]">
             <span className="text-muted">E-mail</span>
             <span className="font-medium text-foreground">
-              {loading ? "..." : profile?.email ?? "—"}
+              {loading ? "..." : (profile?.email ?? "—")}
             </span>
           </div>
           <div className="flex items-center justify-between text-[13px]">
@@ -130,7 +159,26 @@ export default function ConfigPage() {
             </h2>
 
             <div className="mb-4 flex flex-col gap-1.5">
-              <label htmlFor="new-password" className="text-[13px] font-medium text-foreground">
+              <label
+                htmlFor="current-password"
+                className="text-[13px] font-medium text-foreground"
+              >
+                Senha atual
+              </label>
+              <input
+                id="current-password"
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                className="rounded-md border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground"
+              />
+            </div>
+
+            <div className="mb-4 flex flex-col gap-1.5">
+              <label
+                htmlFor="new-password"
+                className="text-[13px] font-medium text-foreground"
+              >
                 Nova senha
               </label>
               <input
@@ -140,10 +188,14 @@ export default function ConfigPage() {
                 onChange={(e) => setNewPassword(e.target.value)}
                 className="rounded-md border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground"
               />
+              <PasswordChecks password={newPassword} />
             </div>
 
             <div className="mb-2 flex flex-col gap-1.5">
-              <label htmlFor="confirm-password" className="text-[13px] font-medium text-foreground">
+              <label
+                htmlFor="confirm-password"
+                className="text-[13px] font-medium text-foreground"
+              >
                 Confirmar nova senha
               </label>
               <input

@@ -72,7 +72,7 @@ export default function AddStudentPage() {
 
   const handleConcluir = async () => {
     if (selectedIds.length === 0) {
-      router.push(`/classes-admin/${classId}`);
+      router.push(`/classes/${classId}`);
       return;
     }
 
@@ -86,7 +86,7 @@ export default function AddStudentPage() {
     const failedIds = selectedIds.filter((_, index) => results[index].status === "rejected");
 
     if (failedIds.length === 0) {
-      router.push(`/classes-admin/${classId}`);
+      router.push(`/classes/${classId}`);
       return;
     }
 
@@ -102,11 +102,11 @@ export default function AddStudentPage() {
       <div className="mb-5 flex items-start justify-between">
         <div>
           <p className="mb-2 text-xs text-muted">
-            <Link href="/classes-admin" className="hover:underline">
+            <Link href="/classes" className="hover:underline">
               Turmas
             </Link>{" "}
             /{" "}
-            <Link href={`/classes-admin/${classId}`} className="hover:underline">
+            <Link href={`/classes/${classId}`} className="hover:underline">
               {classInfo?.name ?? "..."}
             </Link>{" "}
             / Adicionar Aluno
