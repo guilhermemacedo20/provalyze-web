@@ -268,7 +268,7 @@ export default function UsersPage() {
                     </Badge>
                   </td>
                   <td className="px-5 py-3.5 text-muted">
-                    {user.classes.length > 0 ? user.classes.join(", ") : "—"}
+                    {user.classes.length > 0 ? user.classes.join(", ") : "Nenhuma"}
                   </td>
                   <td className="px-5 py-3.5 text-muted">{user.createdAt}</td>
                   <td className="px-5 py-3.5">

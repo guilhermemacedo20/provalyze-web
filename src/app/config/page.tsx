@@ -111,7 +111,7 @@ export default function ConfigPage() {
         <div className="mb-4 flex items-center gap-4">
           <div className="size-16 shrink-0 rounded-full bg-primary-light" />
           <p className="text-lg font-semibold text-foreground">
-            {loading ? "Carregando..." : (profile?.name ?? "—")}
+            {loading ? "Carregando..." : profile?.name}
           </p>
         </div>
 
@@ -119,7 +119,7 @@ export default function ConfigPage() {
           <div className="mb-3 flex items-center justify-between text-[13px]">
             <span className="text-muted">E-mail</span>
             <span className="font-medium text-foreground">
-              {loading ? "..." : (profile?.email ?? "—")}
+              {loading ? "..." : (profile?.email)}
             </span>
           </div>
           <div className="flex items-center justify-between text-[13px]">

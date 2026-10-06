@@ -91,7 +91,7 @@ export default function AddStudentPage() {
     }
 
     setError(
-      `${selectedIds.length - failedIds.length} aluno(s) adicionado(s) com sucesso. ${failedIds.length} falharam — tente novamente.`
+      `${selectedIds.length - failedIds.length} aluno(s) adicionado(s) com sucesso. ${failedIds.length} falharam, tente novamente.`
     );
     setSelectedIds(failedIds);
     setSubmitting(false);

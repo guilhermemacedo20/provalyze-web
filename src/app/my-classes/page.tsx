@@ -89,7 +89,7 @@ export default function MyClassesPage() {
             >
               <div>
                 <h2 className="text-xl font-bold mb-4">{classItem.subjectName}</h2>
-                <p>{classItem.name}</p>
+                <p className="text-sm text-muted">{classItem.courseName}</p>
               </div>
             </Link>
           ))

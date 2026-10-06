@@ -65,4 +65,4 @@ public/             # logo e ícones
 
 No projeto **web**, as envs do client precisam do prefixo:
 
-- `NEXT_PUBLIC_API_URL` — URL pública da API, já com `/api`
+- `NEXT_PUBLIC_API_URL` : URL pública da API, já com `/api`
