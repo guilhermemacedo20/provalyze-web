@@ -78,9 +78,21 @@ export function ExamResult({
               ? "Pendente"
               : score.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
           </p>
+          {review.length > 0 &&
+            review.some(
+              (question) =>
+                question.type === "OPEN_ENDED" &&
+                question.gradeStatus === "PENDING",
+            ) && (
+              <p className="mt-1 text-xs text-muted">
+                Algumas questões ainda estão sendo corrigidas.
+              </p>
+            )}
         </article>
         <article className="rounded-2xl border border-[#E2E8F0] px-5 py-4">
-          <p className="text-xs font-semibold tracking-wide text-muted">ACERTOS</p>
+          <p className="text-xs font-semibold tracking-wide text-muted">
+            ACERTOS
+          </p>
           <p className="mt-2 text-3xl font-semibold">
             {review.length > 0 ? `${correct} de ${review.length}` : "Pendente"}
           </p>
