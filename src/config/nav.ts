@@ -35,7 +35,7 @@ export const navItems: NavItemConfig[] = [
   },
   {
     href: "/exams",
-    label: "Exames",
+    label: "Provas",
     roles: ["TEACHER"],
     icon: FileText,
   },
