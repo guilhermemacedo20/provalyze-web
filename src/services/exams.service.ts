@@ -76,9 +76,10 @@ export type ExamOverview = {
 
 export type SaveExamPayload = {
   title: string;
-  startsAt: string; // ISO
-  endsAt: string; // ISO
+  startsAt: string;
+  endsAt: string; 
   durationMinutes: number;
+  totalScore: number;
   questions: { questionId: string; points: number }[];
   classIds: string[];
   publish?: boolean;

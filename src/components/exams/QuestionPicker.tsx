@@ -8,8 +8,8 @@ import { Theme, themesService } from "@/services/themes.service";
 import { formatPoints, pluralize } from "@/lib/exam-format";
 import { extractErrorMessage } from "@/lib/extract-error-message";
 import {
-  EXAM_TOTAL_SCORE,
   parsePoints,
+  round2,
   SelectedQuestion,
   sumPoints,
   typeLabel,
@@ -27,6 +27,7 @@ type Props = {
   onChange: (next: SelectedQuestion[]) => void;
   openTheme: Theme | null;
   onOpenTheme: (theme: Theme | null) => void;
+  totalScore: number;
 };
 
 export function QuestionPicker({
@@ -34,6 +35,7 @@ export function QuestionPicker({
   onChange,
   openTheme,
   onOpenTheme,
+  totalScore,
 }: Props) {
   const [themes, setThemes] = useState<Theme[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({});
@@ -59,6 +61,7 @@ export function QuestionPicker({
       <ThemeQuestions
         theme={openTheme}
         selected={selected}
+        totalScore={totalScore}
         onCancel={() => onOpenTheme(null)}
         onApply={(next) => {
           onChange(next);
@@ -128,7 +131,11 @@ export function QuestionPicker({
           })}
         </div>
 
-        <SelectedPanel selected={selected} onChange={onChange} />
+        <SelectedPanel
+          selected={selected}
+          onChange={onChange}
+          totalScore={totalScore}
+        />
       </div>
     </div>
   );
@@ -137,10 +144,15 @@ export function QuestionPicker({
 function SelectedPanel({
   selected,
   onChange,
+  totalScore,
 }: {
   selected: SelectedQuestion[];
   onChange: (next: SelectedQuestion[]) => void;
+  totalScore: number;
 }) {
+  const sum = sumPoints(selected);
+  const remaining = round2(totalScore - sum);
+
   return (
     <aside className="w-[320px] shrink-0 rounded-[22px] border border-border bg-surface p-5 shadow-[0px_1px_3px_0px_rgba(13,20,38,0.06)]">
       <h3 className="mb-3 text-[14px] font-semibold text-foreground">
@@ -180,33 +192,49 @@ function SelectedPanel({
       )}
 
       <div className="flex items-center justify-between border-t border-border py-2.5 text-[13px]">
-        <span className="font-semibold text-foreground">Pontuação total</span>
+        <span className="font-semibold text-foreground">
+          Pontuação das questões
+        </span>
+        <span className="font-semibold text-primary">{formatPoints(sum)}</span>
+      </div>
+      <div className="flex items-center justify-between border-t border-border py-2.5 text-[13px]">
+        <span className="font-semibold text-foreground">
+          Total da prova
+        </span>
         <span className="font-semibold text-primary">
-          {formatPoints(sumPoints(selected))}
+          {formatPoints(totalScore)}
         </span>
       </div>
       <div className="flex items-center justify-between border-t border-border pt-2.5 text-[13px]">
-        <span className="font-semibold text-foreground">
-          Pontuação total da prova
-        </span>
-        <span className="font-semibold text-primary">
-          {formatPoints(EXAM_TOTAL_SCORE)}
+        <span className="font-semibold text-foreground">Restante</span>
+        <span
+          className={`font-semibold ${
+            remaining < 0
+              ? "text-danger"
+              : remaining === 0
+                ? "text-success"
+                : "text-foreground"
+          }`}
+        >
+          {formatPoints(remaining)}
         </span>
       </div>
     </aside>
   );
 }
 
-// questões de um tema 
+// questões de um tema
 
 function ThemeQuestions({
   theme,
   selected,
+  totalScore,
   onCancel,
   onApply,
 }: {
   theme: Theme;
   selected: SelectedQuestion[];
+  totalScore: number;
   onCancel: () => void;
   onApply: (next: SelectedQuestion[]) => void;
 }) {
@@ -242,6 +270,20 @@ function ThemeQuestions({
     );
   }, [questions, search]);
 
+  // pontos das questões de OUTROS temas (já confirmadas na prova)
+  const otherThemesSum = useMemo(
+    () =>
+      sumPoints(selected.filter((s) => s.themeId !== theme.id)),
+    [selected, theme.id],
+  );
+
+  // pontos que estão marcados agora neste tema (ainda não confirmados)
+  const currentThemeSum = round2(
+    Object.values(checked).reduce((sum, raw) => sum + (parsePoints(raw) ?? 0), 0),
+  );
+
+  const remaining = round2(totalScore - otherThemesSum - currentThemeSum);
+
   const toggle = (id: string) => {
     setChecked((prev) => {
       const next = { ...prev };
@@ -262,6 +304,13 @@ function ThemeQuestions({
         );
         return;
       }
+    }
+
+    if (remaining < 0) {
+      setFormError(
+        `A soma dos pontos ultrapassa o total da prova em ${formatPoints(Math.abs(remaining))}. Reduza os pontos das questões ou aumente o total na etapa 1.`,
+      );
+      return;
     }
 
     const chosenIds = new Set(chosen.map((q) => q.id as string));
@@ -294,9 +343,29 @@ function ThemeQuestions({
   return (
     <div>
       <div className="rounded-[22px] border border-border bg-surface p-5 shadow-[0px_1px_3px_0px_rgba(13,20,38,0.06)]">
-        <h2 className="mb-3 text-[14px] font-semibold text-foreground">
-          Banco de questões — {theme.name}
-        </h2>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 className="text-[14px] font-semibold text-foreground">
+            Banco de questões — {theme.name}
+          </h2>
+          <p className="shrink-0 text-[12px] text-muted">
+            Total da prova:{" "}
+            <span className="font-semibold text-foreground">
+              {formatPoints(totalScore)}
+            </span>{" "}
+            · Restante:{" "}
+            <span
+              className={`font-semibold ${
+                remaining < 0
+                  ? "text-danger"
+                  : remaining === 0
+                    ? "text-success"
+                    : "text-foreground"
+              }`}
+            >
+              {formatPoints(remaining)}
+            </span>
+          </p>
+        </div>
 
         <input
           value={search}
@@ -369,13 +438,19 @@ function ThemeQuestions({
         })}
 
         {formError && <p className="mt-3 text-[13px] text-danger">{formError}</p>}
+        {!formError && remaining < 0 && (
+          <p className="mt-3 text-[13px] text-danger">
+            A soma ultrapassa o total da prova em{" "}
+            {formatPoints(Math.abs(remaining))}.
+          </p>
+        )}
 
         <div className="mt-5 flex justify-end">
           <button
             type="button"
             onClick={apply}
-            disabled={loading || !!loadError}
-            className="cursor-pointer rounded-md bg-primary px-[18px] py-2.5 text-[13px] font-semibold text-white hover:bg-primary-hover disabled:opacity-60"
+            disabled={loading || !!loadError || remaining < 0}
+            className="cursor-pointer rounded-md bg-primary px-[18px] py-2.5 text-[13px] font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
           >
             Adicionar
           </button>

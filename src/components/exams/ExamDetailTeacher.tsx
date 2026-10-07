@@ -15,7 +15,7 @@ import {
 } from "@/lib/exam-format";
 import { extractErrorMessage } from "@/lib/extract-error-message";
 import { ExamStatusBadge, StudentStatusBadge } from "./ExamStatusBadge";
-import { typeLabel } from "./exam-wizard-types";
+import { round2, typeLabel } from "./exam-wizard-types";
 
 type Tab = "overview" | "questions";
 
@@ -106,6 +106,11 @@ export function ExamDetailTeacher({ examId }: { examId: string }) {
   const classNames = exam.classes.map((c) => c.name).join(", ") || "Sem turma";
   const isDraft = exam.status === "DRAFT";
 
+  const pointsSum = round2(exam.totalPoints);
+  const pointsTotal = round2(exam.targetScore);
+  const pointsDiff = round2(pointsTotal - pointsSum);
+  const pointsOk = pointsDiff === 0;
+
   return (
     <div className="px-10 py-9">
       <p className="mb-2 text-xs text-muted">
@@ -141,8 +146,13 @@ export function ExamDetailTeacher({ examId }: { examId: string }) {
             <button
               type="button"
               onClick={publish}
-              disabled={publishing}
-              className="cursor-pointer rounded-md bg-primary px-4 py-2.5 text-[13px] font-semibold text-white hover:bg-primary-hover disabled:opacity-60"
+              disabled={publishing || !pointsOk}
+              title={
+                pointsOk
+                  ? undefined
+                  : "A soma dos pontos precisa ser igual ao total da prova"
+              }
+              className="cursor-pointer rounded-md bg-primary px-4 py-2.5 text-[13px] font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
             >
               {publishing ? "Publicando..." : "Publicar prova ✓"}
             </button>
@@ -157,6 +167,13 @@ export function ExamDetailTeacher({ examId }: { examId: string }) {
         <p className="mt-4 rounded-lg border border-[#fde7b8] bg-[#fef1dd] px-4 py-3 text-[13px] text-[#8a5a00]">
           Esta prova é um rascunho: os alunos só poderão vê-la depois que você
           publicar.
+        </p>
+      )}
+      {isDraft && !pointsOk && (
+        <p className="mt-3 rounded-lg border border-[#fde7b8] bg-[#fef1dd] px-4 py-3 text-[13px] text-[#8a5a00]">
+          {pointsDiff > 0
+            ? `Faltam ${formatPoints(pointsDiff)} para fechar o total da prova (${formatPoints(pointsTotal)}). Clique em Editar para ajustar os pontos antes de publicar.`
+            : `A soma das questões passou ${formatPoints(Math.abs(pointsDiff))} do total da prova (${formatPoints(pointsTotal)}). Clique em Editar para ajustar.`}
         </p>
       )}
 
@@ -202,6 +219,14 @@ export function ExamDetailTeacher({ examId }: { examId: string }) {
             <StatCard
               label="Questões"
               value={String(overview.stats.questionsCount)}
+            />
+            <StatCard
+              label="Pontos"
+              value={
+                pointsOk
+                  ? formatPoints(pointsTotal)
+                  : `${formatPoints(pointsSum)} de ${formatPoints(pointsTotal)}`
+              }
             />
             <StatCard
               label="Alunos"

@@ -1,6 +1,7 @@
 import type { QuestionType } from "@/services/questions.service";
 
 export const EXAM_TOTAL_SCORE = 10;
+export const MAX_TOTAL_SCORE = 1000;
 
 export type SelectedQuestion = {
   questionId: string;
@@ -11,8 +12,12 @@ export type SelectedQuestion = {
   type: QuestionType | null;
 };
 
+export function round2(value: number) {
+  return Math.round(value * 100) / 100;
+}
+
 export function sumPoints(questions: SelectedQuestion[]) {
-  return questions.reduce((sum, q) => sum + q.points, 0);
+  return round2(questions.reduce((sum, q) => sum + q.points, 0));
 }
 
 export function typeLabel(type: QuestionType | null) {
@@ -21,9 +26,10 @@ export function typeLabel(type: QuestionType | null) {
   return "—";
 }
 
-// aceita "2", "2,5" e "2.5"; devolve null se não for um valor válido (> 0)
 export function parsePoints(raw: string): number | null {
   const value = Number(raw.trim().replace(",", "."));
-  if (!Number.isFinite(value) || value <= 0 || value > 1000) return null;
-  return Math.round(value * 100) / 100;
+  if (!Number.isFinite(value) || value <= 0 || value > MAX_TOTAL_SCORE) {
+    return null;
+  }
+  return round2(value);
 }

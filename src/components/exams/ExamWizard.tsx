@@ -21,7 +21,10 @@ import { extractErrorMessage } from "@/lib/extract-error-message";
 import { QuestionPicker } from "./QuestionPicker";
 import { WizardSteps } from "./WizardSteps";
 import {
+  EXAM_TOTAL_SCORE,
   SelectedQuestion,
+  parsePoints,
+  round2,
   sumPoints,
   typeLabel,
 } from "./exam-wizard-types";
@@ -45,9 +48,12 @@ export function ExamWizard({ examId }: { examId?: string }) {
 
   // passo 1
   const [title, setTitle] = useState("");
-  const [startsAt, setStartsAt] = useState(""); 
+  const [startsAt, setStartsAt] = useState("");
   const [endsAt, setEndsAt] = useState("");
-  const [duration, setDuration] = useState(""); 
+  const [duration, setDuration] = useState("");
+  const [totalScoreInput, setTotalScoreInput] = useState(
+    String(EXAM_TOTAL_SCORE),
+  );
 
   // passo 2
   const [questions, setQuestions] = useState<SelectedQuestion[]>([]);
@@ -85,6 +91,7 @@ export function ExamWizard({ examId }: { examId?: string }) {
         setStartsAt(toLocalInput(exam.startsAt));
         setEndsAt(toLocalInput(exam.endsAt));
         setDuration(minutesToDuration(exam.durationMinutes));
+        setTotalScoreInput(String(exam.targetScore).replace(".", ","));
         setQuestions(
           exam.questions.map((q) => ({
             questionId: q.questionId,
@@ -102,6 +109,10 @@ export function ExamWizard({ examId }: { examId?: string }) {
   }, [examId]);
 
   const durationMinutes = durationToMinutes(duration);
+  const totalScore = parsePoints(totalScoreInput);
+  const pointsSum = sumPoints(questions);
+  const pointsRemaining =
+    totalScore === null ? null : round2(totalScore - pointsSum);
 
   const validateInfo = (): string | null => {
     if (!title.trim()) return "Informe o nome da prova.";
@@ -117,14 +128,31 @@ export function ExamWizard({ examId }: { examId?: string }) {
     if (durationMinutes > (end - start) / 60000) {
       return "O tempo de prova não pode ser maior que o período de aplicação.";
     }
+    if (totalScore === null) {
+      return "Informe o total de pontos da prova (maior que zero).";
+    }
+    return null;
+  };
+
+  const validatePoints = (): string | null => {
+    if (totalScore === null) {
+      return "Informe o total de pontos da prova (maior que zero).";
+    }
+    if (pointsSum > totalScore) {
+      return `A soma dos pontos (${formatPoints(pointsSum)}) ultrapassa o total da prova (${formatPoints(totalScore)}). Ajuste os pontos das questões ou aumente o total na etapa 1.`;
+    }
     return null;
   };
 
   const goNext = () => {
     let problem: string | null = null;
     if (step === 1) problem = validateInfo();
-    if (step === 2 && questions.length === 0) {
-      problem = "Adicione ao menos uma questão à prova.";
+    if (step === 2) {
+      if (questions.length === 0) {
+        problem = "Adicione ao menos uma questão à prova.";
+      } else {
+        problem = validatePoints();
+      }
     }
     if (step === 3 && classIds.length === 0) {
       problem = "Selecione ao menos uma turma.";
@@ -140,10 +168,16 @@ export function ExamWizard({ examId }: { examId?: string }) {
   };
 
   const save = async (publish: boolean) => {
-    const problem = validateInfo();
+    const problem = validateInfo() ?? validatePoints();
     if (problem) {
       setError(problem);
-      setStep(1);
+      setStep(validateInfo() ? 1 : 2);
+      return;
+    }
+    if (publish && pointsRemaining !== 0) {
+      setError(
+        "Para publicar, a soma dos pontos das questões precisa ser igual ao total da prova.",
+      );
       return;
     }
     if (publish && new Date(endsAt).getTime() <= Date.now()) {
@@ -161,6 +195,7 @@ export function ExamWizard({ examId }: { examId?: string }) {
       startsAt: fromLocalInput(startsAt),
       endsAt: fromLocalInput(endsAt),
       durationMinutes: durationMinutes as number,
+      totalScore: totalScore as number,
       questions: questions.map((q) => ({
         questionId: q.questionId,
         points: q.points,
@@ -211,6 +246,7 @@ export function ExamWizard({ examId }: { examId?: string }) {
 
   const selectedClasses = classes.filter((c) => classIds.includes(c.id));
   const inPickerSubView = step === 2 && openTheme !== null;
+  const canPublish = pointsRemaining === 0;
 
   return (
     <div className="px-10 py-9">
@@ -279,26 +315,49 @@ export function ExamWizard({ examId }: { examId?: string }) {
             </div>
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label
-              htmlFor="exam-duration"
-              className="text-[13px] font-medium text-foreground"
-            >
-              Tempo de prova
-            </label>
-            <input
-              id="exam-duration"
-              inputMode="numeric"
-              value={duration}
-              onChange={(e) => setDuration(maskDuration(e.target.value))}
-              onBlur={() => setDuration((v) => completeDuration(v))}
-              placeholder="HH:MM (ex.: 01:30)"
-              className={inputClass}
-            />
-            <p className="text-[12px] text-muted">
-              Quanto tempo cada aluno tem para responder. Não pode passar do
-              período entre a data inicial e a final.
-            </p>
+          <div className="flex gap-5">
+            <div className="flex flex-1 flex-col gap-1.5">
+              <label
+                htmlFor="exam-duration"
+                className="text-[13px] font-medium text-foreground"
+              >
+                Tempo de prova
+              </label>
+              <input
+                id="exam-duration"
+                inputMode="numeric"
+                value={duration}
+                onChange={(e) => setDuration(maskDuration(e.target.value))}
+                onBlur={() => setDuration((v) => completeDuration(v))}
+                placeholder="HH:MM (ex.: 01:30)"
+                className={inputClass}
+              />
+              <p className="text-[12px] text-muted">
+                Quanto tempo cada aluno tem para responder. Não pode passar do
+                período entre a data inicial e a final.
+              </p>
+            </div>
+
+            <div className="flex flex-1 flex-col gap-1.5">
+              <label
+                htmlFor="exam-total"
+                className="text-[13px] font-medium text-foreground"
+              >
+                Total de pontos da prova
+              </label>
+              <input
+                id="exam-total"
+                inputMode="decimal"
+                value={totalScoreInput}
+                onChange={(e) => setTotalScoreInput(e.target.value)}
+                placeholder="Ex.: 10"
+                className={inputClass}
+              />
+              <p className="text-[12px] text-muted">
+                A soma dos pontos das questões não pode passar desse valor e,
+                para publicar, precisa ser igual a ele.
+              </p>
+            </div>
           </div>
         </div>
       )}
@@ -310,6 +369,7 @@ export function ExamWizard({ examId }: { examId?: string }) {
           onChange={setQuestions}
           openTheme={openTheme}
           onOpenTheme={setOpenTheme}
+          totalScore={totalScore ?? EXAM_TOTAL_SCORE}
         />
       )}
 
@@ -374,8 +434,8 @@ export function ExamWizard({ examId }: { examId?: string }) {
           <div className="mb-6 grid grid-cols-3 gap-x-6 gap-y-4">
             <Summary label="Questões" value={String(questions.length)} />
             <Summary
-              label="Pontuação total"
-              value={formatPoints(sumPoints(questions))}
+              label="Pontuação das questões"
+              value={`${formatPoints(pointsSum)} de ${formatPoints(totalScore ?? 0)}`}
             />
             <Summary
               label="Período"
@@ -400,6 +460,14 @@ export function ExamWizard({ examId }: { examId?: string }) {
               value={`${duration} (${durationMinutes} min)`}
             />
           </div>
+
+          {!canPublish && pointsRemaining !== null && (
+            <p className="mb-5 rounded-md border border-warning/40 bg-[#fef1dd] px-3.5 py-2.5 text-[13px] text-foreground">
+              {pointsRemaining > 0
+                ? `Faltam ${formatPoints(pointsRemaining)} para fechar o total da prova. Você pode salvar como rascunho, mas só consegue publicar quando a soma for igual ao total.`
+                : `A soma passou ${formatPoints(Math.abs(pointsRemaining))} do total da prova. Ajuste os pontos na etapa 2.`}
+            </p>
+          )}
 
           <div className="border-t border-border pt-5">
             <h3 className="mb-3 text-[13px] font-semibold text-foreground">
@@ -427,14 +495,23 @@ export function ExamWizard({ examId }: { examId?: string }) {
             </Link>
           ) : (
             <button type="button" onClick={goBack} className={linkBtn}>
-              ← Voltar: {step === 2 ? "Informações" : step === 3 ? "Questões" : "Destinatários"}
+              ← Voltar:{" "}
+              {step === 2
+                ? "Informações"
+                : step === 3
+                  ? "Questões"
+                  : "Destinatários"}
             </button>
           )}
 
           {step < 4 ? (
             <button type="button" onClick={goNext} className={primaryBtn}>
               Próximo:{" "}
-              {step === 1 ? "Questões" : step === 2 ? "Destinatários" : "Revisão"}{" "}
+              {step === 1
+                ? "Questões"
+                : step === 2
+                  ? "Destinatários"
+                  : "Revisão"}{" "}
               →
             </button>
           ) : (
@@ -450,7 +527,12 @@ export function ExamWizard({ examId }: { examId?: string }) {
               <button
                 type="button"
                 onClick={() => save(true)}
-                disabled={saving !== null}
+                disabled={saving !== null || !canPublish}
+                title={
+                  canPublish
+                    ? undefined
+                    : "A soma dos pontos precisa ser igual ao total da prova"
+                }
                 className={primaryBtn}
               >
                 {saving === "publish" ? "Publicando..." : "Publicar prova ✓"}
