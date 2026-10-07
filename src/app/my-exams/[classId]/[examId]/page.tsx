@@ -83,10 +83,7 @@ export default function TakeExamPage() {
   useEffect(() => {
     if (!user || !exam?.sessionId || !exam.questions) return;
     const stored: StoredExam = { exam, answers };
-    localStorage.setItem(
-      examDraftKey(user.id, examId),
-      JSON.stringify(stored),
-    );
+    localStorage.setItem(examDraftKey(user.id, examId), JSON.stringify(stored));
   }, [answers, exam, examId, user]);
 
   const openExam = (data: StudentExamDetail, savedAnswers: Draft = {}) => {
@@ -94,7 +91,10 @@ export default function TakeExamPage() {
     setAnswers(savedAnswers);
     if (user && data.sessionId && data.questions) {
       const stored: StoredExam = { exam: data, answers: savedAnswers };
-      localStorage.setItem(examDraftKey(user.id, examId), JSON.stringify(stored));
+      localStorage.setItem(
+        examDraftKey(user.id, examId),
+        JSON.stringify(stored),
+      );
     }
   };
 
@@ -193,6 +193,8 @@ export default function TakeExamPage() {
         questions={exam.questions}
         answers={answers}
         expiresAt={exam.expiresAt}
+        classId={classId}
+        examId={examId}
         submitting={submitting}
         error={error}
         onAnswer={updateAnswer}
@@ -220,7 +222,10 @@ export default function TakeExamPage() {
       <p className="mb-6 max-w-xl text-sm">
         {summary?.available
           ? "O tempo começa a contar ao iniciar. As questões ficam salvas neste navegador."
-          : (exam?.message ?? summary?.message ?? error ?? "Prova indisponível.")}
+          : (exam?.message ??
+            summary?.message ??
+            error ??
+            "Prova indisponível.")}
       </p>
       {error && <p className="mb-4 text-sm text-danger">{error}</p>}
       {summary?.available && (

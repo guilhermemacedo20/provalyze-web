@@ -1,8 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { ExamQuestion } from "@/services/exams.service";
+import {
+  ExamEventType,
+  ExamQuestion,
+  examsService,
+} from "@/services/exams.service";
 
 type Draft = Record<string, { optionId?: string; content?: string }>;
 
@@ -33,6 +37,8 @@ export function ExamRunner({
   questions,
   answers,
   expiresAt,
+  classId,
+  examId,
   submitting,
   error,
   onAnswer,
@@ -44,6 +50,8 @@ export function ExamRunner({
   answers: Draft;
   expiresAt?: string;
   submitting: boolean;
+  classId: string;
+  examId: string;
   error: string | null;
   onAnswer: (question: ExamQuestion, value: Draft[string]) => void;
   onSubmit: () => void;
@@ -51,6 +59,11 @@ export function ExamRunner({
   const [index, setIndex] = useState(0);
   const [now, setNow] = useState(() => Date.now());
   const question = questions[index];
+  const questionRef = useRef(question);
+  const [lastEvent, setLastEvent] = useState<{
+    event: ExamEventType;
+    examQuestionId: string;
+  } | null>(null);
   const remaining = formatRemaining(expiresAt, now);
   const total = questions.length;
 
@@ -58,6 +71,52 @@ export function ExamRunner({
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(timer);
   }, []);
+
+  questionRef.current = question;
+  useEffect(() => {
+    const send = (type: ExamEventType) => {
+      const current = questionRef.current;
+
+      if (!current) return;
+
+      if (
+        lastEvent?.event === type &&
+        lastEvent?.examQuestionId === current.id
+      ) {
+        return;
+      }
+      setLastEvent({ event: type, examQuestionId: current.id });
+      examsService.createExamEvent(classId, examId, {
+        type,
+        examQuestionId: current.id,
+      });
+    };
+
+    const onPaste = () => send("PASTE");
+    const onCopy = () => send("COPY");
+    const onCut = () => send("CUT");
+    const onVisibility = () => {
+      if (document.hidden) send("TAB_SWITCH");
+    };
+    const onBlur = () => {
+      if (!document.hidden) send("WINDOW_BLUR");
+    };
+    const onContextMenu = () => send("CONTEXT_MENU");
+    window.addEventListener("paste", onPaste);
+    window.addEventListener("copy", onCopy);
+    window.addEventListener("cut", onCut);
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("blur", onBlur);
+    window.addEventListener("contextmenu", onContextMenu);
+    return () => {
+      window.removeEventListener("paste", onPaste);
+      window.removeEventListener("copy", onCopy);
+      window.removeEventListener("cut", onCut);
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("blur", onBlur);
+      window.removeEventListener("contextmenu", onContextMenu);
+    };
+  }, [classId, examId]);
 
   if (!question) return null;
 

@@ -35,6 +35,7 @@ export type ExamOption = {
 
 export type ExamQuestion = {
   id: string;
+  questionId: string;
   points: number;
   statement: string;
   type: "OPEN_ENDED" | "MULTIPLE_CHOICE" | null;
@@ -72,6 +73,15 @@ export type StudentExamDetail = {
   review?: ExamReviewQuestion[];
 };
 
+export type ExamEventType =
+  | "PASTE"
+  | "COPY"
+  | "CUT"
+  | "TAB_SWITCH"
+  | "WINDOW_BLUR"
+  | "CONTEXT_MENU"
+  | "QUESTION_CHANGE";
+
 export type SubmitExamResult = {
   status: string;
   score: number;
@@ -98,6 +108,17 @@ export const examsService = {
     return apiRequest<SubmitExamResult>(
       `/classes-exams/${classId}/exams/${examId}/submit`,
       { method: "POST", body: { answers } },
+    );
+  },
+
+  createExamEvent(
+    classId: string,
+    examId: string,
+    event: { type: ExamEventType; examQuestionId: string },
+  ) {
+    return apiRequest<SubmitExamResult>(
+      `/classes-exams/${classId}/exams/${examId}/examEvents`,
+      { method: "POST", body: { event } },
     );
   },
 };
