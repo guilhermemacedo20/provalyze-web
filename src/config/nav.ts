@@ -36,7 +36,7 @@ export const navItems: NavItemConfig[] = [
   },
   {
     href: "/exams",
-    label: "Exames",
+    label: "Provas",
     roles: ["TEACHER", "STUDENT"],
     icon: FileText,
   },
@@ -98,8 +98,12 @@ export function isQuestionBankPath(pathname: string) {
   );
 }
 
+export function isExamAuthoringPath(pathname: string) {
+  return pathname === "/exams/new" || /^\/exams\/[^/]+\/edit$/.test(pathname);
+}
+
 export function canAccessPath(pathname: string, role: Role) {
-  if (isQuestionBankPath(pathname)) {
+  if (isQuestionBankPath(pathname) || isExamAuthoringPath(pathname)) {
     return role === "TEACHER";
   }
 

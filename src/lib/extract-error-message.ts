@@ -2,6 +2,7 @@ export function extractErrorMessage(error: unknown): string {
   if (error instanceof Error) {
     try {
       const parsed = JSON.parse(error.message);
+      if (Array.isArray(parsed?.message)) return parsed.message.join(". ");
       if (parsed?.message) return parsed.message;
     } catch {
     }

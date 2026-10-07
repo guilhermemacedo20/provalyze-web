@@ -1,5 +1,6 @@
 "use client";
 
+import { useLayoutEffect, useRef } from "react";
 import { X } from "lucide-react";
 
 type Section = "terms" | "privacy";
@@ -371,6 +372,22 @@ export function TermsPolicyModal({
   onSectionChange,
   onClose,
 }: TermsPolicyModalProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const positions = useRef<Record<Section, number>>({ terms: 0, privacy: 0 });
+  const wasOpen = useRef(false);
+
+  // Ao abrir o modal, cada aba volta a começar do topo.
+  if (open && !wasOpen.current) {
+    positions.current = { terms: 0, privacy: 0 };
+  }
+  wasOpen.current = open;
+
+  // Ao trocar de aba, restaura a posição que aquela aba tinha.
+  useLayoutEffect(() => {
+    if (!open || !scrollRef.current) return;
+    scrollRef.current.scrollTop = positions.current[section];
+  }, [section, open]);
+
   if (!open) return null;
 
   const blocks = section === "terms" ? TERMS_BLOCKS : PRIVACY_BLOCKS;
@@ -412,7 +429,13 @@ export function TermsPolicyModal({
           </button>
         </div>
 
-        <div className="overflow-y-auto pr-2">
+        <div
+          ref={scrollRef}
+          onScroll={(e) => {
+            positions.current[section] = e.currentTarget.scrollTop;
+          }}
+          className="overflow-y-auto pr-2"
+        >
           {blocks.map((block, index) => renderBlock(block, index))}
         </div>
       </div>
