@@ -6,7 +6,6 @@ import {
   BookOpen,
   GraduationCap,
   Layers,
-  School,
   BarChart3,
   Target,
   FileBarChart,
@@ -31,14 +30,20 @@ export const navItems: NavItemConfig[] = [
   {
     href: "/users",
     label: "Usuários",
-    roles: ["ADMIN"],
+    roles: ["ADMIN", "COORDINATOR"],
     icon: Users,
   },
   {
     href: "/exams",
-    label: "Provas",
-    roles: ["TEACHER", "STUDENT"],
+    label: "Exames",
+    roles: ["TEACHER"],
     icon: FileText,
+  },
+  {
+    href: "/my-classes",
+    label: "Matérias",
+    roles: ["STUDENT"],
+    icon: GraduationCap,
   },
   {
     href: "/questions",
@@ -49,7 +54,7 @@ export const navItems: NavItemConfig[] = [
   {
     href: "/classes",
     label: "Turmas",
-    roles: ["ADMIN", "COORDINATOR", "TEACHER", "STUDENT"],
+    roles: ["ADMIN", "COORDINATOR", "TEACHER"],
     icon: GraduationCap,
   },
   {
