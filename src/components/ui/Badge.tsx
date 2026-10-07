@@ -1,4 +1,12 @@
-type BadgeTone = "professor" | "aluno" | "admin" | "coordenador" | "success";
+type BadgeTone =
+  | "professor"
+  | "aluno"
+  | "admin"
+  | "coordenador"
+  | "success"
+  | "neutral"
+  | "warning"
+  | "purple";
 
 const TONE_STYLES: Record<BadgeTone, string> = {
   professor: "bg-[#e0e9fc] text-primary",
@@ -6,6 +14,9 @@ const TONE_STYLES: Record<BadgeTone, string> = {
   admin: "bg-[#fef1dd] text-warning",
   coordenador: "bg-[#D8F5DD] text-[#3CAE63]",
   success: "bg-[#def2e6] text-success",
+  neutral: "bg-[#eceff3] text-muted",
+  warning: "bg-[#fef1dd] text-warning",
+  purple: "bg-[#e6e1fb] text-[#6d5bd0]",
 };
 
 export function Badge({

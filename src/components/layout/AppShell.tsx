@@ -57,7 +57,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <aside className="flex w-64 shrink-0 flex-col border-r border-border bg-surface">
+      <aside className="sticky top-0 flex h-screen w-64 shrink-0 flex-col border-r border-border bg-surface">
         <div className="border-b border-border px-5 py-5">
           <div className="flex items-center gap-2">
             <Image src="/logo.png" alt="Provalyze" width={26} height={35} />
