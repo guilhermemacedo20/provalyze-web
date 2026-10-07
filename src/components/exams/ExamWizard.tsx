@@ -170,13 +170,10 @@ export function ExamWizard({ examId }: { examId?: string }) {
     };
 
     try {
-      if (examId) {
-        await examsService.updateExam(examId, payload);
-      } else {
-        await examsService.createExam(payload);
-      }
-      // passo 4
-      router.push("/exams");
+      const saved = examId
+        ? await examsService.updateExam(examId, payload)
+        : await examsService.createExam(payload);
+      router.push(`/exams/${saved.id}`);
     } catch (err) {
       setError(extractErrorMessage(err));
       setSaving(null);
