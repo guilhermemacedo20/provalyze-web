@@ -452,7 +452,7 @@ export function ExamWizard({ examId }: { examId?: string }) {
                     (c) =>
                       `${c.name} (${pluralize(c.studentsCount, "aluno", "alunos")})`,
                   )
-                  .join(", ") || "—"
+                  .join(", ") || "-"
               }
             />
             <Summary
@@ -476,7 +476,7 @@ export function ExamWizard({ examId }: { examId?: string }) {
             <ol className="flex flex-col gap-2.5 text-[13px] text-muted">
               {questions.map((q, index) => (
                 <li key={q.questionId}>
-                  {index + 1}. {q.statement} — {q.themeName} ·{" "}
+                  {index + 1}. {q.statement} : {q.themeName} ·{" "}
                   {typeLabel(q.type)} · {formatPoints(q.points)}
                 </li>
               ))}

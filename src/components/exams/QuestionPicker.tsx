@@ -345,7 +345,7 @@ function ThemeQuestions({
       <div className="rounded-[22px] border border-border bg-surface p-5 shadow-[0px_1px_3px_0px_rgba(13,20,38,0.06)]">
         <div className="mb-3 flex items-center justify-between gap-3">
           <h2 className="text-[14px] font-semibold text-foreground">
-            Banco de questões — {theme.name}
+            Banco de questões : {theme.name}
           </h2>
           <p className="shrink-0 text-[12px] text-muted">
             Total da prova:{" "}

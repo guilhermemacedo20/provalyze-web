@@ -14,11 +14,11 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
 }
 
 function TeacherDashboardPlaceholder() {
-  return <p className="text-muted">Painel do Professor — em construção.</p>;
+  return <p className="text-muted">Painel do Professor - em construção.</p>;
 }
 
 function StudentDashboardPlaceholder() {
-  return <p className="text-muted">Painel do Aluno — em construção.</p>;
+  return <p className="text-muted">Painel do Aluno - em construção.</p>;
 }
 
 function AdminDashboard() {
