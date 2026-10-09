@@ -15,7 +15,7 @@ export function formatCount(
     return "Carregando...";
   }
   if (value == null) {
-    return "—";
+    return "*";
   }
   return value.toLocaleString("pt-BR");
 }
@@ -28,7 +28,7 @@ export function formatAverage(
     return "Carregando...";
   }
   if (value == null) {
-    return "—";
+    return "*";
   }
   return value.toLocaleString("pt-BR", {
     minimumFractionDigits: 1,

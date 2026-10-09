@@ -128,7 +128,7 @@ function TeacherDashboard({ name }: { name: string }) {
             loading
               ? "Carregando..."
               : stats?.hitRate == null
-                ? "—"
+                ? "*"
                 : `${stats.hitRate}%`
           }
           tone="blue"
