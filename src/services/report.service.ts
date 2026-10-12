@@ -27,8 +27,47 @@ export type StudentStats = {
 
 export type DashboardStats = AdminStats | TeacherStats | StudentStats;
 
+export type StudentThemeResult = {
+  name: string;
+  percent: number;
+};
+
+export type StudentExamHistory = {
+  title: string;
+  subjectName: string;
+  finishedAt: string | null;
+  score: number | null;
+};
+
+export type StudentAnalytics = {
+  studentName: string;
+  className: string;
+  subjectName: string;
+  totalAverage: number | null;
+  finishedExams: number;
+  themes: StudentThemeResult[];
+  exams: StudentExamHistory[];
+};
+
+export type StudentThemeAnalysis = {
+  difficulty: string;
+  recommendation: string;
+};
+
 export const reportService = {
   getDashboard() {
     return apiRequest<DashboardStats>("/report/dashboard-information");
+  },
+
+  getStudentAnalytics(classId: string, studentId: string) {
+    return apiRequest<StudentAnalytics>(
+      `/report/${classId}/analytics/${studentId}`,
+    );
+  },
+
+  getStudentThemeAnalysis(classId: string, studentId: string) {
+    return apiRequest<StudentThemeAnalysis>(
+      `/report/${classId}/analytics/${studentId}/ai`,
+    );
   },
 };
