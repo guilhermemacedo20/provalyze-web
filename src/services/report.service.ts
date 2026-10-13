@@ -54,6 +54,20 @@ export type StudentThemeAnalysis = {
   recommendation: string;
 };
 
+export type PerformanceTheme = {
+  name: string;
+  percent: number;
+};
+
+export type PerformanceReport = {
+  average: number | null;
+  median: number | null;
+  hitRate: number | null;
+  themes: PerformanceTheme[];
+  classes: { id: string; name: string; subjectName: string }[];
+  exams: { id: string; title: string; targetScore: string }[];
+};
+
 export const reportService = {
   getDashboard() {
     return apiRequest<DashboardStats>("/report/dashboard-information");
@@ -69,5 +83,16 @@ export const reportService = {
     return apiRequest<StudentThemeAnalysis>(
       `/report/${classId}/analytics/${studentId}/ai`,
     );
+  },
+
+  getGeneralAnalytics(classId?: string, examId?: string) {
+    const params = new URLSearchParams();
+    if (classId) {
+      params.set("classId", classId);
+    }
+    if (examId) {
+      params.set("examId", examId);
+    }
+    return apiRequest<PerformanceReport>(`/report/classAnalytics?${params}`);
   },
 };

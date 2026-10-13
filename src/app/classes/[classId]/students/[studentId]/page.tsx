@@ -10,14 +10,7 @@ import {
   StudentThemeAnalysis,
   reportService,
 } from "@/services/report.service";
-
-function formatScore(value: number | null) {
-  if (value == null) return "-";
-  return value.toLocaleString("pt-BR", {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
-  });
-}
+import { formatAverage } from "@/utils/formatFunctions";
 
 export default function StudentAnalyticsPage() {
   const { classId, studentId } = useParams<{
@@ -121,7 +114,7 @@ export default function StudentAnalyticsPage() {
             Média geral
           </p>
           <p className="mt-2 text-3xl font-bold text-foreground">
-            {formatScore(report.totalAverage)}
+            {formatAverage(report.totalAverage, loading)}
           </p>
         </article>
         <article className="rounded-2xl border border-border bg-surface px-6 py-4">
@@ -215,7 +208,7 @@ export default function StudentAnalyticsPage() {
                   </span>
                 </p>
                 <p className="shrink-0 font-semibold text-foreground">
-                  {formatScore(exam.score)}
+                  {formatAverage(exam.score, loading)}
                 </p>
               </li>
             ))}
