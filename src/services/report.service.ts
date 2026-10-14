@@ -68,6 +68,15 @@ export type PerformanceReport = {
   exams: { id: string; title: string; targetScore: string }[];
 };
 
+export type GapReport = {
+  theme: string;
+  evidence: string;
+  suggestion: string;
+  percent: number;
+};
+
+const gapsInFlight = new Map<string, Promise<GapReport[]>>();
+
 export const reportService = {
   getDashboard() {
     return apiRequest<DashboardStats>("/report/dashboard-information");
@@ -94,5 +103,23 @@ export const reportService = {
       params.set("examId", examId);
     }
     return apiRequest<PerformanceReport>(`/report/classAnalytics?${params}`);
+  },
+
+  getGaps(classId?: string) {
+    const key = classId ?? "";
+    const current = gapsInFlight.get(key);
+    if (current) return current;
+
+    const params = new URLSearchParams();
+    if (classId) {
+      params.set("classId", classId);
+    }
+    const request = apiRequest<GapReport[]>(`/report/gaps?${params}`).finally(
+      () => {
+        gapsInFlight.delete(key);
+      },
+    );
+    gapsInFlight.set(key, request);
+    return request;
   },
 };

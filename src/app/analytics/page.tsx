@@ -5,16 +5,7 @@ import { ChevronDown } from "lucide-react";
 import { extractErrorMessage } from "@/lib/extract-error-message";
 import { PerformanceReport, reportService } from "@/services/report.service";
 import { formatAverage } from "@/utils/formatFunctions";
-
-function themeTone(percent: number) {
-  if (percent >= 70) {
-    return { bar: "bg-success", text: "text-success" };
-  }
-  if (percent >= 50) {
-    return { bar: "bg-warning", text: "text-warning" };
-  }
-  return { bar: "bg-danger", text: "text-danger" };
-}
+import { themeTone } from "@/utils/themeTone";
 
 function FilterSelect({
   label,
