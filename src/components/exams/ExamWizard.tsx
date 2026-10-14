@@ -113,6 +113,7 @@ export function ExamWizard({ examId }: { examId?: string }) {
   const pointsSum = sumPoints(questions);
   const pointsRemaining =
     totalScore === null ? null : round2(totalScore - pointsSum);
+  const hasMissingPoints = questions.some((q) => q.points === null);
 
   const validateInfo = (): string | null => {
     if (!title.trim()) return "Informe o nome da prova.";
@@ -137,6 +138,10 @@ export function ExamWizard({ examId }: { examId?: string }) {
   const validatePoints = (): string | null => {
     if (totalScore === null) {
       return "Informe o total de pontos da prova (maior que zero).";
+    }
+    const missing = questions.filter((q) => q.points === null).length;
+    if (missing > 0) {
+      return `Defina os pontos de todas as questões (${pluralize(missing, "questão sem pontos", "questões sem pontos")}). Use "Distribuir igualmente" se preferir.`;
     }
     if (pointsSum > totalScore) {
       return `A soma dos pontos (${formatPoints(pointsSum)}) ultrapassa o total da prova (${formatPoints(totalScore)}). Ajuste os pontos das questões ou aumente o total na etapa 1.`;
@@ -168,10 +173,12 @@ export function ExamWizard({ examId }: { examId?: string }) {
   };
 
   const save = async (publish: boolean) => {
-    const problem = validateInfo() ?? validatePoints();
+    const infoProblem = validateInfo();
+    const pointsProblem = validatePoints();
+    const problem = infoProblem ?? pointsProblem;
     if (problem) {
       setError(problem);
-      setStep(validateInfo() ? 1 : 2);
+      setStep(infoProblem ? 1 : 2);
       return;
     }
     if (publish && pointsRemaining !== 0) {
@@ -198,7 +205,7 @@ export function ExamWizard({ examId }: { examId?: string }) {
       totalScore: totalScore as number,
       questions: questions.map((q) => ({
         questionId: q.questionId,
-        points: q.points,
+        points: q.points as number,
       })),
       classIds,
       publish,
@@ -246,7 +253,7 @@ export function ExamWizard({ examId }: { examId?: string }) {
 
   const selectedClasses = classes.filter((c) => classIds.includes(c.id));
   const inPickerSubView = step === 2 && openTheme !== null;
-  const canPublish = pointsRemaining === 0;
+  const canPublish = pointsRemaining === 0 && !hasMissingPoints;
 
   return (
     <div className="px-10 py-9">
@@ -409,13 +416,13 @@ export function ExamWizard({ examId }: { examId?: string }) {
                   onChange={() => toggleClass(schoolClass.id)}
                   className="size-4 accent-primary"
                 />
-                <span className="flex-1 text-[14px] font-medium text-foreground">
+                <span className="min-w-0 flex-1 break-words text-[14px] font-medium text-foreground">
                   {schoolClass.name}
                   <span className="ml-2 text-[12px] font-normal text-muted">
                     {schoolClass.subjectName} · {schoolClass.courseName}
                   </span>
                 </span>
-                <span className="text-[13px] text-muted">
+                <span className="shrink-0 text-[13px] text-muted">
                   {pluralize(schoolClass.studentsCount, "aluno", "alunos")}
                 </span>
               </label>
@@ -427,7 +434,7 @@ export function ExamWizard({ examId }: { examId?: string }) {
       {/*Revisão*/}
       {step === 4 && (
         <div className={cardClass}>
-          <h2 className="mb-5 text-[18px] font-semibold text-foreground">
+          <h2 className="mb-5 break-words text-[18px] font-semibold text-foreground">
             {title.trim()}
           </h2>
 
@@ -463,9 +470,11 @@ export function ExamWizard({ examId }: { examId?: string }) {
 
           {!canPublish && pointsRemaining !== null && (
             <p className="mb-5 rounded-md border border-warning/40 bg-[#fef1dd] px-3.5 py-2.5 text-[13px] text-foreground">
-              {pointsRemaining > 0
-                ? `Faltam ${formatPoints(pointsRemaining)} para fechar o total da prova. Você pode salvar como rascunho, mas só consegue publicar quando a soma for igual ao total.`
-                : `A soma passou ${formatPoints(Math.abs(pointsRemaining))} do total da prova. Ajuste os pontos na etapa 2.`}
+              {hasMissingPoints
+                ? "Há questões sem pontos. Volte à etapa 2 para definir."
+                : pointsRemaining > 0
+                  ? `Faltam ${formatPoints(pointsRemaining)} para fechar o total da prova. Você pode salvar como rascunho, mas só consegue publicar quando a soma for igual ao total.`
+                  : `A soma passou ${formatPoints(Math.abs(pointsRemaining))} do total da prova. Ajuste os pontos na etapa 2.`}
             </p>
           )}
 
@@ -475,9 +484,9 @@ export function ExamWizard({ examId }: { examId?: string }) {
             </h3>
             <ol className="flex flex-col gap-2.5 text-[13px] text-muted">
               {questions.map((q, index) => (
-                <li key={q.questionId}>
+                <li key={q.questionId} className="break-words">
                   {index + 1}. {q.statement} — {q.themeName} ·{" "}
-                  {typeLabel(q.type)} · {formatPoints(q.points)}
+                  {typeLabel(q.type)} · {formatPoints(q.points ?? 0)}
                 </li>
               ))}
             </ol>
@@ -547,9 +556,11 @@ export function ExamWizard({ examId }: { examId?: string }) {
 
 function Summary({ label, value }: { label: string; value: string }) {
   return (
-    <div>
+    <div className="min-w-0">
       <p className="text-[12px] text-muted">{label}</p>
-      <p className="text-[14px] font-semibold text-foreground">{value}</p>
+      <p className="break-words text-[14px] font-semibold text-foreground">
+        {value}
+      </p>
     </div>
   );
 }

@@ -23,7 +23,7 @@ export function Modal({
       onClick={() => setIsOpen(false)}
     >
       <div
-        className="w-full max-w-md rounded-lg bg-white p-6 shadow-lg relative"
+        className="relative mx-4 max-h-[85vh] w-full max-w-md overflow-y-auto rounded-lg bg-white p-6 shadow-lg"
         onClick={(event) => event.stopPropagation()}
       >
         <button
@@ -33,8 +33,8 @@ export function Modal({
         >
           X
         </button>
-        <h2 className="mb-4 text-xl font-bold">{title}</h2>
-        <p className="mb-6 text-gray-600">{description}</p>
+        <h2 className="mb-4 break-words pr-12 text-xl font-bold">{title}</h2>
+        <p className="mb-6 break-words text-gray-600">{description}</p>
         <div className="flex justify-center gap-2">
           <button
             type="button"
