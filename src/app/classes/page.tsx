@@ -6,7 +6,7 @@ import { SchoolClass, classesService } from "@/services/classes.service";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 function formatAverage(value: number | null) {
-  if (value === null) return "—";
+  if (value === null) return "";
   return value.toFixed(1).replace(".", ",");
 }
 

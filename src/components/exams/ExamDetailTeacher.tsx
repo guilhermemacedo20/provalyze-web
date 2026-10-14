@@ -284,7 +284,7 @@ export function ExamDetailTeacher({ examId }: { examId: string }) {
                     <td className="px-5 py-3.5 text-muted">
                       {student.durationMinutes !== null
                         ? `${student.durationMinutes} min`
-                        : "—"}
+                        : "-"}
                     </td>
                     <td className="px-5 py-3.5">
                       {student.status === "FINISHED" && (
@@ -305,7 +305,7 @@ export function ExamDetailTeacher({ examId }: { examId: string }) {
                       )}
                       {student.status !== "FINISHED" &&
                         student.status !== "GRADED" && (
-                          <span className="text-muted">—</span>
+                          <span className="text-muted">-</span>
                         )}
                     </td>
                   </tr>
@@ -354,7 +354,7 @@ export function ExamDetailTeacher({ examId }: { examId: string }) {
                     {formatPoints(q.points)}
                   </td>
                   <td className="px-5 py-3.5 text-muted">
-                    {q.correctRate === null ? "—" : `${q.correctRate}%`}
+                    {q.correctRate === null ? "-" : `${q.correctRate}%`}
                   </td>
                 </tr>
               ))}

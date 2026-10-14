@@ -17,7 +17,7 @@ export const authService = {
   register(data: {
     name: string;
     email: string;
-    role: "TEACHER" | "STUDENT";
+    role: "STUDENT";
     password: string;
   }) {
     return apiRequest<User>("/auth/register", {

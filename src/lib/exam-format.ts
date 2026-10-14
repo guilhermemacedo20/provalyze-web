@@ -66,8 +66,8 @@ export function formatPeriod(startsAtIso: string, endsAtIso: string): string {
 
   const sameDay = day(s) === day(e) && s.getFullYear() === e.getFullYear();
   return sameDay
-    ? `${day(s)} ${hour(s)} — ${hour(e)}`
-    : `${day(s)} ${hour(s)} — ${day(e)} ${hour(e)}`;
+    ? `${day(s)} ${hour(s)} : ${hour(e)}`
+    : `${day(s)} ${hour(s)} : ${day(e)} ${hour(e)}`;
 }
 
 // textos 
@@ -78,7 +78,7 @@ export function formatPoints(value: number): string {
 }
 
 export function formatScore(value: number | null): string {
-  if (value === null) return "—";
+  if (value === null) return "-";
   return value.toLocaleString("pt-BR", {
     minimumFractionDigits: 1,
     maximumFractionDigits: 1,

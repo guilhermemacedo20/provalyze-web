@@ -11,14 +11,11 @@ import { TermsPolicyModal } from "@/components/ui/TermsPolicyModal";
 import { isPasswordStrong } from "@/lib/password-validate";
 import { PasswordChecks } from "@/components/auth/PasswordChecks";
 
-type ProfileRole = "TEACHER" | "STUDENT";
-
 export default function RegisterPage() {
   const router = useRouter();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<ProfileRole>("TEACHER");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -56,7 +53,7 @@ export default function RegisterPage() {
       await authService.register({
         name: name.trim(),
         email: email.trim(),
-        role,
+        role: "STUDENT",
         password,
       });
       router.push("/login?success=account");
@@ -128,39 +125,9 @@ export default function RegisterPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="professor@escola.edu.br"
+              placeholder="aluno@escola.edu.br"
               className="rounded-md border border-border bg-surface px-3.5 py-3 text-sm text-foreground placeholder:text-muted"
             />
-          </div>
-
-          <div className="mb-4 flex flex-col gap-1.5">
-            <label className="text-[13px] font-medium text-foreground">
-              Perfil
-            </label>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setRole("TEACHER")}
-                className={`flex-1 rounded-md py-2.5 text-xs font-medium ${
-                  role === "TEACHER"
-                    ? "bg-primary text-white"
-                    : "border border-border bg-surface text-foreground"
-                }`}
-              >
-                Professor
-              </button>
-              <button
-                type="button"
-                onClick={() => setRole("STUDENT")}
-                className={`flex-1 rounded-md py-2.5 text-xs font-medium ${
-                  role === "STUDENT"
-                    ? "bg-primary text-white"
-                    : "border border-border bg-surface text-foreground"
-                }`}
-              >
-                Aluno
-              </button>
-            </div>
           </div>
 
           <div className="mb-4 flex flex-col gap-1.5">

@@ -32,6 +32,17 @@ export const classesService = {
     return apiRequest<SchoolClass[]>("/classes");
   },
 
+  listStudentClasses() {
+    return apiRequest<SchoolClass[]>("/classes/student-classes");
+  },
+
+  joinClass(code: string) {
+    return apiRequest<void>("/classes/join", {
+      method: "POST",
+      body: { code },
+    });
+  },
+
   getClass(id: string) {
     return apiRequest<ClassDetail>(`/classes/${id}`);
   },

@@ -23,7 +23,7 @@ export function sumPoints(questions: SelectedQuestion[]) {
 export function typeLabel(type: QuestionType | null) {
   if (type === "OPEN_ENDED") return "Dissertativa";
   if (type === "MULTIPLE_CHOICE") return "Objetiva";
-  return "—";
+  return "Tipo desconhecido";
 }
 
 // aceita "2", "2,5" e "2.5"; devolve null se não for um valor válido (> 0)
