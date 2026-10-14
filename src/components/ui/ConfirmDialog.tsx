@@ -1,9 +1,11 @@
 "use client";
 
+import type { ReactNode } from "react";
+
 type ConfirmDialogProps = {
   open: boolean;
   title: string;
-  message: string;
+  message: ReactNode;
   error?: string | null;
   confirmLabel?: string;
   confirming?: boolean;
@@ -25,11 +27,11 @@ export function ConfirmDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="mx-4 max-h-[85vh] w-full max-w-[420px] overflow-y-auto rounded-lg bg-surface p-8 shadow-lg">
+      <div className="mx-4 max-h-[85vh] w-full max-w-[460px] overflow-y-auto rounded-lg bg-surface p-8 shadow-lg">
         <h2 className="mb-3 break-words text-lg font-semibold text-foreground">
           {title}
         </h2>
-        <p className="mb-3 break-words text-sm text-muted">{message}</p>
+        <div className="mb-3 break-words text-sm text-muted">{message}</div>
         {error && (
           <p className="mb-3 break-words text-[13px] text-danger">{error}</p>
         )}

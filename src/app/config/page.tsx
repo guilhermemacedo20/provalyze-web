@@ -4,11 +4,75 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authService } from "@/services/auth.service";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { LegalFooter } from "@/components/ui/LegalFooter";
 import { extractErrorMessage } from "@/lib/extract-error-message";
 import { User, usersService } from "@/services/users.service";
 import { clearSession } from "@/lib/auth-role-storage";
 import { isPasswordStrong } from "@/lib/password-validate";
 import { PasswordChecks } from "@/components/auth/PasswordChecks";
+
+const PRIVACY_EMAIL = "provalyze@gmail.com";
+
+function DeleteAccountMessage({ role }: { role?: User["role"] }) {
+  const isRemoved = role === "ADMIN" || role === "COORDINATOR";
+
+  return (
+    <div className="flex flex-col gap-3">
+      <p>
+        Tem certeza que deseja excluir sua conta e seus dados? Essa ação não
+        pode ser desfeita e você perderá o acesso ao sistema.
+      </p>
+
+      {isRemoved ? (
+        <div>
+          <p className="font-semibold text-foreground">O que será removido:</p>
+          <ul className="mt-1 list-disc pl-5">
+            <li>Seu nome e seu e-mail.</li>
+            <li>Seu acesso ao sistema.</li>
+          </ul>
+        </div>
+      ) : (
+        <>
+          <div>
+            <p className="font-semibold text-foreground">
+              Dados que serão anonimizados:
+            </p>
+            <ul className="mt-1 list-disc pl-5">
+              <li>Seu nome completo.</li>
+              <li>Seu e-mail.</li>
+            </ul>
+            <p className="mt-1">
+              Eles serão substituídos por valores genéricos, e você não poderá
+              mais entrar com esta conta.
+            </p>
+          </div>
+
+          <div>
+            <p className="font-semibold text-foreground">
+              O que permanece, sem identificar você:
+            </p>
+            <p className="mt-1">
+              O histórico acadêmico (turmas e avaliações) fica registrado de
+              forma anônima por <strong>5 anos</strong>, para preservar a
+              integridade dos dados da turma.
+            </p>
+          </div>
+        </>
+      )}
+
+      <p>
+        Para esclarecer dúvidas, entre em contato pelo e-mail{" "}
+        <a
+          href={`mailto:${PRIVACY_EMAIL}`}
+          className="font-medium text-primary hover:underline"
+        >
+          {PRIVACY_EMAIL}
+        </a>
+        .
+      </p>
+    </div>
+  );
+}
 
 export default function ConfigPage() {
   const router = useRouter();
@@ -25,6 +89,7 @@ export default function ConfigPage() {
 
   const [confirmingDeleteAccount, setConfirmingDeleteAccount] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     authService
@@ -86,12 +151,17 @@ export default function ConfigPage() {
     }
   };
 
+  const openDeleteAccount = () => {
+    setDeleteError(null);
+    setConfirmingDeleteAccount(true);
+  };
+
   const confirmDeleteAccount = async () => {
+    if (!profile) return;
+
     setDeletingAccount(true);
+    setDeleteError(null);
     try {
-      if (!profile) {
-        return;
-      }
       await usersService.deleteUser(profile.id);
       clearSession();
       setTimeout(() => {
@@ -99,19 +169,20 @@ export default function ConfigPage() {
       }, 1500);
     } catch (error) {
       console.error("Erro ao excluir conta:", error);
+      setDeleteError(extractErrorMessage(error));
       setDeletingAccount(false);
     }
   };
 
   return (
-    <div className="relative px-10 py-9">
+    <div className="relative flex min-h-screen flex-col px-10 py-9">
       <h1 className="mb-5 text-2xl font-bold text-foreground">Configurações</h1>
 
       <div className="relative mb-8 rounded-lg border border-border bg-surface px-7 py-6 shadow-sm">
         <div className="mb-4 flex items-center gap-4">
           <div className="size-16 shrink-0 rounded-full bg-primary-light" />
           <p className="text-lg font-semibold text-foreground">
-            {loading ? "Carregando..." : (profile?.name ?? "—")}
+            {loading ? "Carregando..." : profile?.name}
           </p>
         </div>
 
@@ -119,7 +190,7 @@ export default function ConfigPage() {
           <div className="mb-3 flex items-center justify-between text-[13px]">
             <span className="text-muted">E-mail</span>
             <span className="font-medium text-foreground">
-              {loading ? "..." : (profile?.email ?? "—")}
+              {loading ? "..." : profile?.email}
             </span>
           </div>
           <div className="flex items-center justify-between text-[13px]">
@@ -141,10 +212,10 @@ export default function ConfigPage() {
       <div className="flex justify-end">
         <button
           type="button"
-          onClick={() => setConfirmingDeleteAccount(true)}
+          onClick={openDeleteAccount}
           className="rounded-md bg-danger px-[18px] py-2.5 text-[13px] font-semibold text-white hover:opacity-90"
         >
-          Excluir conta
+          Excluir conta e dados
         </button>
       </div>
 
@@ -233,12 +304,16 @@ export default function ConfigPage() {
 
       <ConfirmDialog
         open={confirmingDeleteAccount}
-        title="Excluir conta"
-        message="Tem certeza que deseja excluir sua conta? Essa ação não pode ser desfeita."
+        title="Excluir conta e dados"
+        message={<DeleteAccountMessage role={profile?.role} />}
+        error={deleteError}
+        confirmLabel="Excluir conta e dados"
         confirming={deletingAccount}
         onConfirm={confirmDeleteAccount}
         onCancel={() => setConfirmingDeleteAccount(false)}
       />
+
+      <LegalFooter />
     </div>
   );
 }
