@@ -52,6 +52,11 @@ export type ExamReviewQuestion = {
   isCorrect: boolean;
   score: number;
   gradeStatus: string;
+  number?: number;
+  statement?: string;
+  maxScore?: number;
+  teacherFeedback?: string | null;
+  studentAnswer?: string;
 };
 
 export type StudentExamDetail = {
