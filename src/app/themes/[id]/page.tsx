@@ -83,7 +83,9 @@ export default function ThemeQuestionsPage() {
 
   return (
     <main className="flex min-h-screen flex-col gap-6 bg-surface px-10 pb-10 pt-9">
-      <p className="text-[12px] text-muted">Banco de Questões / {theme.name}</p>
+      <p className="break-words text-[12px] text-muted">
+        Banco de Questões / {theme.name}
+      </p>
       <div className="flex items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
@@ -123,7 +125,7 @@ export default function ThemeQuestionsPage() {
             />
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-3">
           <Link
             href={`/themes/${theme.id}/edit`}
             className="text-[13px] font-medium text-primary"
@@ -155,9 +157,9 @@ export default function ThemeQuestionsPage() {
           filteredQuestions.map((question) => (
             <div
               key={question.id}
-              className="flex items-center gap-3 border-b border-border px-5 py-4 text-[13px] last:border-b-0"
+              className="flex min-w-0 items-center gap-3 border-b border-border px-5 py-4 text-[13px] last:border-b-0"
             >
-              <p className="min-w-0 flex-1 font-medium text-foreground">
+              <p className="min-w-0 flex-1 break-words font-medium text-foreground">
                 {question.statement}
               </p>
               <p className="w-[120px] shrink-0 text-muted">
@@ -194,11 +196,7 @@ export default function ThemeQuestionsPage() {
           }
         }}
         title="Confirmar exclusão"
-        description={
-          questionToDelete
-            ? `Excluir a questão "${questionToDelete.statement}"?`
-            : ""
-        }
+        description="Tem certeza que deseja excluir esta questão? Essa ação não pode ser desfeita."
         onConfirm={confirmDelete}
       />
     </main>
