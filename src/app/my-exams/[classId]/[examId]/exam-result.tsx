@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ExamReviewQuestion } from "@/services/exams.service";
+import { formatPoints } from "@/lib/exam-format";
 
 function usedTime(startedAt?: string | null, finishedAt?: string | null) {
   if (!startedAt || !finishedAt) return "Pendente";
@@ -30,6 +31,19 @@ function themeStats(review: ExamReviewQuestion[]) {
   }));
 }
 
+function reviewStatus(question: ExamReviewQuestion) {
+  if (question.type === "MULTIPLE_CHOICE") {
+    return { label: "Correção automática", className: "text-muted" };
+  }
+  if (question.gradeStatus === "PENDING") {
+    return {
+      label: "Aguardando correção do professor",
+      className: "text-[#8a5a00]",
+    };
+  }
+  return { label: "Corrigida pelo professor", className: "text-[#16A34A]" };
+}
+
 export function ExamResult({
   title,
   subjectName,
@@ -49,6 +63,7 @@ export function ExamResult({
 }) {
   const correct = review.filter((question) => question.isCorrect).length;
   const themes = themeStats(review);
+  const details = review.filter((question) => question.statement);
 
   const sentAt = finishedAt
     ? new Date(finishedAt).toLocaleTimeString("pt-BR", {
@@ -138,6 +153,69 @@ export function ExamResult({
               </div>
             ))}
           </div>
+        </section>
+      )}
+
+      {details.length > 0 && (
+        <section className="mb-6 max-w-3xl rounded-2xl border border-[#E2E8F0] px-6 py-5">
+          <h2 className="mb-4 font-semibold">Correção das questões</h2>
+          <ul className="flex flex-col">
+            {details.map((question) => {
+              const status = reviewStatus(question);
+              const pending =
+                question.type === "OPEN_ENDED" &&
+                question.gradeStatus === "PENDING";
+
+              return (
+                <li
+                  key={question.examQuestionId}
+                  className="border-t border-[#E2E8F0] py-4 first:border-t-0 first:pt-0 last:pb-0"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <p className="min-w-0 break-words text-sm font-medium text-foreground">
+                      {question.number}. {question.statement}
+                    </p>
+                    <p className="shrink-0 text-sm font-semibold text-foreground">
+                      {pending
+                        ? "-"
+                        : `${formatPoints(question.score)}${
+                            question.maxScore !== undefined
+                              ? ` / ${formatPoints(question.maxScore)}`
+                              : ""
+                          }`}
+                    </p>
+                  </div>
+                  <p className={`mt-1 text-xs ${status.className}`}>
+                    {question.themeName} · {status.label}
+                  </p>
+
+                  <div className="mt-3 rounded-xl border border-[#E2E8F0] px-4 py-3">
+                    <p className="text-xs font-semibold tracking-wide text-muted">
+                      SUA RESPOSTA
+                    </p>
+                    <p className="mt-1 whitespace-pre-wrap break-words text-sm text-foreground">
+                      {question.studentAnswer || (
+                        <span className="italic text-muted">
+                          Não respondida.
+                        </span>
+                      )}
+                    </p>
+                  </div>
+
+                  {question.teacherFeedback && (
+                    <div className="mt-3 rounded-xl bg-[#F8FAFC] px-4 py-3">
+                      <p className="text-xs font-semibold tracking-wide text-muted">
+                        FEEDBACK DO PROFESSOR
+                      </p>
+                      <p className="mt-1 whitespace-pre-wrap break-words text-sm text-foreground">
+                        {question.teacherFeedback}
+                      </p>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
         </section>
       )}
 

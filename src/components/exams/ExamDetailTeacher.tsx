@@ -288,20 +288,20 @@ export function ExamDetailTeacher({ examId }: { examId: string }) {
                     </td>
                     <td className="px-5 py-3.5">
                       {student.status === "FINISHED" && (
-                        <span
-                          className="cursor-not-allowed font-medium text-primary/50"
-                          title="Disponível com o módulo de correção"
+                        <Link
+                          href={`/exams/${examId}/correction/${student.id}`}
+                          className="font-medium text-primary hover:underline"
                         >
                           Corrigir
-                        </span>
+                        </Link>
                       )}
                       {student.status === "GRADED" && (
-                        <span
-                          className="cursor-not-allowed font-medium text-primary/50"
-                          title="Disponível com o módulo de correção"
+                        <Link
+                          href={`/exams/${examId}/correction/${student.id}`}
+                          className="font-medium text-primary hover:underline"
                         >
                           Ver detalhes
-                        </span>
+                        </Link>
                       )}
                       {student.status !== "FINISHED" &&
                         student.status !== "GRADED" && (
@@ -345,7 +345,7 @@ export function ExamDetailTeacher({ examId }: { examId: string }) {
                   className="border-b border-border last:border-b-0"
                 >
                   <td className="px-5 py-3.5 text-muted">{index + 1}</td>
-                  <td className="px-5 py-3.5 font-medium text-foreground">
+                  <td className="break-words px-5 py-3.5 font-medium text-foreground">
                     {q.statement}
                   </td>
                   <td className="px-5 py-3.5 text-muted">{typeLabel(q.type)}</td>

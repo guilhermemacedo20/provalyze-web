@@ -52,6 +52,11 @@ export type ExamReviewQuestion = {
   isCorrect: boolean;
   score: number;
   gradeStatus: string;
+  number?: number;
+  statement?: string;
+  maxScore?: number;
+  teacherFeedback?: string | null;
+  studentAnswer?: string;
 };
 
 export type StudentExamDetail = {
@@ -173,6 +178,53 @@ export type SaveExamPayload = {
   publish?: boolean;
 };
 
+export type GradeStatus = "PENDING" | "AUTO" | "TEACHER_APPROVED";
+
+export type CorrectionQuestion = {
+  number: number;
+  answerId: string | null;
+  type: QuestionType;
+  statement: string;
+  themeName: string;
+  maxScore: number;
+  options: { label: string; text: string }[];
+  correctOption: string | null;
+  content: string;
+  isCorrect: boolean;
+  score: number;
+  gradeStatus: GradeStatus;
+  aiSuggestedScore: number | null;
+  aiJustification: string | null;
+  teacherFeedback: string | null;
+};
+
+export type CorrectionIntegrity = {
+  startedAt: string | null;
+  finishedAt: string | null;
+  events: {
+    id: string;
+    type: ExamEventType;
+    createdAt: string;
+    questionNumber: number | null;
+  }[];
+};
+
+export type ExamCorrection = {
+  exam: { id: string; title: string; targetScore: number };
+  student: { id: string; name: string };
+  score: number | null;
+  integrity: CorrectionIntegrity;
+  questions: CorrectionQuestion[];
+};
+
+export type GradeAnswerResult = {
+  answerId: string;
+  score: number;
+  gradeStatus: GradeStatus;
+  teacherFeedback: string | null;
+  sessionScore: number;
+};
+
 export const examsService = {
   listExams() {
     return apiRequest<ExamListItem[]>("/exams");
@@ -203,6 +255,22 @@ export const examsService = {
 
   deleteExam(id: string) {
     return apiRequest<{ id: string }>(`/exams/${id}`, { method: "DELETE" });
+  },
+
+  getCorrection(examId: string, studentId: string) {
+    return apiRequest<ExamCorrection>(
+      `/exams/${examId}/students/${studentId}/correction`,
+    );
+  },
+
+  gradeAnswer(
+    answerId: string,
+    data: { score: number; feedback?: string },
+  ) {
+    return apiRequest<GradeAnswerResult>(`/exams/answers/${answerId}/grade`, {
+      method: "PATCH",
+      body: data,
+    });
   },
 
   listClassExams(classId: string) {
