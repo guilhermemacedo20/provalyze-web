@@ -14,7 +14,11 @@ const analysisOptions: { value: ReportAnalysisType; label: string }[] = [
 ];
 
 const includedByType: Record<ReportAnalysisType, string[]> = {
-  PERFORMANCE: ["Resumo geral do desempenho", "Distribuição de notas por tema"],
+  PERFORMANCE: [
+    "Resumo geral do desempenho",
+    "Distribuição de notas por tema",
+    "Alunos e resultado final de cada prova",
+  ],
   GAPS: [
     "Dificuldades identificadas por tema",
     "Insights e recomendações pedagógicas geradas por IA",
@@ -22,6 +26,7 @@ const includedByType: Record<ReportAnalysisType, string[]> = {
   BOTH: [
     "Resumo geral do desempenho",
     "Distribuição de notas por tema",
+    "Alunos e resultado final de cada prova",
     "Dificuldades identificadas por tema",
     "Insights e recomendações pedagógicas geradas por IA",
   ],

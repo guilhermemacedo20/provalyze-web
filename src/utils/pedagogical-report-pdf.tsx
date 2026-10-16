@@ -113,6 +113,28 @@ const styles = StyleSheet.create({
     height: 6,
     borderRadius: 99,
   },
+  studentBlock: {
+    marginBottom: 8,
+  },
+  studentName: {
+    fontSize: 11,
+    fontFamily: "Helvetica-Bold",
+    marginBottom: 3,
+  },
+  examRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 2,
+    paddingLeft: 8,
+  },
+  examTitle: {
+    fontSize: 10,
+    color: "#334155",
+  },
+  examScore: {
+    fontSize: 10,
+    fontFamily: "Helvetica-Bold",
+  },
   card: {
     backgroundColor: "#ffffff",
     borderWidth: 1,
@@ -237,6 +259,32 @@ function ReportDocument({ report }: { report: PedagogicalReportDetail }) {
                   </View>
                 );
               })
+            )}
+
+            <Text style={[styles.sectionTitle, { marginTop: 12 }]}>
+              Alunos
+            </Text>
+            {(report.content.students ?? []).length === 0 ? (
+              <Text style={styles.empty}>
+                Nenhum aluno com prova corrigida.
+              </Text>
+            ) : (
+              report.content.students.map((student) => (
+                <View key={student.name} style={styles.studentBlock}>
+                  <Text style={styles.studentName}>{student.name}</Text>
+                  {student.exams.map((exam) => (
+                    <View
+                      key={`${student.name}-${exam.title}`}
+                      style={styles.examRow}
+                    >
+                      <Text style={styles.examTitle}>{exam.title}</Text>
+                      <Text style={styles.examScore}>
+                        {formatAverage(exam.score, false)}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              ))
             )}
           </View>
         )}

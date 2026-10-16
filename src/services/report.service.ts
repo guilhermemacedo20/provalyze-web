@@ -92,6 +92,10 @@ export type PedagogicalReportContent = {
   median: number | null;
   hitRate: number | null;
   themes: { name: string; percent: number }[];
+  students: {
+    name: string;
+    exams: { title: string; score: number | null }[];
+  }[];
   gaps: GapReport[];
 };
 
