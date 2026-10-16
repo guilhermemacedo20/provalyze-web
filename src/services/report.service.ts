@@ -1,3 +1,4 @@
+import { downloadPedagogicalReportPdf } from "@/utils/pedagogical-report-pdf";
 import { apiRequest } from "./api";
 
 export type AdminStats = {
@@ -75,6 +76,30 @@ export type GapReport = {
   percent: number;
 };
 
+export type ReportAnalysisType = "PERFORMANCE" | "GAPS" | "BOTH";
+
+export type PedagogicalReportSummary = {
+  id: string;
+  title: string;
+  className: string;
+  createdAt: string;
+  authorName: string;
+  analysisType: ReportAnalysisType;
+};
+
+export type PedagogicalReportContent = {
+  average: number | null;
+  median: number | null;
+  hitRate: number | null;
+  themes: { name: string; percent: number }[];
+  gaps: GapReport[];
+};
+
+export type PedagogicalReportDetail = PedagogicalReportSummary & {
+  subjectName: string;
+  content: PedagogicalReportContent;
+};
+
 const gapsInFlight = new Map<string, Promise<GapReport[]>>();
 
 export const reportService = {
@@ -121,5 +146,42 @@ export const reportService = {
     );
     gapsInFlight.set(key, request);
     return request;
+  },
+
+  listPedagogicalReports(classId?: string) {
+    const params = new URLSearchParams();
+    if (classId) {
+      params.set("classId", classId);
+    }
+    return apiRequest<PedagogicalReportSummary[]>(
+      `/report/pedagogical-reports?${params}`,
+    );
+  },
+
+  createPedagogicalReport(body: {
+    classId: string;
+    analysisType: ReportAnalysisType;
+  }) {
+    return apiRequest<PedagogicalReportDetail>("/report/pedagogical-reports", {
+      method: "POST",
+      body,
+    });
+  },
+
+  deletePedagogicalReport(id: string) {
+    return apiRequest<PedagogicalReportDetail>(
+      `/report/pedagogical-reports/${id}`,
+      {
+        method: "DELETE",
+      },
+    );
+  },
+
+  async downloadPedagogicalReport(id: string) {
+    const report = await apiRequest<PedagogicalReportDetail>(
+      `/report/pedagogical-reports/${id}`,
+    );
+
+    await downloadPedagogicalReportPdf(report);
   },
 };
