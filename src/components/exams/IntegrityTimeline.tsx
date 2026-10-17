@@ -83,7 +83,7 @@ export function IntegrityTimeline({
       <div className="flex items-center justify-between gap-3">
         <h2 className="flex min-w-0 items-center gap-2 text-[13px] font-semibold text-foreground">
           <ShieldAlert size={16} className="shrink-0 text-danger" />
-          <span className="truncate">Integridade da avaliação — {title}</span>
+          <span className="truncate">Integridade da avaliação: {title}</span>
         </h2>
         <button
           type="button"
