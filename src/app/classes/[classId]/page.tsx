@@ -137,7 +137,14 @@ export default function ClassDetailPage() {
             {!loading &&
               schoolClass?.students.map((student) => (
                 <tr key={student.id} className="border-b border-border last:border-b-0">
-                  <td className="px-5 py-3.5 font-medium text-foreground">{student.name}</td>
+                  <td className="px-5 py-3.5 font-medium text-foreground">
+                    <Link
+                      href={`/classes/${classId}/students/${student.id}`}
+                      className="hover:text-primary hover:underline"
+                    >
+                      {student.name}
+                    </Link>
+                  </td>
                   <td className="px-5 py-3.5 text-muted">{student.email}</td>
                   <td className="px-5 py-3.5 text-right">
                     <button
