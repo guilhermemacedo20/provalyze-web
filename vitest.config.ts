@@ -8,12 +8,13 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: ["./vitest.setup.ts"],
-    include: ["src/**/*.{test,spec}.{ts,tsx}"],
+    include: ["src/tests/**/*.{test,spec}.{ts,tsx}"],
     coverage: {
       provider: "v8",
       reportsDirectory: "./coverage",
       reporter: ["text", "text-summary", "html"],
-      include: ["src/**/*.{ts,tsx}"]
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: ["src/tests/**", "src/**/*.d.ts"],
     },
   },
   resolve: {

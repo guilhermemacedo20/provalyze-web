@@ -21,6 +21,7 @@ const eslintConfig = [
       "vitest.config.ts",
       "vitest.setup.ts",
       "coverage/**",
+      "src/tests/**",
     ],
   },
 ];
