@@ -79,9 +79,9 @@ export function ExamResult({
           Prova finalizada!
         </h1>
         <p className="mt-1 text-sm text-muted">
-          {title}
-          {subjectName ? `, ${subjectName}` : ""}
-          {sentAt ? ` · Enviada às ${sentAt}` : ""}
+          <span>{title}</span>
+          <span>{subjectName ? `, ${subjectName}` : ""}</span>
+          <span>{sentAt ? ` · Enviada às ${sentAt}` : ""}</span>
         </p>
       </div>
 
