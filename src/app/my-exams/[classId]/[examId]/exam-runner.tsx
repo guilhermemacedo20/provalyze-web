@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { QuestionImage } from "@/components/questions/QuestionImage";
 import {
   ExamEventType,
   ExamQuestion,
@@ -154,13 +155,13 @@ export function ExamRunner({
             {question.statement}
           </h1>
           {question.imageUrl && (
-            <img
-              src={question.imageUrl}
-              width={450}
-              height={450}
-              alt=""
-              className="mb-6 max-h-56 rounded-xl max-w-md max-h-md"
-            />
+            <div className="mb-6">
+              <QuestionImage
+                src={question.imageUrl}
+                alt={`Imagem da questão ${index + 1}`}
+                className="max-h-72 max-w-md rounded-xl object-contain"
+              />
+            </div>
           )}
 
           {question.type === "MULTIPLE_CHOICE" ? (

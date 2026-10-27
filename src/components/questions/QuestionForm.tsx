@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -9,6 +9,8 @@ import {
   QuestionType,
   questionsService,
 } from "@/services/questions.service";
+import { extractErrorMessage } from "@/lib/extract-error-message";
+import { QuestionImage } from "./QuestionImage";
 import { Theme, themesService } from "@/services/themes.service";
 import { Modal } from "../layout/Modal";
 
@@ -18,6 +20,18 @@ const emptyOptions: QuestionOption[] = [
   { label: "A", text: "", isCorrect: true },
   { label: "B", text: "", isCorrect: false },
 ];
+
+const fileToDataUrl = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error("Não foi possível ler a imagem."));
+    reader.readAsDataURL(file);
+  });
+};
+
+const QUESTION_IMAGE_TYPES = ["image/png", "image/jpeg"];
+const QUESTION_IMAGE_MAX_BYTES = 1024 * 1024;
 
 const withLabels = (options: QuestionOption[]): QuestionOption[] => {
   return options.map((option, index) => ({
@@ -31,6 +45,9 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
   const isEdit = !!questionId;
   const [statement, setStatement] = useState("");
   const [image, setImage] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [themeId, setThemeId] = useState("");
   const [themes, setThemes] = useState<Theme[]>([]);
   const [type, setType] = useState<QuestionType>("MULTIPLE_CHOICE");
@@ -117,6 +134,46 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
     });
   };
 
+  const onImageSelected = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) {
+      return;
+    }
+
+    setImageError(null);
+
+    if (!QUESTION_IMAGE_TYPES.includes(file.type)) {
+      setImageError("Formato não aceito. Envie PNG ou JPG.");
+      return;
+    }
+
+    if (file.size > QUESTION_IMAGE_MAX_BYTES) {
+      setImageError("A imagem deve ter no máximo 1 MB.");
+      return;
+    }
+
+    setUploadingImage(true);
+    
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      const uploaded = await questionsService.uploadImage(dataUrl);
+      setImage(uploaded.url);
+    } catch (err) {
+      console.error("Error uploading image:", err);
+      setImageError(extractErrorMessage(err));
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const removeImage = () => {
+    setImage("");
+    setImageError(null);
+  };
+
   const onSubmit = async (
     event: React.FormEvent | null = null,
     keepOnPage: boolean = false,
@@ -125,6 +182,11 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
       event.preventDefault();
     }
     setError(null);
+
+    if (uploadingImage) {
+      setError("Aguarde o envio da imagem terminar.");
+      return;
+    }
 
     if (!statement || !themeId) {
       setError("Preencha enunciado e tema.");
@@ -151,7 +213,7 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
     const payload: QuestionPayload = {
       statement: statement.trim(),
       themeId,
-      ...(image ? { imageUrl: image } : {}),
+      imageUrl: image || null,
       type,
       ...(type === "MULTIPLE_CHOICE"
         ? {
@@ -174,6 +236,7 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
       if (keepOnPage) {
         setStatement("");
         setImage("");
+        setImageError(null);
         setType("MULTIPLE_CHOICE");
         setOptions(withLabels(emptyOptions));
       } else {
@@ -240,31 +303,61 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
           />
         </div>
 
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <label htmlFor="image" className="block text-[13px] font-medium">
-            Tem imagem?
+            Imagem (opcional)
           </label>
           <input
+            ref={fileInputRef}
             id="image"
-            value={image}
-            placeholder={"URL da imagem"}
-            onChange={(event) => setImage(event.target.value)}
-            className="w-full rounded-[14px] border border-border bg-surface px-3.5 py-2.5 text-[14px] text-foreground placeholder:text-muted"
+            type="file"
+            accept={QUESTION_IMAGE_TYPES.join(",")}
+            onChange={onImageSelected}
+            disabled={uploadingImage}
+            className="sr-only"
           />
-        </div>
-
-        {image && (
-          <div>
-            A imagem será exibida dessa forma:
-            <img
-              src={image}
-              alt={"Question image"}
-              className="max-w-md max-h-md"
-              width={450}
-              height={450}
-            />
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingImage}
+              className="rounded-[14px] border border-border bg-surface px-4 py-2.5 text-[13px] font-semibold text-foreground hover:bg-background disabled:opacity-50 cursor-pointer"
+            >
+              {uploadingImage
+                ? "Enviando imagem..."
+                : image
+                  ? "Trocar imagem"
+                  : "Escolher imagem"}
+            </button>
+            {image && !uploadingImage && (
+              <button
+                type="button"
+                onClick={removeImage}
+                className="text-[13px] font-medium text-danger hover:underline cursor-pointer"
+              >
+                Remover imagem
+              </button>
+            )}
+            <span className="text-[12px] text-muted">
+              PNG ou JPG, até 1 MB.
+            </span>
           </div>
-        )}
+          {imageError && (
+            <p className="text-[13px] text-danger">{imageError}</p>
+          )}
+          {image && (
+            <div className="space-y-1.5 pt-1">
+              <p className="text-[12px] text-muted">
+                O aluno verá a imagem assim:
+              </p>
+              <QuestionImage
+                src={image}
+                alt="Pré-visualização da imagem da questão"
+                className="max-h-72 max-w-md rounded-xl border border-border object-contain"
+              />
+            </div>
+          )}
+        </div>
 
         <div className="space-y-1.5">
           <label htmlFor="themeId" className="block text-[13px] font-medium">
@@ -382,6 +475,7 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
               <button
                 type="button"
                 onClick={() => onSubmit(null, true)}
+                disabled={uploadingImage}
                 className="rounded-[14px] bg-secondary px-4 py-2.5 text-[13px] font-semibold text-black hover:bg-secondary-hover disabled:opacity-50 cursor-pointer mr-3 border border-border"
               >
                 Salvar e adicionar outra
@@ -389,6 +483,7 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
             )}
             <button
               type="submit"
+              disabled={uploadingImage}
               className="rounded-[14px] bg-primary px-4 py-2.5 text-[13px] font-semibold text-white hover:bg-primary-hover disabled:opacity-50 cursor-pointer"
             >
               {isEdit ? "Salvar alterações" : "Criar"}
