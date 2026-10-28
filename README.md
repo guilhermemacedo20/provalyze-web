@@ -22,6 +22,7 @@ Versões do repositório.
 | ESLint       | 9.x     | Lint                  |
 | lucide-react | 1.41.0  | Ícones do menu        |
 | vitejs       | 5.0.4   | Testes                |
+| recharts     | 3.1.0   | Criação de dashboards |
 
 Chamadas HTTP: `src/services/api.ts`.
 

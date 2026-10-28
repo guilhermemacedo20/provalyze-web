@@ -26,7 +26,34 @@ export type StudentStats = {
   totalAverage: number | null;
 };
 
-export type DashboardStats = AdminStats | TeacherStats | StudentStats;
+export type DashboardStats = (AdminStats | TeacherStats | StudentStats) &
+  DashboardCharts;
+
+export type DashboardPeriod = "month" | "year" | "all";
+
+export type DashboardFilter = {
+  period: DashboardPeriod;
+  month?: string;
+  year?: string;
+  classId?: string;
+};
+
+type AnswerOutcomes = { correct: number; wrong: number; pending: number };
+
+export type DashboardCharts = {
+  hitRate?: number | null;
+  classes: { id: string; name: string; subjectName: string }[];
+  pendingSubmissions: number;
+  answers: AnswerOutcomes;
+  scoresByExam: { examId: string; title: string; average: number }[];
+  questionsByExam: {
+    examId: string;
+    title: string;
+    answers: AnswerOutcomes;
+    questions: (AnswerOutcomes & { number: number; theme: string })[];
+  }[];
+  timeline: { label: string; submissions: number }[];
+};
 
 export type StudentThemeResult = {
   name: string;
@@ -107,8 +134,20 @@ export type PedagogicalReportDetail = PedagogicalReportSummary & {
 const gapsInFlight = new Map<string, Promise<GapReport[]>>();
 
 export const reportService = {
-  getDashboard() {
-    return apiRequest<DashboardStats>("/report/dashboard-information");
+  getDashboard(filter?: DashboardFilter) {
+    const params = new URLSearchParams();
+    if (filter) {
+      params.set("period", filter.period);
+      if (filter.period === "month" && filter.month)
+        params.set("month", filter.month);
+      if (filter.period === "year" && filter.year)
+        params.set("year", filter.year);
+      if (filter.classId) params.set("classId", filter.classId);
+    }
+    const query = params.toString();
+    return apiRequest<DashboardStats>(
+      `/report/dashboard-information${query ? `?${query}` : ""}`,
+    );
   },
 
   getStudentAnalytics(classId: string, studentId: string) {
