@@ -8,13 +8,7 @@ import {
   StudentExam,
   examsService,
 } from "@/services/exams.service";
-import {
-  reportService,
-  type AdminStats,
-  type StudentStats,
-  type TeacherStats,
-} from "@/services/report.service";
-import { MetricCard } from "@/components/ui/MetricCard";
+import { reportService, type AdminStats } from "@/services/report.service";
 import { QuickAction } from "@/components/ui/QuickAction";
 import {
   TeacherExamRow,
@@ -23,6 +17,7 @@ import {
 } from "@/components/ui/CustomCard";
 import { formatCount, formatAverage } from "@/utils/formatFunctions";
 import { firstName } from "@/utils/firstName";
+import { PerformancePanel } from "@/components/dashboard/PerformancePanel";
 
 function useDashboardStats<T>() {
   const [stats, setStats] = useState<T | null>(null);
@@ -53,6 +48,10 @@ function AdminDashboard() {
         Painel administrativo
       </h1>
 
+      <div className="mb-10">
+        <PerformancePanel audience="admin" />
+      </div>
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <AdminCard label="Total de usuários" value={count(stats?.totalUsers)} />
         <AdminCard label="Professores" value={count(stats?.totalTeachers)} />
@@ -79,7 +78,6 @@ function AdminDashboard() {
 }
 
 function TeacherDashboard({ name }: { name: string }) {
-  const { stats, loading } = useDashboardStats<TeacherStats>();
   const [exams, setExams] = useState<ExamListItem[]>([]);
   const [examsLoading, setExamsLoading] = useState(true);
 
@@ -111,29 +109,7 @@ function TeacherDashboard({ name }: { name: string }) {
         </h1>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <MetricCard
-          label="Provas aplicadas"
-          value={formatCount(stats?.totalExams, loading)}
-          tone="blue"
-        />
-        <MetricCard
-          label="Média geral"
-          value={formatAverage(stats?.totalAverage, loading)}
-          tone="blue"
-        />
-        <MetricCard
-          label="Taxa de acertos"
-          value={
-            loading
-              ? "Carregando..."
-              : stats?.hitRate == null
-                ? "*"
-                : `${stats.hitRate}%`
-          }
-          tone="blue"
-        />
-      </div>
+      <PerformancePanel audience="teacher" />
 
       <section className="rounded-[22px] border border-border bg-surface px-6 py-5 shadow-[0px_1px_3px_0px_rgba(13,20,38,0.06)]">
         <h2 className="text-[15px] font-semibold text-foreground">
@@ -171,7 +147,6 @@ function TeacherDashboard({ name }: { name: string }) {
 }
 
 function StudentDashboard({ name }: { name: string }) {
-  const { stats, loading } = useDashboardStats<StudentStats>();
   const [subtitle, setSubtitle] = useState("");
   const [exams, setExams] = useState<StudentExam[]>([]);
   const [examsLoading, setExamsLoading] = useState(true);
@@ -181,12 +156,7 @@ function StudentDashboard({ name }: { name: string }) {
       .listStudentClasses()
       .then(async (classes) => {
         setSubtitle(
-          classes
-            .map(
-              (schoolClass) =>
-                `${schoolClass.subjectName}`,
-            )
-            .join(", "),
+          classes.map((schoolClass) => `${schoolClass.subjectName}`).join(", "),
         );
         const groups = await Promise.all(
           classes.map((schoolClass) =>
@@ -223,23 +193,7 @@ function StudentDashboard({ name }: { name: string }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <MetricCard
-          label="Próximas provas"
-          value={formatCount(stats?.upcomingExams, loading)}
-          tone="green"
-        />
-        <MetricCard
-          label="Provas concluídas"
-          value={formatCount(stats?.finishedExams, loading)}
-          tone="green"
-        />
-        <MetricCard
-          label="Média geral"
-          value={formatAverage(stats?.totalAverage, loading)}
-          tone="green"
-        />
-      </div>
+      <PerformancePanel audience="student" />
 
       <section>
         <h2 className="text-[15px] font-semibold text-foreground">
