@@ -7,7 +7,7 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { LegalFooter } from "@/components/ui/LegalFooter";
 import { extractErrorMessage } from "@/lib/extract-error-message";
 import { User, usersService } from "@/services/users.service";
-import { clearSession } from "@/lib/auth-role-storage";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { isPasswordStrong } from "@/lib/password-validate";
 import { PasswordChecks } from "@/components/auth/PasswordChecks";
 
@@ -15,6 +15,7 @@ const PRIVACY_EMAIL = "provalyze@gmail.com";
 
 function DeleteAccountMessage({ role }: { role?: User["role"] }) {
   const isRemoved = role === "ADMIN" || role === "COORDINATOR";
+  const isStudent = role === "STUDENT";
 
   return (
     <div className="flex flex-col gap-3">
@@ -23,7 +24,26 @@ function DeleteAccountMessage({ role }: { role?: User["role"] }) {
         pode ser desfeita e você perderá o acesso ao sistema.
       </p>
 
-      {isRemoved ? (
+      {isStudent ? (
+        <div>
+          <p className="font-semibold text-foreground">O que acontece:</p>
+          <ul className="mt-1 list-disc pl-5">
+            <li>
+              Suas matrículas nas turmas são apagados.
+            </li>
+            <li>
+              Se você ainda não fez nenhuma prova, sua conta é apagada por
+              completo.
+            </li>
+            <li>
+              Se você já fez provas, seu nome e seu e-mail são substituídos por
+              valores genéricos. As provas e respostas continuam registradas de
+              forma anônima por <strong>5 anos</strong>, para preservar a
+              integridade dos dados da turma.
+            </li>
+          </ul>
+        </div>
+      ) : isRemoved ? (
         <div>
           <p className="font-semibold text-foreground">O que será removido:</p>
           <ul className="mt-1 list-disc pl-5">
@@ -76,6 +96,7 @@ function DeleteAccountMessage({ role }: { role?: User["role"] }) {
 
 export default function ConfigPage() {
   const router = useRouter();
+  const { logout } = useAuth();
 
   const [profile, setProfile] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -163,10 +184,10 @@ export default function ConfigPage() {
     setDeleteError(null);
     try {
       await usersService.deleteUser(profile.id);
-      clearSession();
       setTimeout(() => {
-        router.push("/login");
-      }, 1500);
+        logout();
+        router.replace("/login");
+      }, 1000);
     } catch (error) {
       console.error("Erro ao excluir conta:", error);
       setDeleteError(extractErrorMessage(error));
