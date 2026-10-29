@@ -30,6 +30,7 @@ describe("EditExamPage", () => {
       loading: false,
       login: vi.fn(),
       logout: vi.fn(),
+      acceptTerms: vi.fn(),
     });
 
     render(<EditExamPage />);

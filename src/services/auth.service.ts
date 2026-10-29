@@ -6,6 +6,11 @@ export type LoginResponse = {
   user: User;
 };
 
+export type AcceptTermsResponse = {
+  termsAcceptedAt: string;
+  termsVersion: string;
+};
+
 export const authService = {
   login(email: string, password: string) {
     return apiRequest<LoginResponse>("/auth/login", {
@@ -19,10 +24,18 @@ export const authService = {
     email: string;
     role: "STUDENT";
     password: string;
+    acceptTerms: true;
   }) {
     return apiRequest<User>("/auth/register", {
       method: "POST",
       body: data,
+    });
+  },
+
+  acceptTerms() {
+    return apiRequest<AcceptTermsResponse>("/auth/accept-terms", {
+      method: "POST",
+      body: { acceptTerms: true },
     });
   },
 
@@ -33,7 +46,12 @@ export const authService = {
     });
   },
 
-  resetPassword(data: { email: string; code: string; newPassword: string }) {
+  resetPassword(data: {
+    email: string;
+    code: string;
+    newPassword: string;
+    acceptTerms: true;
+  }) {
     return apiRequest<{ message: string }>("/auth/reset-password", {
       method: "POST",
       body: data,

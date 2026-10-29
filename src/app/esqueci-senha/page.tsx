@@ -102,7 +102,12 @@ export default function ForgotPasswordPage() {
 
     setResetting(true);
     try {
-      await authService.resetPassword({ email: email.trim(), code, newPassword });
+      await authService.resetPassword({
+        email: email.trim(),
+        code,
+        newPassword,
+        acceptTerms: true,
+      });
       router.push("/login?success=password");
     } catch (err) {
       console.error("Erro ao redefinir senha:", err);

@@ -26,6 +26,7 @@ describe("NewExamPage", () => {
       loading: false,
       login: vi.fn(),
       logout: vi.fn(),
+      acceptTerms: vi.fn(),
     });
 
     render(<NewExamPage />);
@@ -45,6 +46,7 @@ describe("NewExamPage", () => {
       loading: false,
       login: vi.fn(),
       logout: vi.fn(),
+      acceptTerms: vi.fn(),
     });
 
     const { container } = render(<NewExamPage />);

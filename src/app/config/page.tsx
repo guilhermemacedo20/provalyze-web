@@ -13,6 +13,12 @@ import { PasswordChecks } from "@/components/auth/PasswordChecks";
 
 const PRIVACY_EMAIL = "provalyze@gmail.com";
 
+function formatTermsDate(iso: string) {
+  return new Date(iso).toLocaleDateString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+  });
+}
+
 function DeleteAccountMessage({ role }: { role?: User["role"] }) {
   const isRemoved = role === "ADMIN" || role === "COORDINATOR";
 
@@ -191,6 +197,16 @@ export default function ConfigPage() {
             <span className="text-muted">E-mail</span>
             <span className="font-medium text-foreground">
               {loading ? "..." : profile?.email}
+            </span>
+          </div>
+          <div className="mb-3 flex items-center justify-between text-[13px]">
+            <span className="text-muted">Termos</span>
+            <span className="font-medium text-foreground">
+              {loading
+                ? "..."
+                : profile?.termsAcceptedAt
+                  ? `Termos aceitos em ${formatTermsDate(profile.termsAcceptedAt)}`
+                  : "Termos ainda não aceitos"}
             </span>
           </div>
           <div className="flex items-center justify-between text-[13px]">
