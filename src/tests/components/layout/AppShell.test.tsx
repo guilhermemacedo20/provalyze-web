@@ -41,6 +41,7 @@ describe("AppShell", () => {
       loading: false,
       login: vi.fn(),
       logout,
+      acceptTerms: vi.fn(),
     });
 
     render(
@@ -67,6 +68,7 @@ describe("AppShell", () => {
       loading: false,
       login: vi.fn(),
       logout,
+      acceptTerms: vi.fn(),
     });
 
     const user = userEvent.setup();

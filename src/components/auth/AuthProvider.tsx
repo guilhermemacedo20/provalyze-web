@@ -15,6 +15,7 @@ type AuthContextValue = {
   loading: boolean;
   login: (email: string, password: string) => Promise<User>;
   logout: () => void;
+  acceptTerms: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -64,6 +65,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logout() {
         clearSession();
         setUser(null);
+      },
+      async acceptTerms() {
+        const result = await authService.acceptTerms();
+        if (!user) return;
+
+        const updated: User = {
+          ...user,
+          termsAcceptedAt: result.termsAcceptedAt,
+          termsVersion: result.termsVersion,
+        };
+        const token = getAccessToken();
+        if (token) saveSession(token, updated);
+        setUser(updated);
       },
     }),
     [user, loading],
