@@ -67,6 +67,8 @@ export type StudentExamHistory = {
   score: number | null;
 };
 
+export type StudentAnswerOutcomes = { correct: number; wrong: number };
+
 export type StudentAnalytics = {
   studentName: string;
   className: string;
@@ -74,6 +76,10 @@ export type StudentAnalytics = {
   totalAverage: number | null;
   finishedExams: number;
   themes: StudentThemeResult[];
+  answers: {
+    objective: StudentAnswerOutcomes;
+    essay: StudentAnswerOutcomes;
+  };
   exams: StudentExamHistory[];
 };
 
