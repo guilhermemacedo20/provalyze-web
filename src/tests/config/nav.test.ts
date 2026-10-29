@@ -35,4 +35,15 @@ describe("nav", () => {
     expect(canAccessPath("/users", "STUDENT")).toBe(false);
     expect(canAccessPath("/my-classes", "STUDENT")).toBe(true);
   });
+  it("mostra Meu desempenho só para o aluno", () => {
+    const studentItems = navItemsForRole("STUDENT");
+    expect(studentItems.some((item) => item.href === "/my-performance")).toBe(
+      true,
+    );
+    expect(
+      navItemsForRole("TEACHER").some((item) => item.href === "/my-performance"),
+    ).toBe(false);
+    expect(canAccessPath("/my-performance", "STUDENT")).toBe(true);
+    expect(canAccessPath("/my-performance", "TEACHER")).toBe(false);
+  });
 });
