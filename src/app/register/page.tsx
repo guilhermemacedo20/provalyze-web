@@ -55,6 +55,7 @@ export default function RegisterPage() {
         email: email.trim(),
         role: "STUDENT",
         password,
+        acceptTerms: true,
       });
       router.push("/login?success=account");
     } catch (err) {

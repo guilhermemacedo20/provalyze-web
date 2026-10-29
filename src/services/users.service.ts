@@ -9,6 +9,8 @@ export type User = {
   registrationNumber?: string;
   classes: string[];
   createdAt: string;
+  termsAcceptedAt?: string | null;
+  termsVersion?: string | null;
 };
 
 export const usersService = {
