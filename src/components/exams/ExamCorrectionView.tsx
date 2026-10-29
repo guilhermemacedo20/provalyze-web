@@ -2,6 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import {
+  Check,
+  LoaderCircle,
+  Sparkles,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { aiService } from "@/services/ai.service";
 import {
@@ -17,7 +24,7 @@ import { IntegrityTimeline } from "./IntegrityTimeline";
 
 type AiStatus = "loading" | "error";
 type AiState = Record<string, AiStatus>;
-type QuestionState = "corrected" | "loading" | "suggested" | "pending";
+type QuestionState = "correct" | "wrong" | "loading" | "suggested" | "pending";
 
 function isCorrected(question: CorrectionQuestion) {
   return question.gradeStatus !== "PENDING";
@@ -27,7 +34,9 @@ function questionState(
   question: CorrectionQuestion,
   ai: AiState,
 ): QuestionState {
-  if (isCorrected(question)) return "corrected";
+  if (isCorrected(question)) {
+    return question.score >= question.maxScore - 0.001 ? "correct" : "wrong";
+  }
   if (question.answerId && ai[question.answerId] === "loading") {
     return "loading";
   }
@@ -35,11 +44,35 @@ function questionState(
   return "pending";
 }
 
-const STATE_STYLE: Record<QuestionState, string> = {
-  corrected: "bg-[#DCFCE7] text-[#166534]",
-  loading: "animate-pulse bg-[#FEF1DD] text-[#8a5a00]",
-  suggested: "bg-primary-light text-primary",
-  pending: "border border-[#E2E8F0] bg-white text-foreground",
+const STATE_META: Record<
+  QuestionState,
+  { label: string; tile: string; Icon?: LucideIcon; iconClass?: string }
+> = {
+  correct: {
+    label: "Correta",
+    tile: "border border-[#86EFAC] bg-[#DCFCE7] text-[#166534]",
+    Icon: Check,
+  },
+  wrong: {
+    label: "Errada",
+    tile: "border border-[#FCA5A5] bg-[#FEE2E2] text-[#991B1B]",
+    Icon: X,
+  },
+  loading: {
+    label: "IA corrigindo",
+    tile: "border border-[#FCD34D] bg-[#FEF3C7] text-[#92400E]",
+    Icon: LoaderCircle,
+    iconClass: "animate-spin",
+  },
+  suggested: {
+    label: "Sugestão da IA pronta",
+    tile: "border border-[#93C5FD] bg-[#DBEAFE] text-[#1D4ED8]",
+    Icon: Sparkles,
+  },
+  pending: {
+    label: "Aguardando correção",
+    tile: "border border-[#CBD5E1] bg-white text-[#64748B]",
+  },
 };
 
 function parseScore(text: string): number | null {
@@ -526,40 +559,53 @@ export function ExamCorrectionView({
           <div className="mt-3 grid grid-cols-5 gap-2">
             {data.questions.map((item, itemIndex) => {
               const current = itemIndex === index;
+              const state = questionState(item, ai);
+              const { tile, Icon, iconClass, label } = STATE_META[state];
               return (
                 <button
                   key={item.number}
                   type="button"
                   onClick={() => setIndex(itemIndex)}
-                  className={`flex h-9 cursor-pointer items-center justify-center rounded-lg text-sm ${
-                    STATE_STYLE[questionState(item, ai)]
-                  } ${current ? "ring-2 ring-[#16A34A] ring-offset-2" : ""}`}
+                  title={`Questão ${itemIndex + 1}: ${label}`}
+                  aria-label={`Questão ${itemIndex + 1}: ${label}`}
+                  aria-current={current ? "step" : undefined}
+                  className={`flex h-9 cursor-pointer items-center justify-center gap-1 rounded-lg text-sm font-semibold ${tile} ${
+                    current ? "ring-2 ring-foreground ring-offset-1" : ""
+                  }`}
                 >
                   {itemIndex + 1}
+                  {Icon && (
+                    <Icon
+                      className={`size-3 ${iconClass ?? ""}`}
+                      aria-hidden
+                    />
+                  )}
                 </button>
               );
             })}
           </div>
 
           <ul className="mt-6 space-y-2 text-sm text-muted">
-            <li className="flex items-center gap-2">
-              <span className="size-2.5 rounded-full bg-[#DCFCE7]" />
-              Corrigida
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="size-2.5 rounded-full bg-[#FEF1DD]" />
-              IA corrigindo
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="size-2.5 rounded-full bg-primary-light" />
-              Sugestão da IA pronta
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="size-2.5 rounded-full border border-[#CBD5E1] bg-white" />
-              Aguardando correção
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="size-2.5 rounded-full ring-2 ring-[#16A34A]" />
+            {(Object.keys(STATE_META) as QuestionState[]).map((key) => {
+              const { label, tile, Icon, iconClass } = STATE_META[key];
+              return (
+                <li key={key} className="flex items-center gap-2.5">
+                  <span
+                    className={`flex size-5 items-center justify-center rounded-md ${tile}`}
+                  >
+                    {Icon && (
+                      <Icon
+                        className={`size-3 ${iconClass ?? ""}`}
+                        aria-hidden
+                      />
+                    )}
+                  </span>
+                  {label}
+                </li>
+              );
+            })}
+            <li className="flex items-center gap-2.5">
+              <span className="size-5 rounded-md ring-2 ring-foreground ring-offset-1" />
               Questão atual
             </li>
           </ul>
