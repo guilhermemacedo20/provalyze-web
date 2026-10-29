@@ -10,6 +10,7 @@ import {
   Target,
   FileBarChart,
   Settings,
+  TrendingUp,
 } from "lucide-react";
 import type { Role } from "@/lib/role";
 
@@ -44,6 +45,12 @@ export const navItems: NavItemConfig[] = [
     label: "Matérias",
     roles: ["STUDENT"],
     icon: GraduationCap,
+  },
+  {
+    href: "/my-performance",
+    label: "Analytics",
+    roles: ["STUDENT"],
+    icon: TrendingUp,
   },
   {
     href: "/questions",
