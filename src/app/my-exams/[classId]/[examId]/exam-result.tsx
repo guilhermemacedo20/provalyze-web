@@ -202,6 +202,18 @@ export function ExamResult({
                     </p>
                   </div>
 
+                  {question.type === "MULTIPLE_CHOICE" &&
+                    question.correctAnswer && (
+                      <div className="mt-3 rounded-xl border border-[#BBF7D0] bg-[#F0FDF4] px-4 py-3">
+                        <p className="text-xs font-semibold tracking-wide text-[#16A34A]">
+                          ALTERNATIVA CORRETA
+                        </p>
+                        <p className="mt-1 whitespace-pre-wrap break-words text-sm text-foreground">
+                          {question.correctAnswer}
+                        </p>
+                      </div>
+                    )}
+
                   {question.teacherFeedback && (
                     <div className="mt-3 rounded-xl bg-[#F8FAFC] px-4 py-3">
                       <p className="text-xs font-semibold tracking-wide text-muted">

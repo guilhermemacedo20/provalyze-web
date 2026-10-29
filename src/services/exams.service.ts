@@ -57,6 +57,7 @@ export type ExamReviewQuestion = {
   maxScore?: number;
   teacherFeedback?: string | null;
   studentAnswer?: string;
+  correctAnswer?: string | null;
 };
 
 export type StudentExamDetail = {
