@@ -1,12 +1,22 @@
 "use client";
 
+import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Modal } from "@/components/layout/Modal";
 import { extractErrorMessage } from "@/lib/extract-error-message";
 import { questionsService } from "@/services/questions.service";
 import { Theme, themesService } from "@/services/themes.service";
+
+const THEMES_PER_PAGE = 8;
+
+function normalize(text: string) {
+  return text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
 
 export default function QuestionsPage() {
   const [themes, setThemes] = useState<Theme[]>([]);
@@ -16,6 +26,8 @@ export default function QuestionsPage() {
   const [name, setName] = useState("");
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
 
   const fetchThemes = async (silent = false) => {
     try {
@@ -76,6 +88,26 @@ export default function QuestionsPage() {
     fetchThemes();
   }, []);
 
+  const filteredThemes = useMemo(() => {
+    const term = normalize(search.trim());
+
+    return themes
+      .filter((theme) => normalize(theme.name).includes(term))
+      .sort((a, b) =>
+        a.name.localeCompare(b.name, "pt-BR", { sensitivity: "base" }),
+      );
+  }, [themes, search]);
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredThemes.length / THEMES_PER_PAGE),
+  );
+  const currentPage = Math.min(page, totalPages);
+  const visibleThemes = filteredThemes.slice(
+    (currentPage - 1) * THEMES_PER_PAGE,
+    currentPage * THEMES_PER_PAGE,
+  );
+
   if (loading) {
     return (
       <main className="px-10 pt-9">
@@ -104,64 +136,118 @@ export default function QuestionsPage() {
         </button>
       </div>
 
+      {themes.length > 0 && (
+        <div className="relative max-w-md">
+          <Search
+            aria-hidden="true"
+            className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted"
+          />
+          <input
+            type="text"
+            aria-label="Pesquisar pastas"
+            placeholder="Pesquisar..."
+            value={search}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setPage(1);
+            }}
+            className="w-full rounded-[14px] border border-border bg-surface py-2.5 pl-10 pr-3.5 text-[13px] text-foreground placeholder:text-muted"
+          />
+        </div>
+      )}
+
       {themes.length === 0 ? (
         <p className="rounded-[22px] border border-border bg-surface px-5 py-8 text-[13px] text-muted">
           Nenhuma pasta cadastrada. Crie um tema para começar a adicionar
           questões.
         </p>
+      ) : filteredThemes.length === 0 ? (
+        <p className="rounded-[22px] border border-border bg-surface px-5 py-8 text-[13px] text-muted">
+          Nenhuma pasta encontrada para &quot;{search.trim()}&quot;.
+        </p>
       ) : (
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-          {themes.map((theme) => {
-            return (
+        <>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {visibleThemes.map((theme) => (
               <div
                 key={theme.id}
-                className="relative rounded-[22px] border border-border bg-surface p-6 shadow-[0px_1px_3px_0px_rgba(13,20,38,0.06)]"
+                className="relative rounded-[16px] border border-border bg-surface p-4 shadow-[0px_1px_3px_0px_rgba(13,20,38,0.06)]"
               >
                 <button
                   type="button"
                   aria-label={`Excluir tema ${theme.name}`}
-                  className="absolute right-6 top-6 cursor-pointer"
+                  className="absolute right-4 top-4 cursor-pointer"
                   onClick={() => setThemeToDelete(theme)}
                 >
                   <Image
                     src="/icons/trash.png"
                     alt=""
-                    width={20}
-                    height={20}
-                    className="size-5 object-contain opacity-70 hover:opacity-100"
+                    width={16}
+                    height={16}
+                    className="size-4 object-contain opacity-70 hover:opacity-100"
                   />
                 </button>
 
-                <Link href={`/themes/${theme.id}`} className="block pr-8">
-                  <div className="mb-5 flex size-10 items-center justify-center rounded-[10px] bg-primary-light">
+                <Link href={`/themes/${theme.id}`} className="block pr-6">
+                  <div className="mb-3 flex size-8 items-center justify-center rounded-[8px] bg-primary-light">
                     <Image
                       src="/icons/folder.svg"
                       alt=""
-                      width={20}
-                      height={20}
-                      className="size-5"
+                      width={16}
+                      height={16}
+                      className="size-4"
                     />
                   </div>
 
-                  <div className="flex items-baseline justify-between gap-3">
-                    <h2 className="text-[16px] font-semibold text-foreground">
-                      {theme.name}
-                    </h2>
-                    <p className="shrink-0 text-[13px] text-muted">
-                      {theme.count === 1
-                        ? "1 questão"
-                        : `${theme.count} questões`}
-                    </p>
-                  </div>
+                  <h2
+                    title={theme.name}
+                    className="truncate text-[14px] font-semibold text-foreground"
+                  >
+                    {theme.name}
+                  </h2>
+                  <p className="mt-0.5 text-[12px] text-muted">
+                    {theme.count === 1
+                      ? "1 questão"
+                      : `${theme.count} questões`}
+                  </p>
 
-                  <p className="mt-5 text-[13px] font-medium text-primary">
+                  <p className="mt-3 text-[12px] font-medium text-primary">
                     Abrir pasta →
                   </p>
                 </Link>
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+
+          {totalPages > 1 && (
+            <nav
+              aria-label="Paginação das pastas"
+              className="flex items-center justify-center gap-3"
+            >
+              <button
+                type="button"
+                aria-label="Página anterior"
+                disabled={currentPage === 1}
+                onClick={() => setPage(currentPage - 1)}
+                className="flex size-9 cursor-pointer items-center justify-center rounded-full border border-border bg-surface text-foreground hover:bg-background disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <ChevronLeft className="size-4" />
+              </button>
+              <span className="text-[13px] text-muted">
+                Página {currentPage} de {totalPages}
+              </span>
+              <button
+                type="button"
+                aria-label="Próxima página"
+                disabled={currentPage === totalPages}
+                onClick={() => setPage(currentPage + 1)}
+                className="flex size-9 cursor-pointer items-center justify-center rounded-full border border-border bg-surface text-foreground hover:bg-background disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <ChevronRight className="size-4" />
+              </button>
+            </nav>
+          )}
+        </>
       )}
 
       <Modal
