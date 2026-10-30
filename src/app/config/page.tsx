@@ -10,6 +10,7 @@ import { User, usersService } from "@/services/users.service";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { isPasswordStrong } from "@/lib/password-validate";
 import { PasswordChecks } from "@/components/auth/PasswordChecks";
+import { EyeOff, Eye } from "lucide-react";
 
 const PRIVACY_EMAIL = "provalyze@gmail.com";
 
@@ -34,9 +35,7 @@ function DeleteAccountMessage({ role }: { role?: User["role"] }) {
         <div>
           <p className="font-semibold text-foreground">O que acontece:</p>
           <ul className="mt-1 list-disc pl-5">
-            <li>
-              Suas matrículas nas turmas são apagados.
-            </li>
+            <li>Suas matrículas nas turmas são apagados.</li>
             <li>
               Se você ainda não fez nenhuma prova, sua conta é apagada por
               completo.
@@ -111,6 +110,9 @@ export default function ConfigPage() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [savingPassword, setSavingPassword] = useState(false);
 
@@ -273,13 +275,23 @@ export default function ConfigPage() {
               >
                 Senha atual
               </label>
-              <input
-                id="current-password"
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                className="rounded-md border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground"
-              />
+              <div className="relative">
+                <input
+                  id="current-password"
+                  type={showPassword ? "text" : "password"}
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="w-full rounded-md border border-border bg-surface px-3.5 py-3 pr-10 text-sm text-foreground"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
+                  aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
 
             <div className="mb-4 flex flex-col gap-1.5">
@@ -289,13 +301,25 @@ export default function ConfigPage() {
               >
                 Nova senha
               </label>
-              <input
-                id="new-password"
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                className="rounded-md border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground"
-              />
+              <div className="relative">
+                <input
+                  id="new-password"
+                  type={showNewPassword ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full rounded-md border border-border bg-surface px-3.5 py-3 pr-10 text-sm text-foreground"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
+                  aria-label={
+                    showNewPassword ? "Ocultar senha" : "Mostrar senha"
+                  }
+                >
+                  {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
               <PasswordChecks password={newPassword} />
             </div>
 
@@ -306,13 +330,29 @@ export default function ConfigPage() {
               >
                 Confirmar nova senha
               </label>
-              <input
-                id="confirm-password"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="rounded-md border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground"
-              />
+              <div className="relative">
+                <input
+                  id="confirm-password"
+                  type={showConfirmNewPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full rounded-md border border-border bg-surface px-3.5 py-3 pr-10 text-sm text-foreground"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmNewPassword((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
+                  aria-label={
+                    showConfirmNewPassword ? "Ocultar senha" : "Mostrar senha"
+                  }
+                >
+                  {showConfirmNewPassword ? (
+                    <EyeOff size={18} />
+                  ) : (
+                    <Eye size={18} />
+                  )}
+                </button>
+              </div>
             </div>
 
             {passwordError && (

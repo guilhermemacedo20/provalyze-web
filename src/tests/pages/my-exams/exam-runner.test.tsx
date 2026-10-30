@@ -52,6 +52,10 @@ describe("ExamRunner", () => {
     expect(onAnswer).toHaveBeenCalled();
 
     await user.click(screen.getByRole("button", { name: /Finalizar prova/i }));
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(screen.getByText(/1 questão não respondida/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Encerrar prova" }));
     expect(onSubmit).toHaveBeenCalled();
   });
 });

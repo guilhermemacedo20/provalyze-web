@@ -21,6 +21,7 @@ function normalize(text: string) {
 export default function QuestionsPage() {
   const [themes, setThemes] = useState<Theme[]>([]);
   const [themeToDelete, setThemeToDelete] = useState<Theme | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
   const [name, setName] = useState("");
@@ -52,9 +53,13 @@ export default function QuestionsPage() {
     if (!themeToDelete) {
       return;
     }
-    await themesService.deleteTheme(themeToDelete.id);
-    setThemeToDelete(null);
-    fetchThemes(true);
+    try {
+      await themesService.deleteTheme(themeToDelete.id);
+      setThemeToDelete(null);
+      fetchThemes(true);
+    } catch (err) {
+      setDeleteError(extractErrorMessage(err));
+    }
   };
 
   const closeCreate = () => {
@@ -255,6 +260,7 @@ export default function QuestionsPage() {
         setIsOpen={(open) => {
           if (!open) {
             setThemeToDelete(null);
+            setDeleteError(null);
           }
         }}
         title="Confirmar exclusão"
@@ -264,7 +270,11 @@ export default function QuestionsPage() {
             : ""
         }
         onConfirm={confirmDelete}
-      />
+      >
+        {deleteError && (
+          <p className="mb-4 text-[13px] text-danger">{deleteError}</p>
+        )}
+      </Modal>
 
       <Modal
         isOpen={createOpen}
