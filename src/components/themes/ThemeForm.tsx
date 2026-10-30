@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { themesService } from "@/services/themes.service";
 import { Modal } from "../layout/Modal";
+import { extractErrorMessage } from "@/lib/extract-error-message";
 
 export function ThemeForm({ themeId }: { themeId?: string }) {
   const router = useRouter();
@@ -76,7 +77,8 @@ export function ThemeForm({ themeId }: { themeId?: string }) {
       router.push("/questions");
     } catch (err) {
       console.error("Error deleting theme:", err);
-      setError("Não foi possível excluir o tema.");
+      setThemeToDelete(null);
+      setError(extractErrorMessage(err));
     }
   };
 

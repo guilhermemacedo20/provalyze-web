@@ -6,6 +6,7 @@ import { Course, coursesService } from "@/services/courses.service";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Pagination } from "@/components/ui/Pagination";
 import { compareNames, matchesSearch, paginate } from "@/lib/list-utils";
+import { extractErrorMessage } from "@/lib/extract-error-message";
 
 const COURSES_PER_PAGE = 10;
 
@@ -59,7 +60,7 @@ export default function CoursesPage() {
       await fetchCourses();
     } catch (error) {
       console.error("Erro ao criar curso:", error);
-      setFormError("Não foi possível criar o curso. Tente novamente.");
+      setFormError(extractErrorMessage(error));
     } finally {
       setCreating(false);
     }
@@ -107,10 +108,15 @@ export default function CoursesPage() {
         onSubmit={handleCreate}
         className="mb-5 flex flex-col gap-3.5 rounded-lg border border-[#d3e0fb] bg-[#f4f7fe] px-[22px] py-5"
       >
-        <p className="text-sm font-semibold text-foreground">Criar novo curso</p>
+        <p className="text-sm font-semibold text-foreground">
+          Criar novo curso
+        </p>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="course-name" className="text-[13px] font-medium text-foreground">
+          <label
+            htmlFor="course-name"
+            className="text-[13px] font-medium text-foreground"
+          >
             Nome
           </label>
           <input
@@ -173,9 +179,16 @@ export default function CoursesPage() {
             )}
             {!loading &&
               visibleCourses.map((course) => (
-                <tr key={course.id} className="border-b border-border last:border-b-0">
-                  <td className="px-5 py-3.5 font-semibold text-foreground">{course.name}</td>
-                  <td className="px-5 py-3.5 text-muted">{course.createdAt}</td>
+                <tr
+                  key={course.id}
+                  className="border-b border-border last:border-b-0"
+                >
+                  <td className="px-5 py-3.5 font-semibold text-foreground">
+                    {course.name}
+                  </td>
+                  <td className="px-5 py-3.5 text-muted">
+                    {new Date(course.createdAt)?.toLocaleString("pt-BR") || ""}
+                  </td>
                   <td className="px-5 py-3.5 text-right">
                     <div className="flex items-center justify-end gap-4">
                       <Link

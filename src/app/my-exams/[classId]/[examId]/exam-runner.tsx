@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { QuestionImage } from "@/components/questions/QuestionImage";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import {
   ExamEventType,
   ExamQuestion,
@@ -58,6 +59,7 @@ export function ExamRunner({
   onSubmit: () => void;
 }) {
   const [index, setIndex] = useState(0);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   const question = questions[index];
   const questionRef = useRef(question);
@@ -67,6 +69,9 @@ export function ExamRunner({
   } | null>(null);
   const remaining = formatRemaining(expiresAt, now);
   const total = questions.length;
+  const unanswered = questions.filter(
+    (item) => !isAnswered(item, answers[item.id]),
+  ).length;
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
@@ -146,7 +151,7 @@ export function ExamRunner({
       </header>
 
       <div className="flex min-h-0 flex-1">
-        <main className="flex min-w-0 flex-1 flex-col px-8 py-8 lg:px-14">
+        <main className="flex min-w-0 flex-1 flex-col px-8 py-8 lg:px-14 overflow-auto">
           <p className="mb-3 text-xs font-semibold tracking-wide text-[#16A34A]">
             QUESTÃO {String(index + 1).padStart(2, "0")} DE{" "}
             {String(total).padStart(2, "0")} · {kind}
@@ -267,7 +272,7 @@ export function ExamRunner({
 
           <button
             type="button"
-            onClick={onSubmit}
+            onClick={() => (unanswered > 0 ? setConfirmOpen(true) : onSubmit())}
             disabled={submitting}
             className="mt-auto rounded-lg bg-[#DC2626] px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
           >
@@ -275,6 +280,18 @@ export function ExamRunner({
           </button>
         </aside>
       </div>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Encerrar a prova?"
+        message={`Você ainda tem ${unanswered} ${unanswered === 1 ? "questão não respondida" : "questões não respondidas"}. Depois de encerrar, não será possível alterar as respostas. Deseja realmente encerrar a prova?`}
+        confirmLabel="Encerrar prova"
+        onConfirm={() => {
+          setConfirmOpen(false);
+          onSubmit();
+        }}
+        onCancel={() => setConfirmOpen(false)}
+      />
     </div>
   );
 }
