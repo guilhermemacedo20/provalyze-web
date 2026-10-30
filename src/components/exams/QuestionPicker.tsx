@@ -1,12 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import { Check, X } from "lucide-react";
+import { Check, Search, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Question, questionsService } from "@/services/questions.service";
 import { Theme, themesService } from "@/services/themes.service";
 import { formatPoints, pluralize } from "@/lib/exam-format";
 import { extractErrorMessage } from "@/lib/extract-error-message";
+import { compareNames, matchesSearch, paginate } from "@/lib/list-utils";
+import { Pagination } from "@/components/ui/Pagination";
 import {
   distributeEqually,
   parsePoints,
@@ -22,6 +24,9 @@ const THEME_COLORS = [
   { box: "bg-[#D8F5DD]", link: "text-[#3CAE63]" },
   { box: "bg-[#efe8fe]", link: "text-[#8b5cf6]" },
 ];
+
+const THEMES_PER_PAGE = 6;
+const QUESTIONS_PER_PAGE = 10;
 
 type Props = {
   selected: SelectedQuestion[];
@@ -42,6 +47,8 @@ export function QuestionPicker({
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [themeSearch, setThemeSearch] = useState("");
+  const [themePage, setThemePage] = useState(1);
 
   useEffect(() => {
     Promise.all([themesService.listThemes(), questionsService.listQuestions()])
@@ -56,6 +63,22 @@ export function QuestionPicker({
       .catch((error) => setLoadError(extractErrorMessage(error)))
       .finally(() => setLoading(false));
   }, []);
+
+  const sortedThemes = useMemo(
+    () => [...themes].sort((a, b) => compareNames(a.name, b.name)),
+    [themes],
+  );
+
+  const filteredThemes = useMemo(
+    () => sortedThemes.filter((theme) => matchesSearch(theme.name, themeSearch)),
+    [sortedThemes, themeSearch],
+  );
+
+  const {
+    items: visibleThemes,
+    currentPage: currentThemePage,
+    totalPages: totalThemePages,
+  } = paginate(filteredThemes, themePage, THEMES_PER_PAGE);
 
   return (
     <div className="flex items-start gap-5">
@@ -72,7 +95,7 @@ export function QuestionPicker({
           />
         ) : (
           <>
-            <p className="mb-5 text-[13px] text-muted">
+            <p className="mb-4 text-[13px] text-muted">
               Escolha o tema para ver as questões desse assunto no banco de
               questões.
             </p>
@@ -81,20 +104,49 @@ export function QuestionPicker({
               <p className="mb-4 text-[13px] text-danger">{loadError}</p>
             )}
 
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-              {loading && (
-                <p className="text-[13px] text-muted">Carregando temas...</p>
-              )}
+            {loading && (
+              <p className="text-[13px] text-muted">Carregando temas...</p>
+            )}
 
-              {!loading && !loadError && themes.length === 0 && (
-                <p className="rounded-lg border border-border bg-surface px-5 py-6 text-[13px] text-muted md:col-span-2">
-                  Você ainda não tem temas. Crie uma pasta no Banco de Questões
-                  para montar a prova.
-                </p>
-              )}
+            {!loading && !loadError && themes.length === 0 && (
+              <p className="rounded-lg border border-border bg-surface px-5 py-6 text-[13px] text-muted">
+                Você ainda não tem temas. Crie uma pasta no Banco de Questões
+                para montar a prova.
+              </p>
+            )}
 
-              {themes.map((theme, index) => {
-                const color = THEME_COLORS[index % THEME_COLORS.length];
+            {!loading && themes.length > 0 && (
+              <div className="relative mb-4 max-w-md">
+                <Search
+                  aria-hidden="true"
+                  className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted"
+                />
+                <input
+                  type="text"
+                  aria-label="Pesquisar temas"
+                  placeholder="Pesquisar..."
+                  value={themeSearch}
+                  onChange={(event) => {
+                    setThemeSearch(event.target.value);
+                    setThemePage(1);
+                  }}
+                  className="w-full rounded-[14px] border border-border bg-surface py-2.5 pl-10 pr-3.5 text-[13px] text-foreground placeholder:text-muted"
+                />
+              </div>
+            )}
+
+            {!loading && themes.length > 0 && filteredThemes.length === 0 && (
+              <p className="rounded-lg border border-border bg-surface px-5 py-6 text-[13px] text-muted">
+                Nenhum tema encontrado para &quot;{themeSearch.trim()}&quot;.
+              </p>
+            )}
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {visibleThemes.map((theme) => {
+                const color =
+                  THEME_COLORS[
+                    sortedThemes.indexOf(theme) % THEME_COLORS.length
+                  ];
                 const selectedInTheme = selected.filter(
                   (q) => q.themeId === theme.id,
                 ).length;
@@ -104,38 +156,35 @@ export function QuestionPicker({
                     key={theme.id}
                     type="button"
                     onClick={() => onOpenTheme(theme)}
-                    className="min-w-0 cursor-pointer rounded-[22px] border border-border bg-surface p-5 text-left shadow-[0px_1px_3px_0px_rgba(13,20,38,0.06)] hover:border-primary/40"
+                    className="min-w-0 cursor-pointer rounded-[16px] border border-border bg-surface p-4 text-left shadow-[0px_1px_3px_0px_rgba(13,20,38,0.06)] hover:border-primary/40"
                   >
                     <div
-                      className={`mb-4 flex size-9 items-center justify-center rounded-[10px] ${color.box}`}
+                      className={`mb-3 flex size-8 items-center justify-center rounded-[8px] ${color.box}`}
                     >
                       <Image
                         src="/icons/folder.svg"
                         alt=""
-                        width={18}
-                        height={18}
+                        width={16}
+                        height={16}
                       />
                     </div>
-                    <div className="flex items-baseline justify-between gap-3">
-                      <h2 className="min-w-0 break-words text-[15px] font-semibold text-foreground">
-                        {theme.name}
-                      </h2>
-                      <p className="shrink-0 text-[12px] text-muted">
-                        {pluralize(
-                          counts[theme.id] ?? 0,
-                          "questão",
-                          "questões",
-                        )}
-                      </p>
-                    </div>
-                    <div className="mt-4 flex items-center justify-between">
+                    <h2
+                      title={theme.name}
+                      className="truncate text-[14px] font-semibold text-foreground"
+                    >
+                      {theme.name}
+                    </h2>
+                    <p className="mt-0.5 text-[12px] text-muted">
+                      {pluralize(counts[theme.id] ?? 0, "questão", "questões")}
+                    </p>
+                    <div className="mt-3 flex items-center justify-between gap-2">
                       <span
-                        className={`text-[13px] font-medium ${color.link}`}
+                        className={`text-[12px] font-medium ${color.link}`}
                       >
                         Selecionar tema →
                       </span>
                       {selectedInTheme > 0 && (
-                        <span className="text-[12px] font-medium text-success">
+                        <span className="text-[11px] font-medium text-success">
                           {pluralize(
                             selectedInTheme,
                             "selecionada",
@@ -147,6 +196,15 @@ export function QuestionPicker({
                   </button>
                 );
               })}
+            </div>
+
+            <div className="mt-4">
+              <Pagination
+                page={currentThemePage}
+                totalPages={totalThemePages}
+                onPageChange={setThemePage}
+                label="Paginação dos temas"
+              />
             </div>
           </>
         )}
@@ -335,6 +393,7 @@ function ThemeQuestions({
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
 
   const [checked, setChecked] = useState<Set<string>>(
     () =>
@@ -351,12 +410,16 @@ function ThemeQuestions({
       .finally(() => setLoading(false));
   }, [theme.id]);
 
-  const visible = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    return questions.filter(
-      (q) => !term || q.statement.toLowerCase().includes(term),
-    );
-  }, [questions, search]);
+  const visible = useMemo(
+    () => questions.filter((q) => matchesSearch(q.statement, search)),
+    [questions, search],
+  );
+
+  const {
+    items: pageQuestions,
+    currentPage,
+    totalPages,
+  } = paginate(visible, page, QUESTIONS_PER_PAGE);
 
   const toggle = (id: string) => {
     setChecked((prev) => {
@@ -400,7 +463,10 @@ function ThemeQuestions({
 
         <input
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
           placeholder="Pesquisar..."
           className="mb-5 w-full rounded-md border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted"
         />
@@ -417,7 +483,7 @@ function ThemeQuestions({
           </p>
         )}
 
-        {visible.map((q) => {
+        {pageQuestions.map((q) => {
           const id = q.id as string;
           const isChecked = checked.has(id);
 
@@ -452,7 +518,21 @@ function ThemeQuestions({
           );
         })}
 
-        <div className="mt-5 flex justify-end">
+        <div className="mt-3">
+          <Pagination
+            page={currentPage}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            label="Paginação das questões"
+          />
+        </div>
+
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <span className="text-[12px] text-muted">
+            {checked.size > 0
+              ? `${pluralize(checked.size, "marcada", "marcadas")} neste tema`
+              : ""}
+          </span>
           <button
             type="button"
             onClick={apply}
