@@ -36,13 +36,19 @@ export type DashboardFilter = {
   month?: string;
   year?: string;
   classId?: string;
+  subjectId?: string;
 };
 
 type AnswerOutcomes = { correct: number; wrong: number; pending: number };
 
 export type DashboardCharts = {
   hitRate?: number | null;
-  classes: { id: string; name: string; subjectName: string }[];
+  classes: {
+    id: string;
+    name: string;
+    subjectId: string;
+    subjectName: string;
+  }[];
   pendingSubmissions: number;
   answers: AnswerOutcomes;
   scoresByExam: { examId: string; title: string; average: number }[];
@@ -149,6 +155,7 @@ export const reportService = {
       if (filter.period === "year" && filter.year)
         params.set("year", filter.year);
       if (filter.classId) params.set("classId", filter.classId);
+      if (filter.subjectId) params.set("subjectId", filter.subjectId);
     }
     const query = params.toString();
     return apiRequest<DashboardStats>(

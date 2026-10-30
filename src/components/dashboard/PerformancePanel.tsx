@@ -124,6 +124,9 @@ export function PerformancePanel({
   const years = Array.from({ length: 5 }, (_, i) =>
     String(new Date().getFullYear() - i),
   );
+  const subjects = [
+    ...new Map((data?.classes ?? []).map((c) => [c.subjectId, c.subjectName])),
+  ];
   const hasData = !!data && data.questionsByExam.length > 0;
   const emptyText = "Nenhuma prova entregue nesse período";
   const empty = (text = emptyText) => (
@@ -252,22 +255,41 @@ export function PerformancePanel({
             ))}
           </div>
 
-          <select
-            aria-label="Turma"
-            value={filter.classId ?? ""}
-            disabled={loading}
-            onChange={(e) =>
-              setFilter({ ...filter, classId: e.target.value || undefined })
-            }
-            className={`${field} max-w-[260px]`}
-          >
-            <option value="">Todas as turmas</option>
-            {data?.classes.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name} · {c.subjectName}
-              </option>
-            ))}
-          </select>
+          {student ? (
+            <select
+              aria-label="Matéria"
+              value={filter.subjectId ?? ""}
+              disabled={loading}
+              onChange={(e) =>
+                setFilter({ ...filter, subjectId: e.target.value || undefined })
+              }
+              className={`${field} max-w-[260px]`}
+            >
+              <option value="">Todas as matérias</option>
+              {subjects.map(([id, name]) => (
+                <option key={id} value={id}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <select
+              aria-label="Turma"
+              value={filter.classId ?? ""}
+              disabled={loading}
+              onChange={(e) =>
+                setFilter({ ...filter, classId: e.target.value || undefined })
+              }
+              className={`${field} max-w-[260px]`}
+            >
+              <option value="">Todas as turmas</option>
+              {data?.classes.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name} · {c.subjectName}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
       </div>
 

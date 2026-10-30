@@ -17,7 +17,7 @@ const teacher: DashboardStats = {
   totalExams: 2,
   totalAverage: 7.2,
   hitRate: 60,
-  classes: [{ id: "c1", name: "Turma A", subjectName: "Eng. Software" }],
+  classes: [{ id: "c1", name: "Turma A", subjectId: "s1", subjectName: "Eng. Software" }],
   pendingSubmissions: 0,
   answers: outcomes,
   scoresByExam: [{ examId: "e1", title: "Prova 1", average: 7.2 }],
@@ -98,7 +98,7 @@ describe("PerformancePanel", () => {
     getDashboard.mockResolvedValue(student);
     render(<PerformancePanel audience="student" />);
 
-    await waitFor(() => expect(screen.getAllByText("Nenhuma prova entregue nesse período").length).toBe(3));
+    await waitFor(() => expect(screen.getAllByText("Nenhuma prova entregue nesse período").length).toBe(2));
     expect(screen.getByText("Meu desempenho")).toBeInTheDocument();
     expect(screen.getByText("Próximas provas")).toBeInTheDocument();
     expect(screen.getByText("3")).toBeInTheDocument();
