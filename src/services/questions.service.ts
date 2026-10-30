@@ -22,6 +22,7 @@ export type Question = QuestionPayload & {
   id?: string;
   theme?: Theme;
   questionOptions?: QuestionOption[];
+  inExam?: boolean;
 };
 
 export type UploadedQuestionImage = {
