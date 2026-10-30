@@ -26,7 +26,7 @@ import {
 import { formatAverage, formatCount } from "@/utils/formatFunctions";
 
 const PERIODS: { value: DashboardPeriod; label: string }[] = [
-  { value: "month", label: "Mês" },
+  { value: "semester", label: "Semestre" },
   { value: "year", label: "Ano" },
   { value: "all", label: "Total" },
 ];
@@ -50,9 +50,13 @@ const field =
 const grid = "#e2e8f0";
 const tick = { fontSize: 12, fill: "#64748b" };
 
-const currentMonth = () => {
+const currentSemester = () => {
   const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  return `${now.getFullYear()}-${now.getMonth() < 6 ? 1 : 2}`;
+};
+const semesterLabel = (semester: string) => {
+  const [year, half] = semester.split("-");
+  return `${half}º semestre de ${year}`;
 };
 const score = (value: number) => formatAverage(value, false);
 
@@ -92,8 +96,8 @@ export function PerformancePanel({
   const color = student ? "#16a34a" : "#2563eb";
 
   const [filter, setFilter] = useState<DashboardFilter>(() => ({
-    period: "month",
-    month: currentMonth(),
+    period: "semester",
+    semester: currentSemester(),
     year: String(new Date().getFullYear()),
   }));
   const [data, setData] = useState<DashboardStats | null>(null);
@@ -124,6 +128,11 @@ export function PerformancePanel({
   const years = Array.from({ length: 5 }, (_, i) =>
     String(new Date().getFullYear() - i),
   );
+  const semesters = Array.from({ length: 10 }, (_, i) => {
+    const [year, half] = currentSemester().split("-").map(Number);
+    const index = year * 2 + half - 1 - i;
+    return `${Math.floor(index / 2)}-${(index % 2) + 1}`;
+  });
   const subjects = [
     ...new Map((data?.classes ?? []).map((c) => [c.subjectId, c.subjectName])),
   ];
@@ -193,19 +202,22 @@ export function PerformancePanel({
 
         <div className="flex flex-wrap items-center gap-2">
           <div className="w-[176px] shrink-0">
-            {filter.period === "month" && (
-              <input
-                type="month"
-                aria-label="Mês"
-                value={filter.month}
-                max={currentMonth()}
+            {filter.period === "semester" && (
+              <select
+                aria-label="Semestre"
+                value={filter.semester}
                 disabled={loading}
                 onChange={(e) =>
-                  e.target.value &&
-                  setFilter({ ...filter, month: e.target.value })
+                  setFilter({ ...filter, semester: e.target.value })
                 }
                 className={`${field} w-full`}
-              />
+              >
+                {semesters.map((s) => (
+                  <option key={s} value={s}>
+                    {semesterLabel(s)}
+                  </option>
+                ))}
+              </select>
             )}
             {filter.period === "year" && (
               <select

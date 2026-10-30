@@ -62,7 +62,7 @@ describe("PerformancePanel", () => {
     render(<PerformancePanel audience="teacher" />);
 
     expect(await screen.findByText("7,2")).toBeInTheDocument();
-    expect(getDashboard).toHaveBeenCalledWith(expect.objectContaining({ period: "month" }));
+    expect(getDashboard).toHaveBeenCalledWith(expect.objectContaining({ period: "semester" }));
     expect(screen.getByText("60%")).toBeInTheDocument();
     expect(screen.getByText("Média das notas por prova")).toBeInTheDocument();
   });

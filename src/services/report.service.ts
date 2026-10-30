@@ -29,11 +29,11 @@ export type StudentStats = {
 export type DashboardStats = (AdminStats | TeacherStats | StudentStats) &
   DashboardCharts;
 
-export type DashboardPeriod = "month" | "year" | "all";
+export type DashboardPeriod = "semester" | "year" | "all";
 
 export type DashboardFilter = {
   period: DashboardPeriod;
-  month?: string;
+  semester?: string;
   year?: string;
   classId?: string;
   subjectId?: string;
@@ -150,8 +150,8 @@ export const reportService = {
     const params = new URLSearchParams();
     if (filter) {
       params.set("period", filter.period);
-      if (filter.period === "month" && filter.month)
-        params.set("month", filter.month);
+      if (filter.period === "semester" && filter.semester)
+        params.set("semester", filter.semester);
       if (filter.period === "year" && filter.year)
         params.set("year", filter.year);
       if (filter.classId) params.set("classId", filter.classId);
