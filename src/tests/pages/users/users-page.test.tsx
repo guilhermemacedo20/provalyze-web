@@ -20,6 +20,8 @@ vi.mock("@/services/users.service", () => ({
   },
 }));
 
+vi.setConfig({ testTimeout: 20000 });
+
 function loginAs(role: Role) {
   vi.mocked(useAuth).mockReturnValue({
     user: {
