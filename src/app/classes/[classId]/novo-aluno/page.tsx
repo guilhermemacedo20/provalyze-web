@@ -5,6 +5,10 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { classesService, ClassDetail } from "@/services/classes.service";
 import { User, usersService } from "@/services/users.service";
+import { Pagination } from "@/components/ui/Pagination";
+import { compareNames, matchesSearch, paginate } from "@/lib/list-utils";
+
+const STUDENTS_PER_PAGE = 20;
 
 export default function AddStudentPage() {
   const { classId } = useParams<{ classId: string }>();
@@ -14,6 +18,7 @@ export default function AddStudentPage() {
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
   const [existingIds, setExistingIds] = useState<string[]>([]); // já matriculados na turma
   const [selectedIds, setSelectedIds] = useState<string[]>([]); // marcados nesta sessão
   const [submitting, setSubmitting] = useState(false);
@@ -33,29 +38,27 @@ export default function AddStudentPage() {
       .finally(() => setLoading(false));
   }, [classId]);
 
-  // Alunos que já foram marcados nesta sessão sempre visíveis em ordem alfabética.
   const selectedStudents = useMemo(() => {
     return selectedIds
       .map((id) => allUsers.find((u) => u.id === id))
       .filter((u): u is User => Boolean(u))
-      .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+      .sort((a, b) => compareNames(a.name, b.name));
   }, [allUsers, selectedIds]);
 
-  // Alunos ainda disponíveis pra escolher respeitam a busca.
   const availableStudents = useMemo(() => {
-    return allUsers.filter((user) => {
-      if (user.role !== "STUDENT") return false;
-      if (existingIds.includes(user.id)) return false;
-      if (selectedIds.includes(user.id)) return false; // já aparece na lista de selecionados
-      if (search.trim() === "") return true;
-      return (
-        user.name.toLowerCase().includes(search.toLowerCase()) ||
-        user.email.toLowerCase().includes(search.toLowerCase())
-      );
-    });
+    return allUsers
+      .filter((user) => {
+        if (user.role !== "STUDENT") return false;
+        if (existingIds.includes(user.id)) return false;
+        if (selectedIds.includes(user.id)) return false; 
+        return (
+          matchesSearch(user.name, search) || matchesSearch(user.email, search)
+        );
+      })
+      .sort((a, b) => compareNames(a.name, b.name));
   }, [allUsers, search, existingIds, selectedIds]);
 
-  // Enquanto tem busca digitada, mostra só o resultado dela. 
+  // Enquanto tem busca digitada, mostra só o resultado dela.
   const orderedStudents = useMemo(() => {
     if (search.trim() !== "") {
       return availableStudents;
@@ -63,11 +66,20 @@ export default function AddStudentPage() {
     return [...selectedStudents, ...availableStudents];
   }, [search, selectedStudents, availableStudents]);
 
+  const {
+    items: visibleStudents,
+    currentPage,
+    totalPages,
+  } = paginate(orderedStudents, page, STUDENTS_PER_PAGE);
+
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
-    setSearch("");
+    if (search !== "") {
+      setSearch("");
+      setPage(1);
+    }
   };
 
   const handleConcluir = async () => {
@@ -139,7 +151,10 @@ export default function AddStudentPage() {
             id="student-search"
             type="text"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
             placeholder="Digite um nome ou e-mail"
             className="rounded-md border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted"
           />
@@ -173,7 +188,7 @@ export default function AddStudentPage() {
               </tr>
             )}
             {!loading &&
-              orderedStudents.map((student) => {
+              visibleStudents.map((student) => {
                 const isSelected = selectedIds.includes(student.id);
                 return (
                   <tr
@@ -185,6 +200,7 @@ export default function AddStudentPage() {
                     <td className="px-5 py-3.5">
                       <input
                         type="checkbox"
+                        aria-label={`Selecionar ${student.name}`}
                         checked={isSelected}
                         onChange={() => toggleSelect(student.id)}
                         className="size-4 accent-primary"
@@ -198,6 +214,17 @@ export default function AddStudentPage() {
           </tbody>
         </table>
       </div>
+
+      {!loading && (
+        <div className="mt-4">
+          <Pagination
+            page={currentPage}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            label="Paginação dos alunos"
+          />
+        </div>
+      )}
     </div>
   );
 }
