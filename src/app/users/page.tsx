@@ -118,7 +118,7 @@ export default function UsersPage() {
       return `Tem certeza que deseja excluir o usuário "${user.name}"? Os dados pessoais dele serão anonimizados.`;
     }
 
-    return `Tem certeza que deseja excluir o usuário "${user.name}"? Os dados pessoais dele serão anonimizados, mas o histórico de turmas é preservado.`;
+    return `Tem certeza que deseja excluir o usuário "${user.name}"? Os dados pessoais dele serão anonimizados, mas o histórico de provas é preservado.`;
   };
 
   const countFor = (key: Role | "ALL") =>
