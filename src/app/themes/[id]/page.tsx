@@ -8,6 +8,7 @@ import { Theme, themesService } from "@/services/themes.service";
 import { Modal } from "@/components/layout/Modal";
 import { Pagination } from "@/components/ui/Pagination";
 import { matchesSearch, paginate } from "@/lib/list-utils";
+import { extractErrorMessage } from "@/lib/extract-error-message";
 
 const QUESTIONS_PER_PAGE = 10;
 
@@ -26,6 +27,7 @@ export default function ThemeQuestionsPage() {
     null,
   );
   const [loading, setLoading] = useState(true);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -46,9 +48,13 @@ export default function ThemeQuestionsPage() {
     if (!questionToDelete || !questionToDelete.id) {
       return;
     }
-    await questionsService.deleteQuestion(questionToDelete.id);
-    setQuestionToDelete(null);
-    fetchData();
+    try {
+      await questionsService.deleteQuestion(questionToDelete.id);
+      setQuestionToDelete(null);
+      fetchData();
+    } catch (err) {
+      setDeleteError(extractErrorMessage(err));
+    }
   };
 
   const filteredQuestions = useMemo(() => {
@@ -214,12 +220,17 @@ export default function ThemeQuestionsPage() {
         setIsOpen={(open) => {
           if (!open) {
             setQuestionToDelete(null);
+            setDeleteError(null);
           }
         }}
         title="Confirmar exclusão"
         description="Tem certeza que deseja excluir esta questão? Essa ação não pode ser desfeita."
         onConfirm={confirmDelete}
-      />
+      >
+        {deleteError && (
+          <p className="mb-4 text-[13px] text-danger">{deleteError}</p>
+        )}
+      </Modal>
     </main>
   );
 }

@@ -82,8 +82,10 @@ function ChartCard({
 
 export function PerformancePanel({
   audience,
+  aside,
 }: {
   audience: "teacher" | "admin" | "student";
+  aside?: React.ReactNode;
 }) {
   const student = audience === "student";
   const tone = student ? "green" : "blue";
@@ -290,7 +292,17 @@ export function PerformancePanel({
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+      <div
+        className={`grid grid-cols-1 gap-4 ${aside ? "xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]" : "xl:grid-cols-2"}`}
+      >
+        {aside && (
+          <div className="relative xl:row-span-2">
+            <div className="flex flex-col gap-4 xl:absolute xl:inset-0">
+              {aside}
+            </div>
+          </div>
+        )}
+
         <ChartCard
           title={
             student ? "Minhas notas por prova" : "Média das notas por prova"
@@ -389,38 +401,6 @@ export function PerformancePanel({
                 <Tooltip />
                 <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
               </PieChart>
-            </ResponsiveContainer>
-          ) : (
-            empty()
-          )}
-        </ChartCard>
-
-        <ChartCard
-          title={
-            student
-              ? "Provas que entreguei"
-              : "Provas entregues ao longo do tempo"
-          }
-          wide
-        >
-          {hasData ? (
-            <ResponsiveContainer width="100%" height={220}>
-              <AreaChart
-                data={data.timeline}
-                margin={{ top: 8, right: 8, left: -20, bottom: 0 }}
-              >
-                <CartesianGrid vertical={false} stroke={grid} />
-                <XAxis dataKey="label" tick={tick} minTickGap={16} />
-                <YAxis allowDecimals={false} tick={tick} />
-                <Tooltip formatter={(v) => [v, "Entregas"]} />
-                <Area
-                  type="monotone"
-                  dataKey="submissions"
-                  stroke={color}
-                  fill={color}
-                  fillOpacity={0.12}
-                />
-              </AreaChart>
             </ResponsiveContainer>
           ) : (
             empty()

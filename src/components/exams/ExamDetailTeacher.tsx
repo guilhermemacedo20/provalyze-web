@@ -17,7 +17,7 @@ import { extractErrorMessage } from "@/lib/extract-error-message";
 import { ExamStatusBadge, StudentStatusBadge } from "./ExamStatusBadge";
 import { round2, typeLabel } from "./exam-wizard-types";
 
-type Tab = "overview" | "questions";
+type Tab = "overview" | "questions" | "performance";
 
 const cardShadow = "shadow-[0px_1px_3px_0px_rgba(13,20,38,0.06)]";
 
@@ -104,6 +104,22 @@ export function ExamDetailTeacher({ examId }: { examId: string }) {
   }
 
   const classNames = exam.classes.map((c) => c.name).join(", ") || "Sem turma";
+
+  const scores = overview.students
+    .map((student) => student.score)
+    .filter((score): score is number => score !== null);
+  const themeRates = new Map<string, number[]>();
+  exam.questions.forEach((q) => {
+    if (q.correctRate === null) return;
+    themeRates.set(q.themeName, [
+      ...(themeRates.get(q.themeName) ?? []),
+      q.correctRate,
+    ]);
+  });
+  const themes = [...themeRates].map(([name, rates]) => ({
+    name,
+    percent: Math.round(rates.reduce((sum, r) => sum + r, 0) / rates.length),
+  }));
   const isDraft = exam.status === "DRAFT";
 
   const pointsSum = round2(exam.totalPoints);
@@ -185,6 +201,7 @@ export function ExamDetailTeacher({ examId }: { examId: string }) {
           [
             ["overview", "Visão geral"],
             ["questions", "Questões"],
+            ["performance", "Desempenho"],
           ] as const
         ).map(([key, label]) => (
           <button
@@ -202,15 +219,6 @@ export function ExamDetailTeacher({ examId }: { examId: string }) {
             {label}
           </button>
         ))}
-        <button
-          type="button"
-          role="tab"
-          disabled
-          title="Disponível quando houver provas corrigidas"
-          className="cursor-not-allowed rounded-md px-4 py-1.5 text-[13px] font-medium text-disabled"
-        >
-          Desempenho
-        </button>
       </div>
 
       {tab === "overview" && (
@@ -361,6 +369,65 @@ export function ExamDetailTeacher({ examId }: { examId: string }) {
             </tbody>
           </table>
         </div>
+      )}
+
+      {tab === "performance" && (
+        <>
+          <div className="mb-6 flex flex-wrap gap-4">
+            <StatCard
+              label="Média"
+              value={formatScore(overview.stats.average)}
+            />
+            <StatCard
+              label="Maior nota"
+              value={formatScore(scores.length ? Math.max(...scores) : null)}
+            />
+            <StatCard
+              label="Menor nota"
+              value={formatScore(scores.length ? Math.min(...scores) : null)}
+            />
+          </div>
+
+          <section
+            className={`rounded-[22px] border border-border bg-surface px-6 py-5 ${cardShadow}`}
+          >
+            <h2 className="mb-4 text-[15px] font-semibold text-foreground">
+              Desempenho por tema
+            </h2>
+            {themes.length === 0 ? (
+              <p className="text-[13px] text-muted">
+                Ainda não há respostas para calcular o desempenho.
+              </p>
+            ) : (
+              <ul className="flex flex-col gap-4">
+                {themes.map((theme) => {
+                  const tone =
+                    theme.percent >= 70
+                      ? { bar: "bg-success", text: "text-success" }
+                      : theme.percent >= 50
+                        ? { bar: "bg-warning", text: "text-warning" }
+                        : { bar: "bg-danger", text: "text-danger" };
+                  return (
+                    <li key={theme.name}>
+                      <div className="mb-1.5 flex items-center justify-between text-[13px]">
+                        <span className="text-foreground">{theme.name}</span>
+                        <span className={`font-semibold ${tone.text}`}>
+                          {theme.percent}%
+                        </span>
+                      </div>
+                      <div className="h-2 rounded-full bg-border">
+                        <div
+                          className={`h-2 rounded-full ${tone.bar}`}
+                          style={{ width: `${theme.percent}%` }}
+                        />
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
+        </>
       )}
 
       <Link
