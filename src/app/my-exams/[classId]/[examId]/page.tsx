@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { examDraftKey } from "@/lib/auth-role-storage";
@@ -14,6 +13,7 @@ import {
 } from "@/services/exams.service";
 import { ExamResult } from "./exam-result";
 import { ExamRunner } from "./exam-runner";
+import { ExamStart } from "./exam-start";
 
 type Draft = Record<string, { optionId?: string; content?: string }>;
 
@@ -203,51 +203,21 @@ export default function TakeExamPage() {
     );
   }
 
-  const continuing = summary?.sessionStatus === "STARTED";
-
   return (
-    <div className="px-10 py-9">
-      <Link href={`/my-classes/${classId}`} className="text-sm underline">
-        Voltar para a turma
-      </Link>
-      <h1 className="mt-4 mb-2 text-2xl font-bold">
-        {summary?.title ?? exam?.title ?? "Prova"}
-      </h1>
-      {summary && (
-        <p className="mb-2 text-sm text-muted">
-          {summary.courseName} · {summary.subjectName}
-          {summary.durationMinutes ? ` · ${summary.durationMinutes} min` : ""}
-        </p>
-      )}
-      <p className="mb-6 max-w-xl text-sm">
-        {summary?.available
-          ? "O tempo começa a contar ao iniciar. As questões ficam salvas neste navegador."
-          : (exam?.message ??
-            summary?.message ??
-            error ??
-            "Prova indisponível.")}
-      </p>
-      {error && <p className="mb-4 text-sm text-danger">{error}</p>}
-      {summary?.available && (
-        <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={beginExam}
-            disabled={starting || continuing}
-            className="cursor-pointer rounded-full bg-[#16A34A] px-4 py-2 text-sm text-white disabled:opacity-60"
-          >
-            {starting && !continuing ? "Carregando..." : "Iniciar prova"}
-          </button>
-          <button
-            type="button"
-            onClick={beginExam}
-            disabled={starting || !continuing}
-            className="cursor-pointer rounded-full bg-[#16A34A] px-4 py-2 text-sm text-white disabled:opacity-60"
-          >
-            {starting && continuing ? "Carregando..." : "Continuar"}
-          </button>
-        </div>
-      )}
-    </div>
+    <ExamStart
+      title={summary?.title ?? exam?.title ?? "Prova"}
+      courseName={summary?.courseName}
+      subjectName={summary?.subjectName}
+      durationMinutes={summary?.durationMinutes}
+      available={Boolean(summary?.available)}
+      continuing={summary?.sessionStatus === "STARTED"}
+      starting={starting}
+      message={
+        exam?.message ?? summary?.message ?? error ?? "Prova indisponível."
+      }
+      error={error}
+      backHref={`/my-classes/${classId}`}
+      onStart={beginExam}
+    />
   );
 }
