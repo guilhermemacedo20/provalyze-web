@@ -4,8 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import { User, usersService } from "@/services/users.service";
 import { Badge } from "@/components/ui/Badge";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { Pagination } from "@/components/ui/Pagination";
 import { Role } from "@/lib/role";
+import { matchesSearch, paginate } from "@/lib/list-utils";
 import { useAuth } from "@/components/auth/AuthProvider";
+
+const USERS_PER_PAGE = 20;
 
 // lista todas as abas de filtro dos usuários.
 const TABS: { key: Role | "ALL"; label: string }[] = [
@@ -36,6 +40,7 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Role | "ALL">("ALL");
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
 
   const [modalMode, setModalMode] = useState<"create" | "edit" | null>(null);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
@@ -82,13 +87,18 @@ export default function UsersPage() {
   const filteredUsers = useMemo(() => {
     return scopedUsers.filter((user) => {
       const matchesTab = activeTab === "ALL" || user.role === activeTab;
-      const matchesSearch =
-        search.trim() === "" ||
-        user.name.toLowerCase().includes(search.toLowerCase()) ||
-        user.email.toLowerCase().includes(search.toLowerCase());
-      return matchesTab && matchesSearch;
+      return (
+        matchesTab &&
+        (matchesSearch(user.name, search) || matchesSearch(user.email, search))
+      );
     });
   }, [scopedUsers, activeTab, search]);
+
+  const {
+    items: pageUsers,
+    currentPage,
+    totalPages,
+  } = paginate(filteredUsers, page, USERS_PER_PAGE);
 
   const extractErrorMessage = (error: unknown): string => {
     if (error instanceof Error) {
@@ -205,7 +215,10 @@ export default function UsersPage() {
           <button
             key={tab.key}
             type="button"
-            onClick={() => setActiveTab(tab.key)}
+            onClick={() => {
+              setActiveTab(tab.key);
+              setPage(1);
+            }}
             className={`rounded-sm px-4 py-2 text-[13px] font-medium transition-colors ${
               activeTab === tab.key
                 ? "bg-primary text-white"
@@ -221,7 +234,10 @@ export default function UsersPage() {
         type="text"
         placeholder="Pesquisar..."
         value={search}
-        onChange={(e) => setSearch(e.target.value)}
+        onChange={(e) => {
+          setSearch(e.target.value);
+          setPage(1);
+        }}
         className="mb-5 w-full max-w-[728px] rounded-md border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted"
       />
 
@@ -253,7 +269,7 @@ export default function UsersPage() {
               </tr>
             )}
             {!loading &&
-              filteredUsers.map((user) => (
+              pageUsers.map((user) => (
                 <tr
                   key={user.id}
                   className="border-b border-border last:border-b-0"
@@ -297,6 +313,17 @@ export default function UsersPage() {
           </tbody>
         </table>
       </div>
+
+      {!loading && (
+        <div className="mt-4">
+          <Pagination
+            page={currentPage}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            label="Paginação dos usuários"
+          />
+        </div>
+      )}
 
       {modalMode !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">

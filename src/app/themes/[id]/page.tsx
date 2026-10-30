@@ -6,6 +6,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Question, questionsService } from "@/services/questions.service";
 import { Theme, themesService } from "@/services/themes.service";
 import { Modal } from "@/components/layout/Modal";
+import { Pagination } from "@/components/ui/Pagination";
+import { matchesSearch, paginate } from "@/lib/list-utils";
+
+const QUESTIONS_PER_PAGE = 10;
 
 const typeLabel = (type: Question["type"]) => {
   return type === "OPEN_ENDED" ? "Dissertativa" : "Objetiva";
@@ -17,6 +21,7 @@ export default function ThemeQuestionsPage() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<"" | Question["type"]>("");
+  const [page, setPage] = useState(1);
   const [questionToDelete, setQuestionToDelete] = useState<Question | null>(
     null,
   );
@@ -47,14 +52,17 @@ export default function ThemeQuestionsPage() {
   };
 
   const filteredQuestions = useMemo(() => {
-    const term = search.trim().toLowerCase();
     return questions.filter((question) => {
       const matchesType = !typeFilter || question.type === typeFilter;
-      const matchesSearch =
-        !term || question.statement.toLowerCase().includes(term);
-      return matchesType && matchesSearch;
+      return matchesType && matchesSearch(question.statement, search);
     });
   }, [questions, search, typeFilter]);
+
+  const {
+    items: visibleQuestions,
+    currentPage,
+    totalPages,
+  } = paginate(filteredQuestions, page, QUESTIONS_PER_PAGE);
 
   useEffect(() => {
     fetchData();
@@ -104,11 +112,13 @@ export default function ThemeQuestionsPage() {
                 Tipo de questão:
               </label>
               <select
+                id="questionType"
                 value={typeFilter}
                 className="my-4 h-[40px] rounded-[14px] border border-border bg-background px-4 py-2.5 text-[13px] text-center "
-                onChange={(event) =>
-                  setTypeFilter(event.target.value as "" | Question["type"])
-                }
+                onChange={(event) => {
+                  setTypeFilter(event.target.value as "" | Question["type"]);
+                  setPage(1);
+                }}
               >
                 <option value="">Todos</option>
                 <option value="MULTIPLE_CHOICE">Objetiva</option>
@@ -119,7 +129,10 @@ export default function ThemeQuestionsPage() {
           <div className="flex items-center gap-3 mb-4">
             <input
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(event) => {
+                setSearch(event.target.value);
+                setPage(1);
+              }}
               className="mt-3 w-full rounded-[14px] border border-border px-4 py-2.5 text-foreground placeholder:text-muted"
               placeholder="Pesquisar..."
             />
@@ -154,7 +167,7 @@ export default function ThemeQuestionsPage() {
             Nenhuma questão neste tema.
           </p>
         ) : (
-          filteredQuestions.map((question) => (
+          visibleQuestions.map((question) => (
             <div
               key={question.id}
               className="flex min-w-0 items-center gap-3 border-b border-border px-5 py-4 text-[13px] last:border-b-0"
@@ -182,6 +195,14 @@ export default function ThemeQuestionsPage() {
           ))
         )}
       </div>
+
+      <Pagination
+        page={currentPage}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        label="Paginação das questões"
+      />
+
       <Link
         href={"/questions"}
         className="rounded-[14px] bg-primary px-4 py-2.5 text-[13px] text-white hover:bg-primary-hover width-[120px] text-center self-end max-w-[120px]"
