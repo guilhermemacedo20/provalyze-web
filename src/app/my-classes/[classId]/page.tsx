@@ -16,7 +16,7 @@ function formatSchedule(exam: StudentExam) {
     date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
   const sameDay = start.toDateString() === end.toDateString();
   const when = sameDay
-    ? `${start.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })} ${time(start)} – ${time(end)}`
+    ? `${start.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })} ${time(start)} - ${time(end)}`
     : start.toLocaleString("pt-BR", {
         day: "2-digit",
         month: "2-digit",
@@ -27,22 +27,14 @@ function formatSchedule(exam: StudentExam) {
   return exam.durationMinutes ? `${when} · ${exam.durationMinutes} min` : when;
 }
 
-function ExamCard({
-  exam,
-  action,
-}: {
-  exam: StudentExam;
-  action: ReactNode;
-}) {
+function ExamCard({ exam, action }: { exam: StudentExam; action: ReactNode }) {
   return (
     <article className="rounded-xl border border-[#E2E8F0] bg-white p-5">
       <h3 className="text-base font-semibold text-foreground">{exam.title}</h3>
       <p className="mt-1 text-sm text-muted">
         {exam.courseName} · {exam.subjectName}
       </p>
-      <p className="mt-3 text-sm text-muted">
-        {formatSchedule(exam)}
-      </p>
+      <p className="mt-3 text-sm text-muted">{formatSchedule(exam)}</p>
       <div className="mt-4">{action}</div>
     </article>
   );
@@ -149,6 +141,13 @@ export default function ClassExamsPage() {
           )}
         </div>
       </section>
+
+      <Link
+        href="/my-classes"
+        className="mt-10 inline-block rounded-[14px] bg-success px-4 py-2.5 text-[13px] font-semibold text-white hover:opacity-90"
+      >
+        ← Voltar
+      </Link>
     </div>
   );
 }

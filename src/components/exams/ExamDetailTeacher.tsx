@@ -290,7 +290,7 @@ export function ExamDetailTeacher({ examId }: { examId: string }) {
                       {student.status === "FINISHED" && (
                         <Link
                           href={`/exams/${examId}/correction/${student.id}`}
-                          className="font-medium text-primary hover:underline"
+                          className="font-medium text-success hover:underline"
                         >
                           Corrigir
                         </Link>

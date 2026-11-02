@@ -155,9 +155,7 @@ function StudentDashboard({ name }: { name: string }) {
     classesService
       .listStudentClasses()
       .then(async (classes) => {
-        setSubtitle(
-          classes.map((schoolClass) => `${schoolClass.subjectName}`).join(", "),
-        );
+        setSubtitle(classes.length ? classes[0].courseName : "");
         const groups = await Promise.all(
           classes.map((schoolClass) =>
             examsService.listClassExams(schoolClass.id),

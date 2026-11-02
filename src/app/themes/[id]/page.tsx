@@ -94,27 +94,27 @@ export default function ThemeQuestionsPage() {
       <p className="break-words text-[12px] text-muted">
         Banco de Questões / {theme.name}
       </p>
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-3">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-center gap-6">
             <div className="flex items-center gap-3">
-              <label htmlFor="themeName" className="mr-3">
+              <label htmlFor="themeName">
                 Tema:
               </label>
               <input
                 disabled
                 value={theme.name}
-                className="text-[13px] font-medium text-foreground whitespace-nowrap overflow-hidden text-ellipsis border border-border rounded-[14px] px-4 py-2.5 mr-3 bg-background"
+                className="text-[13px] font-medium text-foreground whitespace-nowrap overflow-hidden text-ellipsis border border-border rounded-[14px] px-4 py-2.5 bg-background"
               />
             </div>
-            <div className="flex items-center gap-3 my-4">
-              <label htmlFor="questionType" className="mr-3">
+            <div className="flex items-center gap-3">
+              <label htmlFor="questionType">
                 Tipo de questão:
               </label>
               <select
                 id="questionType"
                 value={typeFilter}
-                className="my-4 h-[40px] rounded-[14px] border border-border bg-background px-4 py-2.5 text-[13px] text-center "
+                className="h-[40px] rounded-[14px] border border-border bg-background px-4 py-2.5 text-[13px] text-center"
                 onChange={(event) => {
                   setTypeFilter(event.target.value as "" | Question["type"]);
                   setPage(1);
@@ -126,19 +126,19 @@ export default function ThemeQuestionsPage() {
               </select>
             </div>
           </div>
-          <div className="flex items-center gap-3 mb-4">
+          <div className="flex items-center gap-3">
             <input
               value={search}
               onChange={(event) => {
                 setSearch(event.target.value);
                 setPage(1);
               }}
-              className="mt-3 w-full rounded-[14px] border border-border px-4 py-2.5 text-foreground placeholder:text-muted"
+              className="w-full rounded-[14px] border border-border px-4 py-2.5 text-foreground placeholder:text-muted"
               placeholder="Pesquisar..."
             />
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-3">
+        <div className="flex h-[40px] shrink-0 items-center gap-3">
           <Link
             href={`/themes/${theme.id}/edit`}
             className="text-[13px] font-medium text-primary"
@@ -172,7 +172,10 @@ export default function ThemeQuestionsPage() {
               key={question.id}
               className="flex min-w-0 items-center gap-3 border-b border-border px-5 py-4 text-[13px] last:border-b-0"
             >
-              <p className="min-w-0 flex-1 break-words font-medium text-foreground">
+              <p
+                title={question.statement}
+                className="line-clamp-2 min-w-0 flex-1 break-words font-medium text-foreground"
+              >
                 {question.statement}
               </p>
               <p className="w-[120px] shrink-0 text-muted">
@@ -205,7 +208,7 @@ export default function ThemeQuestionsPage() {
 
       <Link
         href={"/questions"}
-        className="rounded-[14px] bg-primary px-4 py-2.5 text-[13px] text-white hover:bg-primary-hover width-[120px] text-center self-end max-w-[120px]"
+        className="self-start rounded-[14px] bg-primary px-4 py-2.5 text-[13px] font-semibold text-white hover:bg-primary-hover"
       >
         <span className="mr-2 font-bold">←</span> Voltar
       </Link>

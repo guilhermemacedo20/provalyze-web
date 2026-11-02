@@ -117,7 +117,10 @@ export default function GapsPage() {
         {loading && !gaps ? (
           <p className="text-sm text-muted">Carregando...</p>
         ) : !loading && gaps?.length === 0 ? (
-          <p className="text-sm text-muted">Nenhum gap encontrado.</p>
+          <p className="text-sm text-muted">
+            Não foi possível analisar os resultados obtidos utilizando a IA
+            nesse momento.
+          </p>
         ) : (
           <ul className="space-y-4">
             {gaps?.map((gap) => {
