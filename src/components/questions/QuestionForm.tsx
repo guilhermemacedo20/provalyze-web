@@ -57,6 +57,7 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
   const [error, setError] = useState<string | null>(null);
   const [questionToDelete, setQuestionToDelete] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [inExam, setInExam] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -80,6 +81,7 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
         setImage(question.imageUrl || "");
         setThemeId(question.themeId);
         setType(question.type);
+        setInExam(!!question.inExam);
         if (question.type === "MULTIPLE_CHOICE") {
           setOptions(
             withLabels(
@@ -139,7 +141,7 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
   ) => {
     const file = event.target.files?.[0];
     event.target.value = "";
-    if (!file) {
+    if (!file || inExam) {
       return;
     }
 
@@ -156,7 +158,7 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
     }
 
     setUploadingImage(true);
-    
+
     try {
       const dataUrl = await fileToDataUrl(file);
       const uploaded = await questionsService.uploadImage(dataUrl);
@@ -180,6 +182,9 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
   ) => {
     if (event) {
       event.preventDefault();
+    }
+    if (inExam) {
+      return;
     }
     setError(null);
 
@@ -246,7 +251,7 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
       console.error("Error saving question:", err);
       setError(
         questionId
-          ? "Não foi possível atualizar a questão."
+          ? extractErrorMessage(err)
           : "Não foi possível criar a questão.",
       );
     }
@@ -261,7 +266,8 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
       router.push("/themes/" + themeId);
     } catch (err) {
       console.error("Error deleting question:", err);
-      setError("Não foi possível excluir a questão.");
+      setQuestionToDelete(null);
+      setError(extractErrorMessage(err));
     }
   };
 
@@ -285,6 +291,12 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
         </h1>
       </div>
 
+      {inExam && (
+        <p className="w-full max-w-[728px] rounded-[14px] border border-warning/40 bg-warning/10 px-4 py-3 text-[13px] text-foreground">
+          Esta questão está em uma prova e não pode ser editada nem excluída.
+        </p>
+      )}
+
       <form
         onSubmit={onSubmit}
         className="w-full max-w-[728px] space-y-5 rounded-[22px] border border-border bg-surface p-7 shadow-[0px_1px_3px_0px_rgba(13,20,38,0.06)]"
@@ -300,6 +312,7 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
             value={statement}
             onChange={(event) => setStatement(event.target.value)}
             className="w-full rounded-[14px] border border-border bg-surface px-3.5 py-2.5 text-[14px] text-foreground placeholder:text-muted"
+            disabled={inExam}
           />
         </div>
 
@@ -313,15 +326,15 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
             type="file"
             accept={QUESTION_IMAGE_TYPES.join(",")}
             onChange={onImageSelected}
-            disabled={uploadingImage}
+            disabled={uploadingImage || inExam}
             className="sr-only"
           />
           <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              disabled={uploadingImage}
-              className="rounded-[14px] border border-border bg-surface px-4 py-2.5 text-[13px] font-semibold text-foreground hover:bg-background disabled:opacity-50 cursor-pointer"
+              disabled={uploadingImage || inExam}
+              className="rounded-[14px] border border-border bg-surface px-4 py-2.5 text-[13px] font-semibold text-foreground hover:bg-background disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
             >
               {uploadingImage
                 ? "Enviando imagem..."
@@ -329,7 +342,7 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
                   ? "Trocar imagem"
                   : "Escolher imagem"}
             </button>
-            {image && !uploadingImage && (
+            {image && !uploadingImage && !inExam && (
               <button
                 type="button"
                 onClick={removeImage}
@@ -377,6 +390,7 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
               value={themeId}
               onChange={(event) => setThemeId(event.target.value)}
               className="w-full rounded-[14px] border border-border bg-surface px-3.5 py-2.5 text-[14px] text-foreground placeholder:text-muted"
+              disabled={inExam}
             >
               <option value="">Selecione um tema</option>
               {themes.map((theme) => (
@@ -397,6 +411,7 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
             value={type}
             onChange={(event) => setType(event.target.value as QuestionType)}
             className="w-full rounded-[14px] border border-border bg-surface px-3.5 py-2.5 text-[14px] text-foreground placeholder:text-muted"
+            disabled={inExam}
           >
             <option value="MULTIPLE_CHOICE">Objetiva</option>
             <option value="OPEN_ENDED">Dissertativa</option>
@@ -414,6 +429,7 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
                     name="correctOption"
                     checked={option.isCorrect}
                     onChange={() => markCorrect(actualIndex)}
+                    disabled={inExam}
                   />
                   {option.label}
                 </label>
@@ -425,12 +441,14 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
                   }
                   placeholder={`Texto da alternativa ${option.label}`}
                   className="w-full rounded-[14px] border border-border bg-surface px-3.5 py-2.5 text-[14px] text-foreground placeholder:text-muted"
+                  disabled={inExam}
                 />
                 {options.length > 2 && (
                   <button
                     type="button"
                     onClick={() => removeOption(actualIndex)}
                     className="shrink-0 text-[13px] font-medium text-danger cursor-pointer"
+                    disabled={inExam}
                   >
                     Excluir
                   </button>
@@ -442,6 +460,7 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
                 type="button"
                 onClick={addOption}
                 className="text-[13px] font-medium text-primary cursor-pointer"
+                disabled={inExam}
               >
                 + Adicionar alternativa
               </button>
@@ -462,7 +481,7 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
             Voltar
           </button>
           <div>
-            {isEdit && (
+            {isEdit && !inExam && (
               <button
                 type="button"
                 onClick={() => themeId && setQuestionToDelete(questionId)}
@@ -481,13 +500,15 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
                 Salvar e adicionar outra
               </button>
             )}
-            <button
-              type="submit"
-              disabled={uploadingImage}
-              className="rounded-[14px] bg-primary px-4 py-2.5 text-[13px] font-semibold text-white hover:bg-primary-hover disabled:opacity-50 cursor-pointer"
-            >
-              {isEdit ? "Salvar alterações" : "Criar"}
-            </button>
+            {!inExam && (
+              <button
+                type="submit"
+                disabled={uploadingImage}
+                className="rounded-[14px] bg-primary px-4 py-2.5 text-[13px] font-semibold text-white hover:bg-primary-hover disabled:opacity-50 cursor-pointer"
+              >
+                {isEdit ? "Salvar alterações" : "Criar"}
+              </button>
+            )}
           </div>
         </div>
       </form>

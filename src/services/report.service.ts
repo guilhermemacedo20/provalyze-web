@@ -29,20 +29,26 @@ export type StudentStats = {
 export type DashboardStats = (AdminStats | TeacherStats | StudentStats) &
   DashboardCharts;
 
-export type DashboardPeriod = "month" | "year" | "all";
+export type DashboardPeriod = "semester" | "year" | "all";
 
 export type DashboardFilter = {
   period: DashboardPeriod;
-  month?: string;
+  semester?: string;
   year?: string;
   classId?: string;
+  subjectId?: string;
 };
 
 type AnswerOutcomes = { correct: number; wrong: number; pending: number };
 
 export type DashboardCharts = {
   hitRate?: number | null;
-  classes: { id: string; name: string; subjectName: string }[];
+  classes: {
+    id: string;
+    name: string;
+    subjectId: string;
+    subjectName: string;
+  }[];
   pendingSubmissions: number;
   answers: AnswerOutcomes;
   scoresByExam: { examId: string; title: string; average: number }[];
@@ -144,11 +150,12 @@ export const reportService = {
     const params = new URLSearchParams();
     if (filter) {
       params.set("period", filter.period);
-      if (filter.period === "month" && filter.month)
-        params.set("month", filter.month);
+      if (filter.period === "semester" && filter.semester)
+        params.set("semester", filter.semester);
       if (filter.period === "year" && filter.year)
         params.set("year", filter.year);
       if (filter.classId) params.set("classId", filter.classId);
+      if (filter.subjectId) params.set("subjectId", filter.subjectId);
     }
     const query = params.toString();
     return apiRequest<DashboardStats>(

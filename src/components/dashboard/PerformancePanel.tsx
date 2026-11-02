@@ -26,7 +26,7 @@ import {
 import { formatAverage, formatCount } from "@/utils/formatFunctions";
 
 const PERIODS: { value: DashboardPeriod; label: string }[] = [
-  { value: "month", label: "Mês" },
+  { value: "semester", label: "Semestre" },
   { value: "year", label: "Ano" },
   { value: "all", label: "Total" },
 ];
@@ -50,9 +50,13 @@ const field =
 const grid = "#e2e8f0";
 const tick = { fontSize: 12, fill: "#64748b" };
 
-const currentMonth = () => {
+const currentSemester = () => {
   const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  return `${now.getFullYear()}-${now.getMonth() < 6 ? 1 : 2}`;
+};
+const semesterLabel = (semester: string) => {
+  const [year, half] = semester.split("-");
+  return `${half}º semestre de ${year}`;
 };
 const score = (value: number) => formatAverage(value, false);
 
@@ -82,16 +86,18 @@ function ChartCard({
 
 export function PerformancePanel({
   audience,
+  aside,
 }: {
   audience: "teacher" | "admin" | "student";
+  aside?: React.ReactNode;
 }) {
   const student = audience === "student";
   const tone = student ? "green" : "blue";
   const color = student ? "#16a34a" : "#2563eb";
 
   const [filter, setFilter] = useState<DashboardFilter>(() => ({
-    period: "month",
-    month: currentMonth(),
+    period: "semester",
+    semester: currentSemester(),
     year: String(new Date().getFullYear()),
   }));
   const [data, setData] = useState<DashboardStats | null>(null);
@@ -122,6 +128,14 @@ export function PerformancePanel({
   const years = Array.from({ length: 5 }, (_, i) =>
     String(new Date().getFullYear() - i),
   );
+  const semesters = Array.from({ length: 10 }, (_, i) => {
+    const [year, half] = currentSemester().split("-").map(Number);
+    const index = year * 2 + half - 1 - i;
+    return `${Math.floor(index / 2)}-${(index % 2) + 1}`;
+  });
+  const subjects = [
+    ...new Map((data?.classes ?? []).map((c) => [c.subjectId, c.subjectName])),
+  ];
   const hasData = !!data && data.questionsByExam.length > 0;
   const emptyText = "Nenhuma prova entregue nesse período";
   const empty = (text = emptyText) => (
@@ -188,19 +202,22 @@ export function PerformancePanel({
 
         <div className="flex flex-wrap items-center gap-2">
           <div className="w-[176px] shrink-0">
-            {filter.period === "month" && (
-              <input
-                type="month"
-                aria-label="Mês"
-                value={filter.month}
-                max={currentMonth()}
+            {filter.period === "semester" && (
+              <select
+                aria-label="Semestre"
+                value={filter.semester}
                 disabled={loading}
                 onChange={(e) =>
-                  e.target.value &&
-                  setFilter({ ...filter, month: e.target.value })
+                  setFilter({ ...filter, semester: e.target.value })
                 }
                 className={`${field} w-full`}
-              />
+              >
+                {semesters.map((s) => (
+                  <option key={s} value={s}>
+                    {semesterLabel(s)}
+                  </option>
+                ))}
+              </select>
             )}
             {filter.period === "year" && (
               <select
@@ -250,22 +267,41 @@ export function PerformancePanel({
             ))}
           </div>
 
-          <select
-            aria-label="Turma"
-            value={filter.classId ?? ""}
-            disabled={loading}
-            onChange={(e) =>
-              setFilter({ ...filter, classId: e.target.value || undefined })
-            }
-            className={`${field} max-w-[260px]`}
-          >
-            <option value="">Todas as turmas</option>
-            {data?.classes.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name} · {c.subjectName}
-              </option>
-            ))}
-          </select>
+          {student ? (
+            <select
+              aria-label="Matéria"
+              value={filter.subjectId ?? ""}
+              disabled={loading}
+              onChange={(e) =>
+                setFilter({ ...filter, subjectId: e.target.value || undefined })
+              }
+              className={`${field} max-w-[260px]`}
+            >
+              <option value="">Todas as matérias</option>
+              {subjects.map(([id, name]) => (
+                <option key={id} value={id}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <select
+              aria-label="Turma"
+              value={filter.classId ?? ""}
+              disabled={loading}
+              onChange={(e) =>
+                setFilter({ ...filter, classId: e.target.value || undefined })
+              }
+              className={`${field} max-w-[260px]`}
+            >
+              <option value="">Todas as turmas</option>
+              {data?.classes.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name} · {c.subjectName}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
       </div>
 
@@ -290,7 +326,17 @@ export function PerformancePanel({
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+      <div
+        className={`grid grid-cols-1 gap-4 ${aside ? "xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]" : "xl:grid-cols-2"}`}
+      >
+        {aside && (
+          <div className="relative xl:row-span-2">
+            <div className="flex flex-col gap-4 xl:absolute xl:inset-0">
+              {aside}
+            </div>
+          </div>
+        )}
+
         <ChartCard
           title={
             student ? "Minhas notas por prova" : "Média das notas por prova"
@@ -389,38 +435,6 @@ export function PerformancePanel({
                 <Tooltip />
                 <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
               </PieChart>
-            </ResponsiveContainer>
-          ) : (
-            empty()
-          )}
-        </ChartCard>
-
-        <ChartCard
-          title={
-            student
-              ? "Provas que entreguei"
-              : "Provas entregues ao longo do tempo"
-          }
-          wide
-        >
-          {hasData ? (
-            <ResponsiveContainer width="100%" height={220}>
-              <AreaChart
-                data={data.timeline}
-                margin={{ top: 8, right: 8, left: -20, bottom: 0 }}
-              >
-                <CartesianGrid vertical={false} stroke={grid} />
-                <XAxis dataKey="label" tick={tick} minTickGap={16} />
-                <YAxis allowDecimals={false} tick={tick} />
-                <Tooltip formatter={(v) => [v, "Entregas"]} />
-                <Area
-                  type="monotone"
-                  dataKey="submissions"
-                  stroke={color}
-                  fill={color}
-                  fillOpacity={0.12}
-                />
-              </AreaChart>
             </ResponsiveContainer>
           ) : (
             empty()
