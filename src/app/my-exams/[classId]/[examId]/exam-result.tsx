@@ -44,6 +44,19 @@ function reviewStatus(question: ExamReviewQuestion) {
   return { label: "Corrigida pelo professor", className: "text-[#16A34A]" };
 }
 
+function answerStyle(question: ExamReviewQuestion, pending: boolean) {
+  if (pending) {
+    return "border-[#E2E8F0]";
+  }
+  if (question.isCorrect) {
+    return "border-[#BBF7D0] bg-[#F0FDF4]";
+  }
+  if (question.score > 0) {
+    return "border-[#FDE68A] bg-[#FFFBEB]";
+  }
+  return "border-[#FECACA] bg-[#FEF2F2]";
+}
+
 export function ExamResult({
   title,
   subjectName,
@@ -85,7 +98,7 @@ export function ExamResult({
         </p>
       </div>
 
-      <div className="mb-6 grid max-w-3xl grid-cols-3 gap-4">
+      <div className="mb-6 flex gap-4">
         <article className="rounded-2xl border border-[#E2E8F0] px-5 py-4">
           <p className="text-xs font-semibold tracking-wide text-muted">NOTA</p>
           <p className="mt-2 text-3xl font-semibold">
@@ -133,7 +146,7 @@ export function ExamResult({
       </div>
 
       {themes.length > 0 && (
-        <section className="mb-6 max-w-3xl rounded-2xl border border-[#E2E8F0] px-6 py-5">
+        <section className="mb-6  rounded-2xl border border-[#E2E8F0] px-6 py-5">
           <h2 className="mb-4 font-semibold">Seu desempenho por tema</h2>
           <div className="flex flex-col gap-4">
             {themes.map((theme) => (
@@ -157,7 +170,7 @@ export function ExamResult({
       )}
 
       {details.length > 0 && (
-        <section className="mb-6 max-w-3xl rounded-2xl border border-[#E2E8F0] px-6 py-5">
+        <section className="mb-6  rounded-2xl border border-[#E2E8F0] px-6 py-5">
           <h2 className="mb-4 font-semibold">Correção das questões</h2>
           <ul className="flex flex-col">
             {details.map((question) => {
@@ -189,7 +202,9 @@ export function ExamResult({
                     {question.themeName} · {status.label}
                   </p>
 
-                  <div className="mt-3 rounded-xl border border-[#E2E8F0] px-4 py-3">
+                  <div
+                    className={`mt-3 rounded-xl border px-4 py-3 ${answerStyle(question, pending)}`}
+                  >
                     <p className="text-xs font-semibold tracking-wide text-muted">
                       SUA RESPOSTA
                     </p>
@@ -231,7 +246,7 @@ export function ExamResult({
         </section>
       )}
 
-      <div className="flex max-w-3xl justify-end">
+      <div className="flex max-w-3xl">
         <Link
           href={backHref}
           className="rounded-full bg-[#16A34A] px-4 py-2 text-sm text-white"
