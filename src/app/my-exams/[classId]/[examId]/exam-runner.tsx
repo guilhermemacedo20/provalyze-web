@@ -130,7 +130,7 @@ export function ExamRunner({
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-white">
-      <header className="flex items-center justify-between border-b border-[#E2E8F0] px-6 py-4">
+      <header className="flex items-center justify-between border-b border-[#E2E8F0] px-6 py-3">
         <div className="flex items-center gap-3">
           <Image src="/logo.png" alt="" width={26} height={35} />
           <p className="text-sm font-semibold text-foreground">
@@ -151,85 +151,87 @@ export function ExamRunner({
       </header>
 
       <div className="flex min-h-0 flex-1">
-        <main className="flex min-w-0 flex-1 flex-col px-8 py-8 lg:px-14 overflow-auto">
-          <p className="mb-3 text-xs font-semibold tracking-wide text-[#16A34A]">
-            QUESTÃO {String(index + 1).padStart(2, "0")} DE{" "}
-            {String(total).padStart(2, "0")} · {kind}
-          </p>
-          <h1 className="mb-6 max-w-3xl text-lg font-semibold text-foreground">
-            {question.statement}
-          </h1>
-          {question.imageUrl && (
-            <div className="mb-6">
-              <QuestionImage
-                src={question.imageUrl}
-                alt={`Imagem da questão ${index + 1}`}
-                className="max-h-72 max-w-md rounded-xl object-contain"
+        <main className="min-w-0 flex-1 overflow-y-auto px-6 py-6 lg:px-10">
+          <div className="mx-auto flex w-full max-w-4xl flex-col">
+            <p className="mb-2 text-center text-xs font-semibold tracking-wide text-[#16A34A]">
+              QUESTÃO {String(index + 1).padStart(2, "0")} DE{" "}
+              {String(total).padStart(2, "0")} · {kind}
+            </p>
+            <h1 className="mb-5 break-words text-justify text-xl font-semibold leading-snug text-foreground">
+              {question.statement}
+            </h1>
+            {question.imageUrl && (
+              <div className="mb-5 flex justify-center">
+                <QuestionImage
+                  src={question.imageUrl}
+                  alt={`Imagem da questão ${index + 1}`}
+                  className="max-h-80 max-w-full rounded-xl object-contain"
+                />
+              </div>
+            )}
+
+            {question.type === "MULTIPLE_CHOICE" ? (
+              <div className="flex w-full flex-col gap-2.5">
+                {question.options.map((option) => {
+                  const selected = answers[question.id]?.optionId === option.id;
+                  return (
+                    <label
+                      key={option.id}
+                      className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 ${
+                        selected ? "border-[#3B82F6]" : "border-[#E2E8F0]"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name={question.id}
+                        checked={selected}
+                        onChange={() =>
+                          onAnswer(question, { optionId: option.id })
+                        }
+                      />
+                      <span className="min-w-0 break-words">{option.text}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            ) : (
+              <textarea
+                value={answers[question.id]?.content ?? ""}
+                onChange={(event) =>
+                  onAnswer(question, { content: event.target.value })
+                }
+                rows={8}
+                className="w-full rounded-xl border border-[#E2E8F0] px-4 py-3 text-sm"
+                placeholder="Escreva sua resposta"
               />
-            </div>
-          )}
+            )}
 
-          {question.type === "MULTIPLE_CHOICE" ? (
-            <div className="flex max-w-3xl flex-col gap-3">
-              {question.options.map((option) => {
-                const selected = answers[question.id]?.optionId === option.id;
-                return (
-                  <label
-                    key={option.id}
-                    className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 ${
-                      selected ? "border-[#3B82F6]" : "border-[#E2E8F0]"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name={question.id}
-                      checked={selected}
-                      onChange={() =>
-                        onAnswer(question, { optionId: option.id })
-                      }
-                    />
-                    <span>{option.text}</span>
-                  </label>
-                );
-              })}
+            <div className="mt-6 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setIndex((current) => Math.max(0, current - 1))}
+                disabled={index === 0}
+                className="rounded-full border border-[#E2E8F0] px-4 py-2 text-sm disabled:opacity-40"
+              >
+                ← Anterior
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setIndex((current) => Math.min(total - 1, current + 1))
+                }
+                disabled={index === total - 1}
+                className="rounded-full bg-[#16A34A] px-4 py-2 text-sm text-white disabled:opacity-40"
+              >
+                Próxima →
+              </button>
             </div>
-          ) : (
-            <textarea
-              value={answers[question.id]?.content ?? ""}
-              onChange={(event) =>
-                onAnswer(question, { content: event.target.value })
-              }
-              rows={6}
-              className="max-w-3xl rounded-xl border border-[#E2E8F0] px-4 py-3 text-sm"
-              placeholder="Escreva sua resposta"
-            />
-          )}
-
-          <div className="mt-auto flex max-w-3xl items-center justify-between pt-10">
-            <button
-              type="button"
-              onClick={() => setIndex((current) => Math.max(0, current - 1))}
-              disabled={index === 0}
-              className="rounded-full border border-[#E2E8F0] px-4 py-2 text-sm disabled:opacity-40"
-            >
-              ← Anterior
-            </button>
-            <button
-              type="button"
-              onClick={() =>
-                setIndex((current) => Math.min(total - 1, current + 1))
-              }
-              disabled={index === total - 1}
-              className="rounded-full bg-[#16A34A] px-4 py-2 text-sm text-white disabled:opacity-40"
-            >
-              Próxima →
-            </button>
+            {error && <p className="mt-4 text-sm text-danger">{error}</p>}
           </div>
-          {error && <p className="mt-4 text-sm text-danger">{error}</p>}
         </main>
 
-        <aside className="flex w-72 shrink-0 flex-col border-l border-[#E2E8F0] px-5 py-6">
-          <p className="mb-4 text-xs font-semibold tracking-wide text-muted">
+        <aside className="flex w-64 shrink-0 flex-col border-l border-[#E2E8F0] px-5 py-5">
+          <p className="mb-3 text-xs font-semibold tracking-wide text-muted">
             QUESTÕES
           </p>
           <div className="grid grid-cols-5 gap-2">
@@ -255,7 +257,7 @@ export function ExamRunner({
             })}
           </div>
 
-          <ul className="mt-6 space-y-2 text-sm text-muted">
+          <ul className="mt-5 space-y-2 text-sm text-muted">
             <li className="flex items-center gap-2">
               <span className="size-2.5 rounded-full bg-[#16A34A]" />
               Atual
