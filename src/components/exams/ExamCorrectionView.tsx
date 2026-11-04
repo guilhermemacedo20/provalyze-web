@@ -206,7 +206,7 @@ function OpenAnswerGrader({
   };
 
   return (
-    <div className="mt-6 max-w-3xl rounded-xl border border-border bg-surface p-5">
+    <div className="mt-5 w-full rounded-xl border border-border bg-surface p-5">
       <div className="mb-4 flex items-center justify-between">
         <p className="text-[13px] font-semibold text-foreground">
           Correção do professor
@@ -291,7 +291,7 @@ function OpenAnswerGrader({
 function MultipleChoiceReview({ question }: { question: CorrectionQuestion }) {
   return (
     <>
-      <div className="flex max-w-3xl flex-col gap-3">
+      <div className="flex w-full flex-col gap-2.5">
         {question.options.map((option) => {
           const chosen = question.content === option.label;
           const correct = question.correctOption === option.label;
@@ -467,7 +467,7 @@ export function ExamCorrectionView({
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-white">
-      <header className="flex items-center justify-between border-b border-[#E2E8F0] px-6 py-4">
+      <header className="flex items-center justify-between border-b border-[#E2E8F0] px-6 py-3">
         <div className="flex min-w-0 items-center gap-3">
           <Image src="/logo.png" alt="" width={26} height={35} />
           <p className="truncate text-sm font-semibold text-foreground">
@@ -485,64 +485,68 @@ export function ExamCorrectionView({
       </header>
 
       <div className="flex min-h-0 flex-1">
-        <main className="flex min-w-0 flex-1 flex-col overflow-y-auto px-8 py-8 lg:px-14">
-          <p className="mb-3 text-xs font-semibold tracking-wide text-[#16A34A]">
-            QUESTÃO {String(index + 1).padStart(2, "0")} DE{" "}
-            {String(total).padStart(2, "0")} · {kind} · {question.themeName}
-          </p>
-          <h1 className="mb-6 max-w-3xl whitespace-pre-wrap break-words text-lg font-semibold text-foreground">
-            {question.statement}
-          </h1>
+        <main className="min-w-0 flex-1 overflow-y-auto px-6 py-6 lg:px-10">
+          <div className="mx-auto flex w-full max-w-4xl flex-col">
+            <p className="mb-2 text-center text-xs font-semibold tracking-wide text-[#16A34A]">
+              QUESTÃO {String(index + 1).padStart(2, "0")} DE{" "}
+              {String(total).padStart(2, "0")} · {kind} · {question.themeName}
+            </p>
+            <h1 className="mb-5 whitespace-pre-wrap break-words text-justify text-xl font-semibold leading-snug text-foreground">
+              {question.statement}
+            </h1>
 
-          {question.type === "MULTIPLE_CHOICE" ? (
-            <MultipleChoiceReview question={question} />
-          ) : (
-            <>
-              <p className="mb-2 text-[12px] font-semibold tracking-wide text-muted">
-                RESPOSTA DO ALUNO
-              </p>
-              <div className="max-w-3xl whitespace-pre-wrap break-words rounded-xl border border-border bg-surface px-4 py-3 text-sm text-foreground">
-                {question.content || (
-                  <span className="italic text-muted">Sem resposta.</span>
-                )}
-              </div>
-              <OpenAnswerGrader
-                key={question.answerId ?? question.number}
-                question={question}
-                aiStatus={question.answerId ? ai[question.answerId] : undefined}
-                onRequestAi={() => {
-                  if (question.answerId) requestAi(question.answerId);
-                }}
-                onSaved={handleSaved}
-              />
-            </>
-          )}
-          <div className="mt-8 max-w-3xl">
-            <IntegrityTimeline integrity={data.integrity} />
-          </div>
-          <div className="mt-auto flex max-w-3xl items-center justify-between pt-10">
-            <button
-              type="button"
-              onClick={() => setIndex((current) => Math.max(0, current - 1))}
-              disabled={index === 0}
-              className="cursor-pointer rounded-full border border-[#E2E8F0] px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              ← Anterior
-            </button>
-            <button
-              type="button"
-              onClick={() =>
-                setIndex((current) => Math.min(total - 1, current + 1))
-              }
-              disabled={index === total - 1}
-              className="cursor-pointer rounded-full bg-[#16A34A] px-4 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              Próxima →
-            </button>
+            {question.type === "MULTIPLE_CHOICE" ? (
+              <MultipleChoiceReview question={question} />
+            ) : (
+              <>
+                <p className="mb-2 text-[12px] font-semibold tracking-wide text-muted">
+                  RESPOSTA DO ALUNO
+                </p>
+                <div className="w-full whitespace-pre-wrap break-words rounded-xl border border-border bg-surface px-4 py-3 text-sm text-foreground">
+                  {question.content || (
+                    <span className="italic text-muted">Sem resposta.</span>
+                  )}
+                </div>
+                <OpenAnswerGrader
+                  key={question.answerId ?? question.number}
+                  question={question}
+                  aiStatus={
+                    question.answerId ? ai[question.answerId] : undefined
+                  }
+                  onRequestAi={() => {
+                    if (question.answerId) requestAi(question.answerId);
+                  }}
+                  onSaved={handleSaved}
+                />
+              </>
+            )}
+            <div className="mt-6 w-full">
+              <IntegrityTimeline integrity={data.integrity} />
+            </div>
+            <div className="mt-6 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setIndex((current) => Math.max(0, current - 1))}
+                disabled={index === 0}
+                className="cursor-pointer rounded-full border border-[#E2E8F0] px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                ← Anterior
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setIndex((current) => Math.min(total - 1, current + 1))
+                }
+                disabled={index === total - 1}
+                className="cursor-pointer rounded-full bg-[#16A34A] px-4 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Próxima →
+              </button>
+            </div>
           </div>
         </main>
 
-        <aside className="flex w-72 shrink-0 flex-col border-l border-[#E2E8F0] px-5 py-6">
+        <aside className="flex w-64 shrink-0 flex-col border-l border-[#E2E8F0] px-5 py-5">
           <p className="mb-1 text-xs font-semibold tracking-wide text-muted">
             QUESTÕES
           </p>
@@ -585,7 +589,7 @@ export function ExamCorrectionView({
             })}
           </div>
 
-          <ul className="mt-6 space-y-2 text-sm text-muted">
+          <ul className="mt-5 space-y-2 text-sm text-muted">
             {(Object.keys(STATE_META) as QuestionState[]).map((key) => {
               const { label, tile, Icon, iconClass } = STATE_META[key];
               return (

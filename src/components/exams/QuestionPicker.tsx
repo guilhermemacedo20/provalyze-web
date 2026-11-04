@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Check, Search, X } from "lucide-react";
+import { Check, Search, X, Eye } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Question, questionsService } from "@/services/questions.service";
 import { Theme, themesService } from "@/services/themes.service";
@@ -9,6 +9,7 @@ import { formatPoints, pluralize } from "@/lib/exam-format";
 import { extractErrorMessage } from "@/lib/extract-error-message";
 import { compareNames, matchesSearch, paginate } from "@/lib/list-utils";
 import { Pagination } from "@/components/ui/Pagination";
+import { QuestionPreviewModal } from "./QuestionPreviewModal";
 import {
   distributeEqually,
   parsePoints,
@@ -245,7 +246,7 @@ function PointsInput({
         onChange(parsePoints(e.target.value));
       }}
       placeholder="pts"
-      className={`h-[28px] w-[64px] shrink-0 rounded-full border bg-surface px-2 text-center text-[12px] text-foreground placeholder:text-muted ${
+      className={`h-[40px] w-[96px] shrink-0 rounded-lg border bg-surface px-3 text-center text-[14px] font-medium text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 ${
         value === null ? "border-warning" : "border-primary"
       }`}
     />
@@ -287,7 +288,7 @@ function SelectedPanel({
   };
 
   return (
-    <aside className="w-[340px] shrink-0 rounded-[22px] border border-border bg-surface p-5 shadow-[0px_1px_3px_0px_rgba(13,20,38,0.06)]">
+    <aside className="w-[460px] shrink-0 rounded-[22px] border border-border bg-surface p-5 shadow-[0px_1px_3px_0px_rgba(13,20,38,0.06)] xl:w-[560px]">
       <h3 className="mb-3 text-[14px] font-semibold text-foreground">
         Questões selecionadas ({selected.length})
       </h3>
@@ -299,10 +300,13 @@ function SelectedPanel({
       ) : (
         <ul className="mb-3 flex flex-col gap-3">
           {selected.map((q) => (
-            <li key={q.questionId} className="flex min-w-0 items-center gap-2">
+            <li
+              key={q.questionId}
+              className="flex min-w-0 items-center gap-3 py-1.5"
+            >
               <div className="min-w-0 flex-1">
                 <p
-                  className="truncate text-[12px] text-foreground"
+                  className="line-clamp-2 min-w-0 flex-1 break-words text-[13px] text-foreground"
                   title={q.statement}
                 >
                   {q.statement}
@@ -401,6 +405,8 @@ function ThemeQuestions({
         selected.filter((q) => q.themeId === theme.id).map((q) => q.questionId),
       ),
   );
+
+  const [previewing, setPreviewing] = useState<Question | null>(null);
 
   useEffect(() => {
     questionsService
@@ -507,9 +513,19 @@ function ThemeQuestions({
                 {isChecked && <Check size={10} strokeWidth={3} />}
               </button>
 
-              <p className="min-w-0 flex-1 break-words text-[13px] text-foreground">
+              <p className="line-clamp-2 min-w-0 flex-1 break-words text-[13px] text-foreground">
                 {q.statement}
               </p>
+
+              <button
+                type="button"
+                onClick={() => setPreviewing(q)}
+                aria-label={`Ver questão completa: ${q.statement}`}
+                className="flex shrink-0 cursor-pointer items-center gap-1 rounded-md border border-border px-2.5 py-1 text-[12px] font-medium text-primary hover:bg-background"
+              >
+                <Eye size={14} aria-hidden="true" />
+                Ver questão
+              </button>
 
               <span className="w-[100px] shrink-0 text-right text-[12px] text-muted">
                 {typeLabel(q.type)}
@@ -551,6 +567,14 @@ function ThemeQuestions({
       >
         ← Voltar: Temas
       </button>
+
+      {previewing && (
+        <QuestionPreviewModal
+          question={previewing}
+          themeName={theme.name}
+          onClose={() => setPreviewing(null)}
+        />
+      )}
     </div>
   );
 }

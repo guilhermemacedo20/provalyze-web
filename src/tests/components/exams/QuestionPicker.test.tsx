@@ -7,12 +7,16 @@ vi.mock("next/image", () => ({
   default: (props: { alt: string }) => <img alt={props.alt} />,
 }));
 
+vi.mock("@/components/questions/QuestionImage", () => ({
+  QuestionImage: ({ alt }: { alt?: string }) => <img alt={alt} />,
+}));
+
 vi.mock("@/services/themes.service", () => ({
   themesService: { listThemes: vi.fn() },
 }));
 
 vi.mock("@/services/questions.service", () => ({
-  questionsService: { listQuestions: vi.fn() },
+  questionsService: { listQuestions: vi.fn(), getQuestion: vi.fn() },
 }));
 
 import { questionsService } from "@/services/questions.service";
@@ -236,5 +240,58 @@ describe("QuestionPicker", () => {
         expect.objectContaining({ questionId: "q11" }),
       ]),
     );
+  });
+
+  it("abre o modal com a questão completa sem marcar a questão", async () => {
+    vi.mocked(questionsService.listQuestions).mockResolvedValue([
+      {
+        id: "q1",
+        statement: "Qual é o resultado de 2+2?",
+        type: "MULTIPLE_CHOICE",
+        themeId: "t1",
+      },
+    ]);
+    vi.mocked(questionsService.getQuestion).mockResolvedValue({
+      id: "q1",
+      statement: "Qual é o resultado de 2+2?",
+      type: "MULTIPLE_CHOICE",
+      themeId: "t1",
+      questionOptions: [
+        { label: "A", text: "Três", isCorrect: false },
+        { label: "B", text: "Quatro", isCorrect: true },
+      ],
+    });
+
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+
+    render(
+      <QuestionPicker
+        selected={[]}
+        onChange={onChange}
+        openTheme={{ id: "t1", name: "Lógica" }}
+        onOpenTheme={vi.fn()}
+        totalScore={10}
+      />,
+    );
+
+    await user.click(
+      await screen.findByRole("button", { name: /Ver questão completa/i }),
+    );
+
+    expect(
+      await screen.findByRole("dialog", { name: "Questão completa" }),
+    ).toBeInTheDocument();
+    expect(await screen.findByText("Quatro")).toBeInTheDocument();
+    expect(screen.getByText("Correta")).toBeInTheDocument();
+
+    expect(screen.getByRole("checkbox")).toHaveAttribute(
+      "aria-checked",
+      "false",
+    );
+    expect(onChange).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Fechar" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });
