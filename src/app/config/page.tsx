@@ -203,6 +203,25 @@ export default function ConfigPage() {
     }
   };
 
+  const exportMe = async () => {
+    try {
+      const data = await authService.export();
+      const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "dados-export.json";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Erro ao exportar dados:", error);
+    }
+  };
+
   return (
     <div className="relative flex min-h-screen flex-col px-10 py-9">
       <h1 className="mb-5 text-2xl font-bold text-foreground">Configurações</h1>
@@ -248,7 +267,14 @@ export default function ConfigPage() {
         </div>
       </div>
 
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-3">
+        <button
+          type="button"
+          onClick={exportMe}
+          className="rounded-md bg-primary px-[18px] py-2.5 text-[13px] font-semibold text-white hover:opacity-90"
+        >
+          Exportar dados
+        </button>
         <button
           type="button"
           onClick={openDeleteAccount}
