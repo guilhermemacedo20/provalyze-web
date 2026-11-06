@@ -70,11 +70,14 @@ const overview = {
     {
       id: "s1",
       name: "Aluno",
+      classId: "c1",
+      className: "Turma A",
       status: "NOT_STARTED" as const,
       score: null,
       durationMinutes: null,
     },
   ],
+  questions: [{ examQuestionId: "eq1", correctRate: null }],
 };
 
 describe("ExamDetailTeacher", () => {
@@ -116,5 +119,30 @@ describe("ExamDetailTeacher", () => {
 
     await user.click(screen.getByRole("tab", { name: "Questões" }));
     expect(screen.getByText("Questão")).toBeInTheDocument();
+  });
+
+  it("filtra a prova pela turma escolhida", async () => {
+    vi.mocked(examsService.getExam).mockResolvedValue({
+      ...examDetail,
+      classes: [
+        ...examDetail.classes,
+        {
+          id: "c2",
+          name: "Turma B",
+          subjectName: "Mat",
+          courseName: "Eng",
+          studentsCount: 3,
+        },
+      ],
+    });
+    const user = userEvent.setup();
+    render(<ExamDetailTeacher examId="e1" />);
+    await waitFor(() => screen.getByText("Prova A"));
+
+    await user.selectOptions(screen.getByLabelText("Turma"), "c2");
+
+    await waitFor(() => {
+      expect(examsService.getOverview).toHaveBeenLastCalledWith("e1", "c2");
+    });
   });
 });

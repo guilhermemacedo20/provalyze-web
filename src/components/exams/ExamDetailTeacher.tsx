@@ -16,6 +16,12 @@ import {
 import { extractErrorMessage } from "@/lib/extract-error-message";
 import { ExamStatusBadge, StudentStatusBadge } from "./ExamStatusBadge";
 import { round2, typeLabel } from "./exam-wizard-types";
+import {
+  buildResultRows,
+  downloadExamResultsExcel,
+  downloadExamResultsPdf,
+  resultsHeader,
+} from "@/utils/exam-results-export";
 
 type Tab = "overview" | "questions" | "performance";
 
@@ -42,15 +48,18 @@ export function ExamDetailTeacher({ examId }: { examId: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("overview");
+  const [classFilter, setClassFilter] = useState("");
 
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState<"pdf" | "excel" | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
       const [examData, overviewData] = await Promise.all([
         examsService.getExam(examId),
-        examsService.getOverview(examId),
+        examsService.getOverview(examId, classFilter || undefined),
       ]);
       setExam(examData);
       setOverview(overviewData);
@@ -60,7 +69,7 @@ export function ExamDetailTeacher({ examId }: { examId: string }) {
     } finally {
       setLoading(false);
     }
-  }, [examId]);
+  }, [examId, classFilter]);
 
   useEffect(() => {
     load();
@@ -76,6 +85,30 @@ export function ExamDetailTeacher({ examId }: { examId: string }) {
       setPublishError(extractErrorMessage(err));
     } finally {
       setPublishing(false);
+    }
+  };
+
+  const exportResults = async (format: "pdf" | "excel") => {
+    if (!exam) {
+      return;
+    }
+    setExporting(format);
+    setExportError(null);
+    try {
+      const results = await examsService.getResults(examId);
+      const rows = buildResultRows(
+        results.filter((r) => !classFilter || r.classId === classFilter),
+      );
+      const header = resultsHeader(exam, classFilter || undefined);
+      if (format === "pdf") {
+        await downloadExamResultsPdf(header, rows);
+      } else {
+        await downloadExamResultsExcel(header, rows);
+      }
+    } catch (err) {
+      setExportError(extractErrorMessage(err));
+    } finally {
+      setExporting(null);
     }
   };
 
@@ -108,13 +141,14 @@ export function ExamDetailTeacher({ examId }: { examId: string }) {
   const scores = overview.students
     .map((student) => student.score)
     .filter((score): score is number => score !== null);
+  const rateByQuestion = new Map(
+    overview.questions.map((q) => [q.examQuestionId, q.correctRate]),
+  );
   const themeRates = new Map<string, number[]>();
   exam.questions.forEach((q) => {
-    if (q.correctRate === null) return;
-    themeRates.set(q.themeName, [
-      ...(themeRates.get(q.themeName) ?? []),
-      q.correctRate,
-    ]);
+    const rate = rateByQuestion.get(q.examQuestionId) ?? null;
+    if (rate === null) return;
+    themeRates.set(q.themeName, [...(themeRates.get(q.themeName) ?? []), rate]);
   });
   const themes = [...themeRates].map(([name, rates]) => ({
     name,
@@ -151,6 +185,27 @@ export function ExamDetailTeacher({ examId }: { examId: string }) {
           </p>
         </div>
 
+        {!isDraft && (
+          <div className="flex shrink-0 items-center gap-3">
+            <button
+              type="button"
+              onClick={() => exportResults("pdf")}
+              disabled={exporting !== null}
+              className="cursor-pointer rounded-md border border-border bg-surface px-4 py-2.5 text-[13px] font-semibold text-foreground hover:bg-background disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {exporting === "pdf" ? "Gerando PDF..." : "Exportar PDF"}
+            </button>
+            <button
+              type="button"
+              onClick={() => exportResults("excel")}
+              disabled={exporting !== null}
+              className="cursor-pointer rounded-md border border-border bg-surface px-4 py-2.5 text-[13px] font-semibold text-foreground hover:bg-background disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {exporting === "excel" ? "Gerando Excel..." : "Exportar Excel"}
+            </button>
+          </div>
+        )}
+
         {isDraft && (
           <div className="flex shrink-0 items-center gap-3">
             <Link
@@ -179,6 +234,9 @@ export function ExamDetailTeacher({ examId }: { examId: string }) {
       {publishError && (
         <p className="mt-3 text-[13px] text-danger">{publishError}</p>
       )}
+      {exportError && (
+        <p className="mt-3 text-[13px] text-danger">{exportError}</p>
+      )}
       {isDraft && (
         <p className="mt-4 rounded-lg border border-[#fde7b8] bg-[#fef1dd] px-4 py-3 text-[13px] text-[#8a5a00]">
           Esta prova é um rascunho: os alunos só poderão vê-la depois que você
@@ -193,32 +251,52 @@ export function ExamDetailTeacher({ examId }: { examId: string }) {
         </p>
       )}
 
-      <div
-        role="tablist"
-        className="mb-6 mt-5 inline-flex gap-1 rounded-lg border border-border bg-surface p-1"
-      >
-        {(
-          [
-            ["overview", "Visão geral"],
-            ["questions", "Questões"],
-            ["performance", "Desempenho"],
-          ] as const
-        ).map(([key, label]) => (
-          <button
-            key={key}
-            type="button"
-            role="tab"
-            aria-selected={tab === key}
-            onClick={() => setTab(key)}
-            className={`cursor-pointer rounded-md px-4 py-1.5 text-[13px] font-medium transition-colors ${
-              tab === key
-                ? "bg-primary text-white"
-                : "text-muted hover:text-foreground"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
+      <div className="mb-6 mt-5 flex flex-wrap items-center justify-between gap-4">
+        <div
+          role="tablist"
+          className="inline-flex gap-1 rounded-lg border border-border bg-surface p-1"
+        >
+          {(
+            [
+              ["overview", "Visão geral"],
+              ["questions", "Questões"],
+              ["performance", "Desempenho"],
+            ] as const
+          ).map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              role="tab"
+              aria-selected={tab === key}
+              onClick={() => setTab(key)}
+              className={`cursor-pointer rounded-md px-4 py-1.5 text-[13px] font-medium transition-colors ${
+                tab === key
+                  ? "bg-primary text-white"
+                  : "text-muted hover:text-foreground"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {exam.classes.length > 1 && (
+          <label className="flex items-center gap-2 text-[13px] text-muted">
+            Turma
+            <select
+              value={classFilter}
+              onChange={(e) => setClassFilter(e.target.value)}
+              className="rounded-md border border-border bg-surface px-3 py-1.5 text-[13px] text-foreground"
+            >
+              <option value="">Todas</option>
+              {exam.classes.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
       </div>
 
       {tab === "overview" && (
@@ -254,6 +332,7 @@ export function ExamDetailTeacher({ examId }: { examId: string }) {
               <thead>
                 <tr className="border-b border-border text-[11px] font-semibold text-muted">
                   <th className="px-5 py-3">ALUNO</th>
+                  <th className="px-5 py-3">TURMA</th>
                   <th className="px-5 py-3">STATUS</th>
                   <th className="px-5 py-3">NOTA</th>
                   <th className="px-5 py-3">TEMPO</th>
@@ -263,7 +342,10 @@ export function ExamDetailTeacher({ examId }: { examId: string }) {
               <tbody>
                 {overview.students.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-5 py-6 text-center text-muted">
+                    <td
+                      colSpan={6}
+                      className="px-5 py-6 text-center text-muted"
+                    >
                       Nenhum aluno nas turmas desta prova.
                     </td>
                   </tr>
@@ -282,6 +364,9 @@ export function ExamDetailTeacher({ examId }: { examId: string }) {
                           {student.name}
                         </span>
                       </div>
+                    </td>
+                    <td className="px-5 py-3.5 text-muted">
+                      {student.className}
                     </td>
                     <td className="px-5 py-3.5">
                       <StudentStatusBadge status={student.status} />
@@ -362,7 +447,9 @@ export function ExamDetailTeacher({ examId }: { examId: string }) {
                     {formatPoints(q.points)}
                   </td>
                   <td className="px-5 py-3.5 text-muted">
-                    {q.correctRate === null ? "-" : `${q.correctRate}%`}
+                    {(rateByQuestion.get(q.examQuestionId) ?? null) === null
+                      ? "-"
+                      : `${rateByQuestion.get(q.examQuestionId)}%`}
                   </td>
                 </tr>
               ))}
