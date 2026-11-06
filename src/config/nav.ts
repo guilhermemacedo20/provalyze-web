@@ -6,11 +6,11 @@ import {
   BookOpen,
   GraduationCap,
   Layers,
-  School,
   BarChart3,
   Target,
   FileBarChart,
   Settings,
+  TrendingUp,
 } from "lucide-react";
 import type { Role } from "@/lib/role";
 
@@ -31,14 +31,26 @@ export const navItems: NavItemConfig[] = [
   {
     href: "/users",
     label: "Usuários",
-    roles: ["ADMIN"],
+    roles: ["ADMIN", "COORDINATOR"],
     icon: Users,
   },
   {
     href: "/exams",
     label: "Provas",
-    roles: ["TEACHER", "STUDENT"],
+    roles: ["TEACHER"],
     icon: FileText,
+  },
+  {
+    href: "/my-classes",
+    label: "Matérias",
+    roles: ["STUDENT"],
+    icon: GraduationCap,
+  },
+  {
+    href: "/my-performance",
+    label: "Analytics",
+    roles: ["STUDENT"],
+    icon: TrendingUp,
   },
   {
     href: "/questions",
@@ -49,7 +61,7 @@ export const navItems: NavItemConfig[] = [
   {
     href: "/classes",
     label: "Turmas",
-    roles: ["TEACHER", "STUDENT"],
+    roles: ["ADMIN", "COORDINATOR", "TEACHER"],
     icon: GraduationCap,
   },
   {
@@ -57,12 +69,6 @@ export const navItems: NavItemConfig[] = [
     label: "Cursos",
     roles: ["ADMIN", "COORDINATOR"],
     icon: Layers,
-  },
-  {
-    href: "/classes-admin",
-    label: "Turmas",
-    roles: ["ADMIN", "COORDINATOR"],
-    icon: School,
   },
   {
     href: "/analytics",
@@ -104,8 +110,12 @@ export function isQuestionBankPath(pathname: string) {
   );
 }
 
+export function isExamAuthoringPath(pathname: string) {
+  return pathname === "/exams/new" || /^\/exams\/[^/]+\/edit$/.test(pathname);
+}
+
 export function canAccessPath(pathname: string, role: Role) {
-  if (isQuestionBankPath(pathname)) {
+  if (isQuestionBankPath(pathname) || isExamAuthoringPath(pathname)) {
     return role === "TEACHER";
   }
 

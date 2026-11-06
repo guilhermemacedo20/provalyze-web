@@ -12,6 +12,7 @@ export type QuestionOption = {
 export type QuestionPayload = {
   statement: string;
   type: QuestionType;
+  imageUrl?: string | null;
   themeId: string;
   correctOption?: string;
   options?: QuestionOption[];
@@ -21,6 +22,17 @@ export type Question = QuestionPayload & {
   id?: string;
   theme?: Theme;
   questionOptions?: QuestionOption[];
+  inExam?: boolean;
+};
+
+export type UploadedQuestionImage = {
+  id: string;
+  url: string;
+};
+
+export type QuestionImageData = {
+  id: string;
+  image: string;
 };
 
 export const questionsService = {
@@ -39,6 +51,17 @@ export const questionsService = {
 
   updateQuestion(id: string, data: QuestionPayload) {
     return apiRequest(`/questions/${id}`, { method: "PATCH", body: data });
+  },
+
+  uploadImage(image: string) {
+    return apiRequest<UploadedQuestionImage>("/questions/images", {
+      method: "POST",
+      body: { image },
+    });
+  },
+
+  getImage(path: string) {
+    return apiRequest<QuestionImageData>(path);
   },
 
   deleteQuestion(id: string) {

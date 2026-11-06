@@ -2,27 +2,127 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { authService, User } from "@/services/auth.service";
+import { authService } from "@/services/auth.service";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { LegalFooter } from "@/components/ui/LegalFooter";
+import { extractErrorMessage } from "@/lib/extract-error-message";
+import { User, usersService } from "@/services/users.service";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { isPasswordStrong } from "@/lib/password-validate";
+import { PasswordChecks } from "@/components/auth/PasswordChecks";
+import { EyeOff, Eye } from "lucide-react";
+
+const PRIVACY_EMAIL = "provalyze@gmail.com";
+
+function formatTermsDate(iso: string) {
+  return new Date(iso).toLocaleDateString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+  });
+}
+
+function DeleteAccountMessage({ role }: { role?: User["role"] }) {
+  const isRemoved = role === "ADMIN" || role === "COORDINATOR";
+  const isStudent = role === "STUDENT";
+
+  return (
+    <div className="flex flex-col gap-3">
+      <p>
+        Tem certeza que deseja excluir sua conta e seus dados? Essa ação não
+        pode ser desfeita e você perderá o acesso ao sistema.
+      </p>
+
+      {isStudent ? (
+        <div>
+          <p className="font-semibold text-foreground">O que acontece:</p>
+          <ul className="mt-1 list-disc pl-5">
+            <li>Suas matrículas nas turmas são apagados.</li>
+            <li>
+              Se você ainda não fez nenhuma prova, sua conta é apagada por
+              completo.
+            </li>
+            <li>
+              Se você já fez provas, seu nome e seu e-mail são substituídos por
+              valores genéricos. As provas e respostas continuam registradas de
+              forma anônima por <strong>5 anos</strong>, para preservar a
+              integridade dos dados da turma.
+            </li>
+          </ul>
+        </div>
+      ) : isRemoved ? (
+        <div>
+          <p className="font-semibold text-foreground">O que será removido:</p>
+          <ul className="mt-1 list-disc pl-5">
+            <li>Seu nome e seu e-mail.</li>
+            <li>Seu acesso ao sistema.</li>
+          </ul>
+        </div>
+      ) : (
+        <>
+          <div>
+            <p className="font-semibold text-foreground">
+              Dados que serão anonimizados:
+            </p>
+            <ul className="mt-1 list-disc pl-5">
+              <li>Seu nome completo.</li>
+              <li>Seu e-mail.</li>
+            </ul>
+            <p className="mt-1">
+              Eles serão substituídos por valores genéricos, e você não poderá
+              mais entrar com esta conta.
+            </p>
+          </div>
+
+          <div>
+            <p className="font-semibold text-foreground">
+              O que permanece, sem identificar você:
+            </p>
+            <p className="mt-1">
+              O histórico acadêmico (turmas e avaliações) fica registrado de
+              forma anônima por <strong>5 anos</strong>, para preservar a
+              integridade dos dados da turma.
+            </p>
+          </div>
+        </>
+      )}
+
+      <p>
+        Para esclarecer dúvidas, entre em contato pelo e-mail{" "}
+        <a
+          href={`mailto:${PRIVACY_EMAIL}`}
+          className="font-medium text-primary hover:underline"
+        >
+          {PRIVACY_EMAIL}
+        </a>
+        .
+      </p>
+    </div>
+  );
+}
 
 export default function ConfigPage() {
   const router = useRouter();
+  const { logout } = useAuth();
 
   const [profile, setProfile] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   const [isPasswordModalOpen, setPasswordModalOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [savingPassword, setSavingPassword] = useState(false);
 
   const [confirmingDeleteAccount, setConfirmingDeleteAccount] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     authService
-      .getProfile()
+      .me()
       .then(setProfile)
       .catch((error) => {
         console.error("Erro ao buscar perfil:", error);
@@ -32,6 +132,7 @@ export default function ConfigPage() {
   }, []);
 
   const openPasswordModal = () => {
+    setCurrentPassword("");
     setNewPassword("");
     setConfirmPassword("");
     setPasswordError(null);
@@ -42,8 +143,20 @@ export default function ConfigPage() {
     e.preventDefault();
     setPasswordError(null);
 
-    if (newPassword.length < 6) {
-      setPasswordError("A senha precisa ter pelo menos 6 caracteres.");
+    if (!profile?.email) {
+      setPasswordError("Não foi possível identificar o e-mail da conta.");
+      return;
+    }
+    if (currentPassword.length < 8) {
+      setPasswordError("A senha atual precisa ter pelo menos 8 caracteres.");
+      return;
+    }
+    if (!isPasswordStrong(newPassword)) {
+      setPasswordError("A senha não atende aos requisitos listados abaixo.");
+      return;
+    }
+    if (newPassword === currentPassword) {
+      setPasswordError("A nova senha deve ser diferente da atual.");
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -53,36 +166,52 @@ export default function ConfigPage() {
 
     setSavingPassword(true);
     try {
-      await authService.changePassword({ newPassword });
+      await authService.changePassword({
+        email: profile.email,
+        actualPassword: currentPassword,
+        newPassword,
+      });
       setPasswordModalOpen(false);
     } catch (error) {
       console.error("Erro ao alterar senha:", error);
-      setPasswordError("Não foi possível alterar a senha. Tente novamente.");
+      setPasswordError(extractErrorMessage(error));
     } finally {
       setSavingPassword(false);
     }
   };
 
+  const openDeleteAccount = () => {
+    setDeleteError(null);
+    setConfirmingDeleteAccount(true);
+  };
+
   const confirmDeleteAccount = async () => {
+    if (!profile) return;
+
     setDeletingAccount(true);
+    setDeleteError(null);
     try {
-      await authService.deleteAccount();
-      router.push("/");
+      await usersService.deleteUser(profile.id);
+      setTimeout(() => {
+        logout();
+        router.replace("/login");
+      }, 1000);
     } catch (error) {
       console.error("Erro ao excluir conta:", error);
+      setDeleteError(extractErrorMessage(error));
       setDeletingAccount(false);
     }
   };
 
   return (
-    <div className="relative px-10 py-9">
+    <div className="relative flex min-h-screen flex-col px-10 py-9">
       <h1 className="mb-5 text-2xl font-bold text-foreground">Configurações</h1>
 
       <div className="relative mb-8 rounded-lg border border-border bg-surface px-7 py-6 shadow-sm">
         <div className="mb-4 flex items-center gap-4">
           <div className="size-16 shrink-0 rounded-full bg-primary-light" />
           <p className="text-lg font-semibold text-foreground">
-            {loading ? "Carregando..." : profile?.name ?? "—"}
+            {loading ? "Carregando..." : profile?.name}
           </p>
         </div>
 
@@ -90,7 +219,17 @@ export default function ConfigPage() {
           <div className="mb-3 flex items-center justify-between text-[13px]">
             <span className="text-muted">E-mail</span>
             <span className="font-medium text-foreground">
-              {loading ? "..." : profile?.email ?? "—"}
+              {loading ? "..." : profile?.email}
+            </span>
+          </div>
+          <div className="mb-3 flex items-center justify-between text-[13px]">
+            <span className="text-muted">Termos</span>
+            <span className="font-medium text-foreground">
+              {loading
+                ? "..."
+                : profile?.termsAcceptedAt
+                  ? `Termos aceitos em ${formatTermsDate(profile.termsAcceptedAt)}`
+                  : "Termos ainda não aceitos"}
             </span>
           </div>
           <div className="flex items-center justify-between text-[13px]">
@@ -112,10 +251,10 @@ export default function ConfigPage() {
       <div className="flex justify-end">
         <button
           type="button"
-          onClick={() => setConfirmingDeleteAccount(true)}
+          onClick={openDeleteAccount}
           className="rounded-md bg-danger px-[18px] py-2.5 text-[13px] font-semibold text-white hover:opacity-90"
         >
-          Excluir conta
+          Excluir conta e dados
         </button>
       </div>
 
@@ -130,29 +269,90 @@ export default function ConfigPage() {
             </h2>
 
             <div className="mb-4 flex flex-col gap-1.5">
-              <label htmlFor="new-password" className="text-[13px] font-medium text-foreground">
+              <label
+                htmlFor="current-password"
+                className="text-[13px] font-medium text-foreground"
+              >
+                Senha atual
+              </label>
+              <div className="relative">
+                <input
+                  id="current-password"
+                  type={showPassword ? "text" : "password"}
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="w-full rounded-md border border-border bg-surface px-3.5 py-3 pr-10 text-sm text-foreground"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
+                  aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+
+            <div className="mb-4 flex flex-col gap-1.5">
+              <label
+                htmlFor="new-password"
+                className="text-[13px] font-medium text-foreground"
+              >
                 Nova senha
               </label>
-              <input
-                id="new-password"
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                className="rounded-md border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground"
-              />
+              <div className="relative">
+                <input
+                  id="new-password"
+                  type={showNewPassword ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full rounded-md border border-border bg-surface px-3.5 py-3 pr-10 text-sm text-foreground"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
+                  aria-label={
+                    showNewPassword ? "Ocultar senha" : "Mostrar senha"
+                  }
+                >
+                  {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+              <PasswordChecks password={newPassword} />
             </div>
 
             <div className="mb-2 flex flex-col gap-1.5">
-              <label htmlFor="confirm-password" className="text-[13px] font-medium text-foreground">
+              <label
+                htmlFor="confirm-password"
+                className="text-[13px] font-medium text-foreground"
+              >
                 Confirmar nova senha
               </label>
-              <input
-                id="confirm-password"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="rounded-md border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground"
-              />
+              <div className="relative">
+                <input
+                  id="confirm-password"
+                  type={showConfirmNewPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full rounded-md border border-border bg-surface px-3.5 py-3 pr-10 text-sm text-foreground"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmNewPassword((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
+                  aria-label={
+                    showConfirmNewPassword ? "Ocultar senha" : "Mostrar senha"
+                  }
+                >
+                  {showConfirmNewPassword ? (
+                    <EyeOff size={18} />
+                  ) : (
+                    <Eye size={18} />
+                  )}
+                </button>
+              </div>
             </div>
 
             {passwordError && (
@@ -181,12 +381,16 @@ export default function ConfigPage() {
 
       <ConfirmDialog
         open={confirmingDeleteAccount}
-        title="Excluir conta"
-        message="Tem certeza que deseja excluir sua conta? Essa ação não pode ser desfeita."
+        title="Excluir conta e dados"
+        message={<DeleteAccountMessage role={profile?.role} />}
+        error={deleteError}
+        confirmLabel="Excluir conta e dados"
         confirming={deletingAccount}
         onConfirm={confirmDeleteAccount}
         onCancel={() => setConfirmingDeleteAccount(false)}
       />
+
+      <LegalFooter />
     </div>
   );
 }

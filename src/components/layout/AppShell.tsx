@@ -11,6 +11,7 @@ import {
   settingsItem,
 } from "@/config/nav";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { TermsAcceptanceModal } from "@/components/auth/TermsAcceptanceModal";
 
 const PUBLIC_PATHS = ["/login", "/register", "/esqueci-senha"];
 
@@ -55,9 +56,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const items = navItemsForRole(user.role);
 
+  const handleLogout = () => {
+    logout();
+    router.replace("/login");
+  };
+
+  const mustAcceptTerms = user.termsAcceptedAt === null;
+
   return (
     <div className="flex min-h-screen bg-background">
-      <aside className="flex w-64 shrink-0 flex-col border-r border-border bg-surface">
+      <aside className="sticky top-0 flex h-screen w-64 shrink-0 flex-col border-r border-border bg-surface">
         <div className="border-b border-border px-5 py-5">
           <div className="flex items-center gap-2">
             <Image src="/logo.png" alt="Provalyze" width={26} height={35} />
@@ -102,10 +110,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <button
               type="button"
               className="cursor-pointer text-[11px] text-muted hover:text-foreground"
-              onClick={() => {
-                logout();
-                router.replace("/login");
-              }}
+              onClick={handleLogout}
             >
               Sair
             </button>
@@ -114,6 +119,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       <div className="min-w-0 flex-1 bg-surface">{children}</div>
+
+      {mustAcceptTerms && <TermsAcceptanceModal onLogout={handleLogout} />}
     </div>
   );
 }

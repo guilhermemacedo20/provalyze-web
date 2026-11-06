@@ -1,11 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Course, coursesService } from "@/services/courses.service";
 import { Subject, subjectsService } from "@/services/subjects.service";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { Pagination } from "@/components/ui/Pagination";
+import { compareNames, matchesSearch, paginate } from "@/lib/list-utils";
+
+const SUBJECTS_PER_PAGE = 10;
 
 export default function CourseSubjectsPage() {
   const { courseId } = useParams<{ courseId: string }>();
@@ -16,6 +20,7 @@ export default function CourseSubjectsPage() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [subjectsLoading, setSubjectsLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
 
   const [name, setName] = useState("");
   const [creating, setCreating] = useState(false);
@@ -24,7 +29,7 @@ export default function CourseSubjectsPage() {
   const [deleteTarget, setDeleteTarget] = useState<Subject | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  const fetchCourse = async () => {
+  const fetchCourse = useCallback(async () => {
     try {
       setCourse(await coursesService.getCourse(courseId));
     } catch (error) {
@@ -33,9 +38,9 @@ export default function CourseSubjectsPage() {
     } finally {
       setCourseLoading(false);
     }
-  };
+  }, [courseId]);
 
-  const fetchSubjects = async () => {
+  const fetchSubjects = useCallback(async () => {
     try {
       setSubjects(await subjectsService.listSubjects(courseId));
     } catch (error) {
@@ -44,12 +49,12 @@ export default function CourseSubjectsPage() {
     } finally {
       setSubjectsLoading(false);
     }
-  };
+  }, [courseId]);
 
   useEffect(() => {
     fetchCourse();
     fetchSubjects();
-  }, [courseId]);
+  }, [fetchCourse, fetchSubjects]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,9 +94,19 @@ export default function CourseSubjectsPage() {
     }
   };
 
-  const filteredSubjects = subjects.filter((subject) =>
-    subject.name.toLowerCase().includes(search.toLowerCase())
+  const filteredSubjects = useMemo(
+    () =>
+      subjects
+        .filter((subject) => matchesSearch(subject.name, search))
+        .sort((a, b) => compareNames(a.name, b.name)),
+    [subjects, search],
   );
+
+  const {
+    items: visibleSubjects,
+    currentPage,
+    totalPages,
+  } = paginate(filteredSubjects, page, SUBJECTS_PER_PAGE);
 
   if (!courseLoading && !course) {
     return (
@@ -154,7 +169,10 @@ export default function CourseSubjectsPage() {
         type="text"
         placeholder="Pesquisar..."
         value={search}
-        onChange={(e) => setSearch(e.target.value)}
+        onChange={(e) => {
+          setSearch(e.target.value);
+          setPage(1);
+        }}
         className="mb-5 w-full rounded-md border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted"
       />
 
@@ -184,7 +202,7 @@ export default function CourseSubjectsPage() {
               </tr>
             )}
             {!subjectsLoading &&
-              filteredSubjects.map((subject) => (
+              visibleSubjects.map((subject) => (
                 <tr key={subject.id} className="border-b border-border last:border-b-0">
                   <td className="px-5 py-3.5 font-semibold text-foreground">{subject.name}</td>
                   <td className="px-5 py-3.5 text-muted">{subject.createdAt}</td>
@@ -202,14 +220,25 @@ export default function CourseSubjectsPage() {
           </tbody>
         </table>
       </div>
-      
+
+      {!subjectsLoading && (
+        <div className="mt-4">
+          <Pagination
+            page={currentPage}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            label="Paginação das matérias"
+          />
+        </div>
+      )}
+
       <Link
         href="/courses"
         className="mt-6 inline-block text-sm font-medium text-muted hover:text-foreground"
       >
         ← Voltar
       </Link>
-      
+
       <ConfirmDialog
         open={deleteTarget !== null}
         title="Excluir matéria"

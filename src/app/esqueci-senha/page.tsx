@@ -3,21 +3,14 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Check, X as XIcon } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { authService } from "@/services/auth.service";
 import { extractErrorMessage } from "@/lib/extract-error-message";
 import { TermsPolicyModal } from "@/components/ui/TermsPolicyModal";
+import { isPasswordStrong } from "@/lib/password-validate";
+import { PasswordChecks } from "@/components/auth/PasswordChecks";
 
 type Step = "email" | "reset";
-
-function getPasswordChecks(password: string) {
-  return [
-    { label: "Mínimo de 8 caracteres", met: password.length >= 8 },
-    { label: "Uma letra maiúscula", met: /[A-Z]/.test(password) },
-    { label: "Uma letra minúscula", met: /[a-z]/.test(password) },
-    { label: "Um número", met: /[0-9]/.test(password) },
-  ];
-}
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -36,12 +29,13 @@ export default function ForgotPasswordPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const [termsSection, setTermsSection] = useState<"terms" | "privacy" | null>(null);
+  const [termsSection, setTermsSection] = useState<"terms" | "privacy" | null>(
+    null,
+  );
   const [resetError, setResetError] = useState<string | null>(null);
   const [resetting, setResetting] = useState(false);
 
-  const passwordChecks = getPasswordChecks(newPassword);
-  const allChecksMet = passwordChecks.every((check) => check.met);
+  const allChecksMet = isPasswordStrong(newPassword);
 
   const handleSendEmail = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,6 +62,16 @@ export default function ForgotPasswordPage() {
     }
   };
 
+  const cleanFields = () => {
+    setEmail("");
+    setNewPassword("");
+    setAcceptedTerms(false);
+    setConfirmPassword("");
+    setDigits(Array(6).fill(""));
+
+    setStep("email");
+  };
+
   const handleDigitChange = (index: number, value: string) => {
     const digit = value.replace(/\D/g, "").slice(-1);
     const next = [...digits];
@@ -79,7 +83,10 @@ export default function ForgotPasswordPage() {
     }
   };
 
-  const handleDigitKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleDigitKeyDown = (
+    index: number,
+    e: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
     if (e.key === "Backspace" && !digits[index] && index > 0) {
       inputsRef.current[index - 1]?.focus();
     }
@@ -104,13 +111,20 @@ export default function ForgotPasswordPage() {
       return;
     }
     if (!acceptedTerms) {
-      setResetError("Você precisa aceitar os Termos de Uso e a Política de Privacidade.");
+      setResetError(
+        "Você precisa aceitar os Termos de Uso e a Política de Privacidade.",
+      );
       return;
     }
 
     setResetting(true);
     try {
-      await authService.resetPassword({ email: email.trim(), code, newPassword });
+      await authService.resetPassword({
+        email: email.trim(),
+        code,
+        newPassword,
+        acceptTerms: true,
+      });
       router.push("/login?success=password");
     } catch (err) {
       console.error("Erro ao redefinir senha:", err);
@@ -133,7 +147,10 @@ export default function ForgotPasswordPage() {
             </p>
 
             <div className="mb-6 flex flex-col gap-1.5">
-              <label htmlFor="email" className="text-[13px] font-medium text-foreground">
+              <label
+                htmlFor="email"
+                className="text-[13px] font-medium text-foreground"
+              >
                 E-mail institucional
               </label>
               <input
@@ -146,7 +163,9 @@ export default function ForgotPasswordPage() {
               />
             </div>
 
-            {emailError && <p className="mb-4 text-[13px] text-danger">{emailError}</p>}
+            {emailError && (
+              <p className="mb-4 text-[13px] text-danger">{emailError}</p>
+            )}
 
             <div className="flex items-center justify-between">
               <Link
@@ -192,7 +211,10 @@ export default function ForgotPasswordPage() {
             </div>
 
             <div className="mb-2 flex flex-col gap-1.5">
-              <label htmlFor="new-password" className="text-[13px] font-medium text-foreground">
+              <label
+                htmlFor="new-password"
+                className="text-[13px] font-medium text-foreground"
+              >
                 Senha
               </label>
               <div className="relative">
@@ -214,23 +236,15 @@ export default function ForgotPasswordPage() {
               </div>
             </div>
 
-            <ul className="mb-4 flex flex-col gap-1">
-              {passwordChecks.map((check) => (
-                <li key={check.label} className="flex items-center gap-1.5 text-[12px]">
-                  {check.met ? (
-                    <Check size={14} className="text-success" />
-                  ) : (
-                    <XIcon size={14} className="text-muted" />
-                  )}
-                  <span className={check.met ? "text-success" : "text-muted"}>
-                    {check.label}
-                  </span>
-                </li>
-              ))}
-            </ul>
+            <div className="mb-4">
+              <PasswordChecks password={newPassword} />
+            </div>
 
             <div className="mb-4 flex flex-col gap-1.5">
-              <label htmlFor="confirm-password" className="text-[13px] font-medium text-foreground">
+              <label
+                htmlFor="confirm-password"
+                className="text-[13px] font-medium text-foreground"
+              >
                 Confirmar senha
               </label>
               <div className="relative">
@@ -245,9 +259,15 @@ export default function ForgotPasswordPage() {
                   type="button"
                   onClick={() => setShowConfirmPassword((v) => !v)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
-                  aria-label={showConfirmPassword ? "Ocultar senha" : "Mostrar senha"}
+                  aria-label={
+                    showConfirmPassword ? "Ocultar senha" : "Mostrar senha"
+                  }
                 >
-                  {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  {showConfirmPassword ? (
+                    <EyeOff size={18} />
+                  ) : (
+                    <Eye size={18} />
+                  )}
                 </button>
               </div>
             </div>
@@ -280,12 +300,14 @@ export default function ForgotPasswordPage() {
               </span>
             </label>
 
-            {resetError && <p className="mb-4 text-[13px] text-danger">{resetError}</p>}
+            {resetError && (
+              <p className="mb-4 text-[13px] text-danger">{resetError}</p>
+            )}
 
             <div className="flex items-center justify-between">
               <button
                 type="button"
-                onClick={() => setStep("email")}
+                onClick={() => cleanFields()}
                 className="rounded-md border border-border px-[18px] py-2.5 text-[13px] font-semibold text-foreground hover:bg-background"
               >
                 Cancelar

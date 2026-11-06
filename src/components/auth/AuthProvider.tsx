@@ -2,25 +2,26 @@
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import {
-  AuthUser,
   clearSession,
   getAccessToken,
   getStoredUser,
   saveSession,
 } from "@/lib/auth-role-storage";
 import { authService } from "@/services/auth.service";
+import { User } from "@/services/users.service";
 
 type AuthContextValue = {
-  user: AuthUser | null;
+  user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<AuthUser>;
+  login: (email: string, password: string) => Promise<User>;
   logout: () => void;
+  acceptTerms: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -64,6 +65,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logout() {
         clearSession();
         setUser(null);
+      },
+      async acceptTerms() {
+        const result = await authService.acceptTerms();
+        if (!user) return;
+
+        const updated: User = {
+          ...user,
+          termsAcceptedAt: result.termsAcceptedAt,
+          termsVersion: result.termsVersion,
+        };
+        const token = getAccessToken();
+        if (token) saveSession(token, updated);
+        setUser(updated);
       },
     }),
     [user, loading],

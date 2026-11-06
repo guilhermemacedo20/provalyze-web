@@ -2,10 +2,15 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Question, questionsService } from "@/services/questions.service";
 import { Theme, themesService } from "@/services/themes.service";
 import { Modal } from "@/components/layout/Modal";
+import { Pagination } from "@/components/ui/Pagination";
+import { matchesSearch, paginate } from "@/lib/list-utils";
+import { extractErrorMessage } from "@/lib/extract-error-message";
+
+const QUESTIONS_PER_PAGE = 10;
 
 const typeLabel = (type: Question["type"]) => {
   return type === "OPEN_ENDED" ? "Dissertativa" : "Objetiva";
@@ -17,12 +22,14 @@ export default function ThemeQuestionsPage() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<"" | Question["type"]>("");
+  const [page, setPage] = useState(1);
   const [questionToDelete, setQuestionToDelete] = useState<Question | null>(
     null,
   );
   const [loading, setLoading] = useState(true);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       const themeList = await themesService.getTheme(id);
@@ -35,30 +42,37 @@ export default function ThemeQuestionsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
   const confirmDelete = async () => {
     if (!questionToDelete || !questionToDelete.id) {
       return;
     }
-    await questionsService.deleteQuestion(questionToDelete.id);
-    setQuestionToDelete(null);
-    fetchData();
+    try {
+      await questionsService.deleteQuestion(questionToDelete.id);
+      setQuestionToDelete(null);
+      fetchData();
+    } catch (err) {
+      setDeleteError(extractErrorMessage(err));
+    }
   };
 
   const filteredQuestions = useMemo(() => {
-    const term = search.trim().toLowerCase();
     return questions.filter((question) => {
       const matchesType = !typeFilter || question.type === typeFilter;
-      const matchesSearch =
-        !term || question.statement.toLowerCase().includes(term);
-      return matchesType && matchesSearch;
+      return matchesType && matchesSearch(question.statement, search);
     });
   }, [questions, search, typeFilter]);
 
+  const {
+    items: visibleQuestions,
+    currentPage,
+    totalPages,
+  } = paginate(filteredQuestions, page, QUESTIONS_PER_PAGE);
+
   useEffect(() => {
     fetchData();
-  }, [id]);
+  }, [fetchData]);
 
   if (loading) {
     return (
@@ -83,30 +97,34 @@ export default function ThemeQuestionsPage() {
 
   return (
     <main className="flex min-h-screen flex-col gap-6 bg-surface px-10 pb-10 pt-9">
-      <p className="text-[12px] text-muted">Banco de Questões / {theme.name}</p>
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-3">
+      <p className="break-words text-[12px] text-muted">
+        Banco de Questões / {theme.name}
+      </p>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-center gap-6">
             <div className="flex items-center gap-3">
-              <label htmlFor="themeName" className="mr-3">
+              <label htmlFor="themeName">
                 Tema:
               </label>
               <input
                 disabled
                 value={theme.name}
-                className="text-[13px] font-medium text-foreground whitespace-nowrap overflow-hidden text-ellipsis border border-border rounded-[14px] px-4 py-2.5 mr-3 bg-background"
+                className="text-[13px] font-medium text-foreground whitespace-nowrap overflow-hidden text-ellipsis border border-border rounded-[14px] px-4 py-2.5 bg-background"
               />
             </div>
-            <div className="flex items-center gap-3 my-4">
-              <label htmlFor="questionType" className="mr-3">
+            <div className="flex items-center gap-3">
+              <label htmlFor="questionType">
                 Tipo de questão:
               </label>
               <select
+                id="questionType"
                 value={typeFilter}
-                className="my-4 h-[40px] rounded-[14px] border border-border bg-background px-4 py-2.5 text-[13px] text-center "
-                onChange={(event) =>
-                  setTypeFilter(event.target.value as "" | Question["type"])
-                }
+                className="h-[40px] rounded-[14px] border border-border bg-background px-4 py-2.5 text-[13px] text-center"
+                onChange={(event) => {
+                  setTypeFilter(event.target.value as "" | Question["type"]);
+                  setPage(1);
+                }}
               >
                 <option value="">Todos</option>
                 <option value="MULTIPLE_CHOICE">Objetiva</option>
@@ -114,16 +132,19 @@ export default function ThemeQuestionsPage() {
               </select>
             </div>
           </div>
-          <div className="flex items-center gap-3 mb-4">
+          <div className="flex items-center gap-3">
             <input
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              className="mt-3 w-full rounded-[14px] border border-border px-4 py-2.5 text-foreground placeholder:text-muted"
+              onChange={(event) => {
+                setSearch(event.target.value);
+                setPage(1);
+              }}
+              className="w-full rounded-[14px] border border-border px-4 py-2.5 text-foreground placeholder:text-muted"
               placeholder="Pesquisar..."
             />
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex h-[40px] shrink-0 items-center gap-3">
           <Link
             href={`/themes/${theme.id}/edit`}
             className="text-[13px] font-medium text-primary"
@@ -152,12 +173,15 @@ export default function ThemeQuestionsPage() {
             Nenhuma questão neste tema.
           </p>
         ) : (
-          filteredQuestions.map((question) => (
+          visibleQuestions.map((question) => (
             <div
               key={question.id}
-              className="flex items-center gap-3 border-b border-border px-5 py-4 text-[13px] last:border-b-0"
+              className="flex min-w-0 items-center gap-3 border-b border-border px-5 py-4 text-[13px] last:border-b-0"
             >
-              <p className="min-w-0 flex-1 font-medium text-foreground">
+              <p
+                title={question.statement}
+                className="line-clamp-2 min-w-0 flex-1 break-words font-medium text-foreground"
+              >
                 {question.statement}
               </p>
               <p className="w-[120px] shrink-0 text-muted">
@@ -180,9 +204,17 @@ export default function ThemeQuestionsPage() {
           ))
         )}
       </div>
+
+      <Pagination
+        page={currentPage}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        label="Paginação das questões"
+      />
+
       <Link
         href={"/questions"}
-        className="rounded-[14px] bg-primary px-4 py-2.5 text-[13px] text-white hover:bg-primary-hover width-[120px] text-center self-end max-w-[120px]"
+        className="self-start rounded-[14px] bg-primary px-4 py-2.5 text-[13px] font-semibold text-white hover:bg-primary-hover"
       >
         <span className="mr-2 font-bold">←</span> Voltar
       </Link>
@@ -191,16 +223,17 @@ export default function ThemeQuestionsPage() {
         setIsOpen={(open) => {
           if (!open) {
             setQuestionToDelete(null);
+            setDeleteError(null);
           }
         }}
         title="Confirmar exclusão"
-        description={
-          questionToDelete
-            ? `Excluir a questão "${questionToDelete.statement}"?`
-            : ""
-        }
+        description="Tem certeza que deseja excluir esta questão? Essa ação não pode ser desfeita."
         onConfirm={confirmDelete}
-      />
+      >
+        {deleteError && (
+          <p className="mb-4 text-[13px] text-danger">{deleteError}</p>
+        )}
+      </Modal>
     </main>
   );
 }

@@ -27,3 +27,29 @@ body {
   font-size: 14px;
   line-height: 1.5;
 }
+
+@layer base {
+  button,
+  [role="button"],
+  a[href],
+  label,
+  summary,
+  select,
+  input[type="checkbox"],
+  input[type="radio"],
+  input[type="file"],
+  input[type="submit"],
+  input[type="button"],
+  input[type="reset"] {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  input:disabled,
+  select:disabled,
+  textarea:disabled,
+  [aria-disabled="true"],
+  label:has(:disabled) {
+    cursor: not-allowed;
+  }
+}

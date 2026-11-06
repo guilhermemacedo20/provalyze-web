@@ -16,7 +16,7 @@ const STUDENT_STATUS: Record<
 > = {
   NOT_STARTED: { label: "Não iniciada", tone: "neutral" },
   IN_PROGRESS: { label: "Em andamento", tone: "warning" },
-  FINISHED: { label: "Concluída", tone: "success" },
+  FINISHED: { label: "Aguardando correção", tone: "success" },
   GRADED: { label: "Corrigida", tone: "purple" },
   EXPIRED: { label: "Expirada", tone: "neutral" },
 };

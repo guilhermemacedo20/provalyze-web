@@ -4,20 +4,22 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { Eye, EyeOff } from "lucide-react";
 import { authService } from "@/services/auth.service";
 import { extractErrorMessage } from "@/lib/extract-error-message";
 import { TermsPolicyModal } from "@/components/ui/TermsPolicyModal";
-
-type ProfileRole = "TEACHER" | "STUDENT";
+import { isPasswordStrong } from "@/lib/password-validate";
+import { PasswordChecks } from "@/components/auth/PasswordChecks";
 
 export default function RegisterPage() {
   const router = useRouter();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<ProfileRole>("TEACHER");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [termsSection, setTermsSection] = useState<"terms" | "privacy" | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -31,8 +33,8 @@ export default function RegisterPage() {
       setError("Preencha todos os campos.");
       return;
     }
-    if (password.length < 8) {
-      setError("A senha precisa ter pelo menos 8 caracteres.");
+    if (!isPasswordStrong(password)) {
+      setError("A senha não atende aos requisitos listados abaixo.");
       return;
     }
     if (password !== confirmPassword) {
@@ -40,7 +42,9 @@ export default function RegisterPage() {
       return;
     }
     if (!acceptedTerms) {
-      setError("Você precisa aceitar os Termos de Uso e a Política de Privacidade.");
+      setError(
+        "Você precisa aceitar os Termos de Uso e a Política de Privacidade.",
+      );
       return;
     }
 
@@ -49,8 +53,9 @@ export default function RegisterPage() {
       await authService.register({
         name: name.trim(),
         email: email.trim(),
-        role,
+        role: "STUDENT",
         password,
+        acceptTerms: true,
       });
       router.push("/login?success=account");
     } catch (err) {
@@ -76,16 +81,27 @@ export default function RegisterPage() {
       <div className="flex w-full items-center justify-center bg-background px-6 py-10 md:w-1/2">
         <form onSubmit={handleSubmit} className="w-full max-w-[360px]">
           <div className="mb-6 flex justify-center">
-            <Image src="/logo.png" alt="Provalyze" width={48} height={65} quality={100} />
+            <Image
+              src="/logo.png"
+              alt="Provalyze"
+              width={48}
+              height={65}
+              quality={100}
+            />
           </div>
 
-          <h1 className="mb-2 text-2xl font-bold text-foreground">Criar conta</h1>
+          <h1 className="mb-2 text-2xl font-bold text-foreground">
+            Criar conta
+          </h1>
           <p className="mb-6 text-sm text-muted">
             Preencha seus dados para começar a usar o Provalyze.
           </p>
 
           <div className="mb-4 flex flex-col gap-1.5">
-            <label htmlFor="name" className="text-[13px] font-medium text-foreground">
+            <label
+              htmlFor="name"
+              className="text-[13px] font-medium text-foreground"
+            >
               Nome completo
             </label>
             <input
@@ -99,7 +115,10 @@ export default function RegisterPage() {
           </div>
 
           <div className="mb-4 flex flex-col gap-1.5">
-            <label htmlFor="email" className="text-[13px] font-medium text-foreground">
+            <label
+              htmlFor="email"
+              className="text-[13px] font-medium text-foreground"
+            >
               E-mail institucional
             </label>
             <input
@@ -107,65 +126,66 @@ export default function RegisterPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="professor@escola.edu.br"
+              placeholder="aluno@escola.edu.br"
               className="rounded-md border border-border bg-surface px-3.5 py-3 text-sm text-foreground placeholder:text-muted"
             />
           </div>
 
           <div className="mb-4 flex flex-col gap-1.5">
-            <label className="text-[13px] font-medium text-foreground">Perfil</label>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setRole("TEACHER")}
-                className={`flex-1 rounded-md py-2.5 text-xs font-medium ${
-                  role === "TEACHER"
-                    ? "bg-primary text-white"
-                    : "border border-border bg-surface text-foreground"
-                }`}
-              >
-                Professor
-              </button>
-              <button
-                type="button"
-                onClick={() => setRole("STUDENT")}
-                className={`flex-1 rounded-md py-2.5 text-xs font-medium ${
-                  role === "STUDENT"
-                    ? "bg-primary text-white"
-                    : "border border-border bg-surface text-foreground"
-                }`}
-              >
-                Aluno
-              </button>
-            </div>
-          </div>
-
-          <div className="mb-4 flex flex-col gap-1.5">
-            <label htmlFor="password" className="text-[13px] font-medium text-foreground">
+            <label
+              htmlFor="password"
+              className="text-[13px] font-medium text-foreground"
+            >
               Senha
             </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              className="rounded-md border border-border bg-surface px-3.5 py-3 text-sm text-foreground placeholder:text-muted"
-            />
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full rounded-md border border-border bg-surface px-3.5 py-3 pr-10 text-sm text-foreground placeholder:text-muted"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
+                aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+            <PasswordChecks password={password} />
           </div>
 
           <div className="mb-4 flex flex-col gap-1.5">
-            <label htmlFor="confirm-password" className="text-[13px] font-medium text-foreground">
+            <label
+              htmlFor="confirm-password"
+              className="text-[13px] font-medium text-foreground"
+            >
               Confirmar senha
             </label>
-            <input
-              id="confirm-password"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="••••••••"
-              className="rounded-md border border-border bg-surface px-3.5 py-3 text-sm text-foreground placeholder:text-muted"
-            />
+            <div className="relative">
+              <input
+                id="confirm-password"
+                type={showConfirmPassword ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full rounded-md border border-border bg-surface px-3.5 py-3 pr-10 text-sm text-foreground placeholder:text-muted"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword((v) => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
+                aria-label={
+                  showConfirmPassword ? "Ocultar senha" : "Mostrar senha"
+                }
+              >
+                {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
 
           <label className="mb-4 flex items-start gap-2 text-[12px] text-muted">
@@ -208,7 +228,10 @@ export default function RegisterPage() {
 
           <p className="mt-4 text-center text-[13px] text-muted">
             Já possui uma conta?{" "}
-            <Link href="/login" className="font-semibold text-primary hover:underline">
+            <Link
+              href="/login"
+              className="font-semibold text-primary hover:underline"
+            >
               Entrar
             </Link>
           </p>

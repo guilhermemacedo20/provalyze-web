@@ -1,15 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Course, coursesService } from "@/services/courses.service";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { Pagination } from "@/components/ui/Pagination";
+import { compareNames, matchesSearch, paginate } from "@/lib/list-utils";
+import { extractErrorMessage } from "@/lib/extract-error-message";
+
+const COURSES_PER_PAGE = 10;
 
 export default function CoursesPage() {
   // listagem de cursos.
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
 
   // referente ao estado do formulário de criar um novo curso.
   const [name, setName] = useState("");
@@ -54,7 +60,7 @@ export default function CoursesPage() {
       await fetchCourses();
     } catch (error) {
       console.error("Erro ao criar curso:", error);
-      setFormError("Não foi possível criar o curso. Tente novamente.");
+      setFormError(extractErrorMessage(error));
     } finally {
       setCreating(false);
     }
@@ -78,13 +84,22 @@ export default function CoursesPage() {
     }
   };
 
-  // filtra e lista os cursos contendo só os que contém o texto da busca.
-  const filteredCourses = courses.filter((course) =>
-    course.name.toLowerCase().includes(search.toLowerCase())
+  // filtra os cursos pelo texto da busca e deixa em ordem alfabética.
+  const filteredCourses = useMemo(
+    () =>
+      courses
+        .filter((course) => matchesSearch(course.name, search))
+        .sort((a, b) => compareNames(a.name, b.name)),
+    [courses, search],
   );
 
+  const {
+    items: visibleCourses,
+    currentPage,
+    totalPages,
+  } = paginate(filteredCourses, page, COURSES_PER_PAGE);
+
   return (
-    // "relative" é necessário pro modal (fixed inset-0) se posicionar corretamente.
     <div className="relative px-10 py-9">
       <h1 className="mb-5 text-2xl font-bold text-foreground">Cursos</h1>
 
@@ -93,10 +108,15 @@ export default function CoursesPage() {
         onSubmit={handleCreate}
         className="mb-5 flex flex-col gap-3.5 rounded-lg border border-[#d3e0fb] bg-[#f4f7fe] px-[22px] py-5"
       >
-        <p className="text-sm font-semibold text-foreground">Criar novo curso</p>
+        <p className="text-sm font-semibold text-foreground">
+          Criar novo curso
+        </p>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="course-name" className="text-[13px] font-medium text-foreground">
+          <label
+            htmlFor="course-name"
+            className="text-[13px] font-medium text-foreground"
+          >
             Nome
           </label>
           <input
@@ -125,7 +145,10 @@ export default function CoursesPage() {
         type="text"
         placeholder="Pesquisar..."
         value={search}
-        onChange={(e) => setSearch(e.target.value)}
+        onChange={(e) => {
+          setSearch(e.target.value);
+          setPage(1);
+        }}
         className="mb-5 w-full rounded-md border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted"
       />
 
@@ -155,10 +178,17 @@ export default function CoursesPage() {
               </tr>
             )}
             {!loading &&
-              filteredCourses.map((course) => (
-                <tr key={course.id} className="border-b border-border last:border-b-0">
-                  <td className="px-5 py-3.5 font-semibold text-foreground">{course.name}</td>
-                  <td className="px-5 py-3.5 text-muted">{course.createdAt}</td>
+              visibleCourses.map((course) => (
+                <tr
+                  key={course.id}
+                  className="border-b border-border last:border-b-0"
+                >
+                  <td className="px-5 py-3.5 font-semibold text-foreground">
+                    {course.name}
+                  </td>
+                  <td className="px-5 py-3.5 text-muted">
+                    {new Date(course.createdAt)?.toLocaleString("pt-BR") || ""}
+                  </td>
                   <td className="px-5 py-3.5 text-right">
                     <div className="flex items-center justify-end gap-4">
                       <Link
@@ -181,6 +211,17 @@ export default function CoursesPage() {
           </tbody>
         </table>
       </div>
+
+      {!loading && (
+        <div className="mt-4">
+          <Pagination
+            page={currentPage}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            label="Paginação dos cursos"
+          />
+        </div>
+      )}
 
       <ConfirmDialog
         open={deleteTarget !== null}

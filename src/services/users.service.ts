@@ -6,8 +6,11 @@ export type User = {
   name: string;
   email: string;
   role: Role;
-  classes: string[]; // nomes das turmas, ex: ["1º A", "7º A"]
-  createdAt: string; // formato "DD/MM/AAAA"
+  registrationNumber?: string;
+  classes: string[];
+  createdAt: string;
+  termsAcceptedAt?: string | null;
+  termsVersion?: string | null;
 };
 
 export const usersService = {

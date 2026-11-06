@@ -1,0 +1,299 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
+import { QuestionImage } from "@/components/questions/QuestionImage";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import {
+  ExamEventType,
+  ExamQuestion,
+  examsService,
+} from "@/services/exams.service";
+
+type Draft = Record<string, { optionId?: string; content?: string }>;
+
+function formatRemaining(expiresAt?: string, now = Date.now()) {
+  if (!expiresAt) return null;
+  const totalSeconds = Math.max(
+    0,
+    Math.floor((new Date(expiresAt).getTime() - now) / 1000),
+  );
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const clock =
+    hours > 0
+      ? `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
+      : `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  return clock;
+}
+
+function isAnswered(question: ExamQuestion, draft?: Draft[string]) {
+  if (question.type === "MULTIPLE_CHOICE") return Boolean(draft?.optionId);
+  return Boolean(draft?.content?.trim());
+}
+
+export function ExamRunner({
+  title,
+  subjectName,
+  questions,
+  answers,
+  expiresAt,
+  classId,
+  examId,
+  submitting,
+  error,
+  onAnswer,
+  onSubmit,
+}: {
+  title: string;
+  subjectName: string;
+  questions: ExamQuestion[];
+  answers: Draft;
+  expiresAt?: string;
+  submitting: boolean;
+  classId: string;
+  examId: string;
+  error: string | null;
+  onAnswer: (question: ExamQuestion, value: Draft[string]) => void;
+  onSubmit: () => void;
+}) {
+  const [index, setIndex] = useState(0);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+  const question = questions[index];
+  const questionRef = useRef(question);
+  const [lastEvent, setLastEvent] = useState<{
+    event: ExamEventType;
+    examQuestionId: string;
+  } | null>(null);
+  const remaining = formatRemaining(expiresAt, now);
+  const total = questions.length;
+  const unanswered = questions.filter(
+    (item) => !isAnswered(item, answers[item.id]),
+  ).length;
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  questionRef.current = question;
+  useEffect(() => {
+    const send = (type: ExamEventType) => {
+      const current = questionRef.current;
+
+      if (!current) return;
+
+      if (
+        lastEvent?.event === type &&
+        lastEvent?.examQuestionId === current.id
+      ) {
+        return;
+      }
+      setLastEvent({ event: type, examQuestionId: current.id });
+      examsService.createExamEvent(classId, examId, {
+        type,
+        examQuestionId: current.id,
+      });
+    };
+
+    const onPaste = () => send("PASTE");
+    const onCopy = () => send("COPY");
+    const onCut = () => send("CUT");
+    const onVisibility = () => {
+      if (document.hidden) send("TAB_SWITCH");
+    };
+    const onBlur = () => {
+      if (!document.hidden) send("WINDOW_BLUR");
+    };
+    const onContextMenu = () => send("CONTEXT_MENU");
+    window.addEventListener("paste", onPaste);
+    window.addEventListener("copy", onCopy);
+    window.addEventListener("cut", onCut);
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("blur", onBlur);
+    window.addEventListener("contextmenu", onContextMenu);
+    return () => {
+      window.removeEventListener("paste", onPaste);
+      window.removeEventListener("copy", onCopy);
+      window.removeEventListener("cut", onCut);
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("blur", onBlur);
+      window.removeEventListener("contextmenu", onContextMenu);
+    };
+  }, [classId, examId]);
+
+  if (!question) return null;
+
+  const kind = question.type === "OPEN_ENDED" ? "DISCURSIVA" : "OBJETIVA";
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col bg-white">
+      <header className="flex items-center justify-between border-b border-[#E2E8F0] px-6 py-3">
+        <div className="flex items-center gap-3">
+          <Image src="/logo.png" alt="" width={26} height={35} />
+          <p className="text-sm font-semibold text-foreground">
+            {title}
+            {subjectName ? ` : ${subjectName}` : ""}
+          </p>
+        </div>
+        <div className="flex items-center gap-3 text-sm">
+          <span className="text-muted">
+            Questão {index + 1} de {total}
+          </span>
+          {remaining && (
+            <span className="rounded-full bg-[#DCFCE7] px-3 py-1 font-medium text-[#16A34A]">
+              {remaining} restantes
+            </span>
+          )}
+        </div>
+      </header>
+
+      <div className="flex min-h-0 flex-1">
+        <main className="min-w-0 flex-1 overflow-y-auto px-6 py-6 lg:px-10">
+          <div className="mx-auto flex w-full max-w-4xl flex-col">
+            <p className="mb-2 text-center text-xs font-semibold tracking-wide text-[#16A34A]">
+              QUESTÃO {String(index + 1).padStart(2, "0")} DE{" "}
+              {String(total).padStart(2, "0")} · {kind}
+            </p>
+            <h1 className="mb-5 break-words text-justify text-xl font-semibold leading-snug text-foreground">
+              {question.statement}
+            </h1>
+            {question.imageUrl && (
+              <div className="mb-5 flex justify-center">
+                <QuestionImage
+                  src={question.imageUrl}
+                  alt={`Imagem da questão ${index + 1}`}
+                  className="max-h-80 max-w-full rounded-xl object-contain"
+                />
+              </div>
+            )}
+
+            {question.type === "MULTIPLE_CHOICE" ? (
+              <div className="flex w-full flex-col gap-2.5">
+                {question.options.map((option) => {
+                  const selected = answers[question.id]?.optionId === option.id;
+                  return (
+                    <label
+                      key={option.id}
+                      className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 ${
+                        selected ? "border-[#3B82F6]" : "border-[#E2E8F0]"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name={question.id}
+                        checked={selected}
+                        onChange={() =>
+                          onAnswer(question, { optionId: option.id })
+                        }
+                      />
+                      <span className="min-w-0 break-words">{option.text}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            ) : (
+              <textarea
+                value={answers[question.id]?.content ?? ""}
+                onChange={(event) =>
+                  onAnswer(question, { content: event.target.value })
+                }
+                rows={8}
+                className="w-full rounded-xl border border-[#E2E8F0] px-4 py-3 text-sm"
+                placeholder="Escreva sua resposta"
+              />
+            )}
+
+            <div className="mt-6 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setIndex((current) => Math.max(0, current - 1))}
+                disabled={index === 0}
+                className="rounded-full border border-[#E2E8F0] px-4 py-2 text-sm disabled:opacity-40"
+              >
+                ← Anterior
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setIndex((current) => Math.min(total - 1, current + 1))
+                }
+                disabled={index === total - 1}
+                className="rounded-full bg-[#16A34A] px-4 py-2 text-sm text-white disabled:opacity-40"
+              >
+                Próxima →
+              </button>
+            </div>
+            {error && <p className="mt-4 text-sm text-danger">{error}</p>}
+          </div>
+        </main>
+
+        <aside className="flex w-64 shrink-0 flex-col border-l border-[#E2E8F0] px-5 py-5">
+          <p className="mb-3 text-xs font-semibold tracking-wide text-muted">
+            QUESTÕES
+          </p>
+          <div className="grid grid-cols-5 gap-2">
+            {questions.map((item, itemIndex) => {
+              const current = itemIndex === index;
+              const answered = isAnswered(item, answers[item.id]);
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setIndex(itemIndex)}
+                  className={`flex h-9 items-center justify-center rounded-lg text-sm ${
+                    current
+                      ? "bg-[#16A34A] text-white"
+                      : answered
+                        ? "bg-[#DCFCE7] text-[#166534]"
+                        : "border border-[#E2E8F0] bg-white text-foreground"
+                  }`}
+                >
+                  {itemIndex + 1}
+                </button>
+              );
+            })}
+          </div>
+
+          <ul className="mt-5 space-y-2 text-sm text-muted">
+            <li className="flex items-center gap-2">
+              <span className="size-2.5 rounded-full bg-[#16A34A]" />
+              Atual
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="size-2.5 rounded-full bg-[#DCFCE7]" />
+              Respondida
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="size-2.5 rounded-full border border-[#CBD5E1] bg-white" />
+              Não respondida
+            </li>
+          </ul>
+
+          <button
+            type="button"
+            onClick={() => (unanswered > 0 ? setConfirmOpen(true) : onSubmit())}
+            disabled={submitting}
+            className="mt-auto rounded-lg bg-[#DC2626] px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
+          >
+            {submitting ? "Finalizando..." : "Finalizar prova"}
+          </button>
+        </aside>
+      </div>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Encerrar a prova?"
+        message={`Você ainda tem ${unanswered} ${unanswered === 1 ? "questão não respondida" : "questões não respondidas"}. Depois de encerrar, não será possível alterar as respostas. Deseja realmente encerrar a prova?`}
+        confirmLabel="Encerrar prova"
+        onConfirm={() => {
+          setConfirmOpen(false);
+          onSubmit();
+        }}
+        onCancel={() => setConfirmOpen(false)}
+      />
+    </div>
+  );
+}

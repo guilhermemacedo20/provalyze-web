@@ -1,9 +1,14 @@
 import { apiRequest } from "./api";
-import type { AuthUser } from "@/lib/auth-role-storage";
+import { User } from "./users.service";
 
 export type LoginResponse = {
   accessToken: string;
-  user: AuthUser;
+  user: User;
+};
+
+export type AcceptTermsResponse = {
+  termsAcceptedAt: string;
+  termsVersion: string;
 };
 
 export const authService = {
@@ -17,15 +22,23 @@ export const authService = {
   register(data: {
     name: string;
     email: string;
-    role: "TEACHER" | "STUDENT";
+    role: "STUDENT";
     password: string;
+    acceptTerms: true;
   }) {
-    return apiRequest<AuthUser>("/users/register", {
+    return apiRequest<User>("/auth/register", {
       method: "POST",
       body: data,
     });
   },
-  
+
+  acceptTerms() {
+    return apiRequest<AcceptTermsResponse>("/auth/accept-terms", {
+      method: "POST",
+      body: { acceptTerms: true },
+    });
+  },
+
   forgotPassword(email: string) {
     return apiRequest<{ message: string }>("/auth/forgot-password", {
       method: "POST",
@@ -33,7 +46,12 @@ export const authService = {
     });
   },
 
-  resetPassword(data: { email: string; code: string; newPassword: string }) {
+  resetPassword(data: {
+    email: string;
+    code: string;
+    newPassword: string;
+    acceptTerms: true;
+  }) {
     return apiRequest<{ message: string }>("/auth/reset-password", {
       method: "POST",
       body: data,
@@ -51,7 +69,13 @@ export const authService = {
     });
   },
 
+  deleteAccount() {
+    return apiRequest<{ message: string }>("/user/delete", {
+      method: "DELETE",
+    });
+  },
+
   me() {
-    return apiRequest<AuthUser>("/auth/me");
+    return apiRequest<User>("/auth/me");
   },
 };

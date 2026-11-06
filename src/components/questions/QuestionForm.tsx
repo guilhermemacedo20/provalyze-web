@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -9,6 +9,8 @@ import {
   QuestionType,
   questionsService,
 } from "@/services/questions.service";
+import { extractErrorMessage } from "@/lib/extract-error-message";
+import { QuestionImage } from "./QuestionImage";
 import { Theme, themesService } from "@/services/themes.service";
 import { Modal } from "../layout/Modal";
 
@@ -18,6 +20,18 @@ const emptyOptions: QuestionOption[] = [
   { label: "A", text: "", isCorrect: true },
   { label: "B", text: "", isCorrect: false },
 ];
+
+const fileToDataUrl = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error("Não foi possível ler a imagem."));
+    reader.readAsDataURL(file);
+  });
+};
+
+const QUESTION_IMAGE_TYPES = ["image/png", "image/jpeg"];
+const QUESTION_IMAGE_MAX_BYTES = 1024 * 1024;
 
 const withLabels = (options: QuestionOption[]): QuestionOption[] => {
   return options.map((option, index) => ({
@@ -30,6 +44,10 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
   const router = useRouter();
   const isEdit = !!questionId;
   const [statement, setStatement] = useState("");
+  const [image, setImage] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [themeId, setThemeId] = useState("");
   const [themes, setThemes] = useState<Theme[]>([]);
   const [type, setType] = useState<QuestionType>("MULTIPLE_CHOICE");
@@ -39,6 +57,7 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
   const [error, setError] = useState<string | null>(null);
   const [questionToDelete, setQuestionToDelete] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [inExam, setInExam] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -59,8 +78,10 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
 
         const question = await questionsService.getQuestion(questionId);
         setStatement(question.statement);
+        setImage(question.imageUrl || "");
         setThemeId(question.themeId);
         setType(question.type);
+        setInExam(!!question.inExam);
         if (question.type === "MULTIPLE_CHOICE") {
           setOptions(
             withLabels(
@@ -115,6 +136,46 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
     });
   };
 
+  const onImageSelected = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file || inExam) {
+      return;
+    }
+
+    setImageError(null);
+
+    if (!QUESTION_IMAGE_TYPES.includes(file.type)) {
+      setImageError("Formato não aceito. Envie PNG ou JPG.");
+      return;
+    }
+
+    if (file.size > QUESTION_IMAGE_MAX_BYTES) {
+      setImageError("A imagem deve ter no máximo 1 MB.");
+      return;
+    }
+
+    setUploadingImage(true);
+
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      const uploaded = await questionsService.uploadImage(dataUrl);
+      setImage(uploaded.url);
+    } catch (err) {
+      console.error("Error uploading image:", err);
+      setImageError(extractErrorMessage(err));
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const removeImage = () => {
+    setImage("");
+    setImageError(null);
+  };
+
   const onSubmit = async (
     event: React.FormEvent | null = null,
     keepOnPage: boolean = false,
@@ -122,7 +183,15 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
     if (event) {
       event.preventDefault();
     }
+    if (inExam) {
+      return;
+    }
     setError(null);
+
+    if (uploadingImage) {
+      setError("Aguarde o envio da imagem terminar.");
+      return;
+    }
 
     if (!statement || !themeId) {
       setError("Preencha enunciado e tema.");
@@ -149,6 +218,7 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
     const payload: QuestionPayload = {
       statement: statement.trim(),
       themeId,
+      imageUrl: image || null,
       type,
       ...(type === "MULTIPLE_CHOICE"
         ? {
@@ -170,6 +240,8 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
       }
       if (keepOnPage) {
         setStatement("");
+        setImage("");
+        setImageError(null);
         setType("MULTIPLE_CHOICE");
         setOptions(withLabels(emptyOptions));
       } else {
@@ -179,7 +251,7 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
       console.error("Error saving question:", err);
       setError(
         questionId
-          ? "Não foi possível atualizar a questão."
+          ? extractErrorMessage(err)
           : "Não foi possível criar a questão.",
       );
     }
@@ -194,7 +266,8 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
       router.push("/themes/" + themeId);
     } catch (err) {
       console.error("Error deleting question:", err);
-      setError("Não foi possível excluir a questão.");
+      setQuestionToDelete(null);
+      setError(extractErrorMessage(err));
     }
   };
 
@@ -218,6 +291,12 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
         </h1>
       </div>
 
+      {inExam && (
+        <p className="w-full max-w-[728px] rounded-[14px] border border-warning/40 bg-warning/10 px-4 py-3 text-[13px] text-foreground">
+          Esta questão está em uma prova e não pode ser editada nem excluída.
+        </p>
+      )}
+
       <form
         onSubmit={onSubmit}
         className="w-full max-w-[728px] space-y-5 rounded-[22px] border border-border bg-surface p-7 shadow-[0px_1px_3px_0px_rgba(13,20,38,0.06)]"
@@ -233,7 +312,64 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
             value={statement}
             onChange={(event) => setStatement(event.target.value)}
             className="w-full rounded-[14px] border border-border bg-surface px-3.5 py-2.5 text-[14px] text-foreground placeholder:text-muted"
+            disabled={inExam}
           />
+        </div>
+
+        <div className="space-y-2">
+          <label htmlFor="image" className="block text-[13px] font-medium">
+            Imagem (opcional)
+          </label>
+          <input
+            ref={fileInputRef}
+            id="image"
+            type="file"
+            accept={QUESTION_IMAGE_TYPES.join(",")}
+            onChange={onImageSelected}
+            disabled={uploadingImage || inExam}
+            className="sr-only"
+          />
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingImage || inExam}
+              className="rounded-[14px] border border-border bg-surface px-4 py-2.5 text-[13px] font-semibold text-foreground hover:bg-background disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+            >
+              {uploadingImage
+                ? "Enviando imagem..."
+                : image
+                  ? "Trocar imagem"
+                  : "Escolher imagem"}
+            </button>
+            {image && !uploadingImage && !inExam && (
+              <button
+                type="button"
+                onClick={removeImage}
+                className="text-[13px] font-medium text-danger hover:underline cursor-pointer"
+              >
+                Remover imagem
+              </button>
+            )}
+            <span className="text-[12px] text-muted">
+              PNG ou JPG, até 1 MB.
+            </span>
+          </div>
+          {imageError && (
+            <p className="text-[13px] text-danger">{imageError}</p>
+          )}
+          {image && (
+            <div className="space-y-1.5 pt-1">
+              <p className="text-[12px] text-muted">
+                O aluno verá a imagem assim:
+              </p>
+              <QuestionImage
+                src={image}
+                alt="Pré-visualização da imagem da questão"
+                className="max-h-72 max-w-md rounded-xl border border-border object-contain"
+              />
+            </div>
+          )}
         </div>
 
         <div className="space-y-1.5">
@@ -254,6 +390,7 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
               value={themeId}
               onChange={(event) => setThemeId(event.target.value)}
               className="w-full rounded-[14px] border border-border bg-surface px-3.5 py-2.5 text-[14px] text-foreground placeholder:text-muted"
+              disabled={inExam}
             >
               <option value="">Selecione um tema</option>
               {themes.map((theme) => (
@@ -274,6 +411,7 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
             value={type}
             onChange={(event) => setType(event.target.value as QuestionType)}
             className="w-full rounded-[14px] border border-border bg-surface px-3.5 py-2.5 text-[14px] text-foreground placeholder:text-muted"
+            disabled={inExam}
           >
             <option value="MULTIPLE_CHOICE">Objetiva</option>
             <option value="OPEN_ENDED">Dissertativa</option>
@@ -291,6 +429,7 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
                     name="correctOption"
                     checked={option.isCorrect}
                     onChange={() => markCorrect(actualIndex)}
+                    disabled={inExam}
                   />
                   {option.label}
                 </label>
@@ -302,12 +441,14 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
                   }
                   placeholder={`Texto da alternativa ${option.label}`}
                   className="w-full rounded-[14px] border border-border bg-surface px-3.5 py-2.5 text-[14px] text-foreground placeholder:text-muted"
+                  disabled={inExam}
                 />
                 {options.length > 2 && (
                   <button
                     type="button"
                     onClick={() => removeOption(actualIndex)}
                     className="shrink-0 text-[13px] font-medium text-danger cursor-pointer"
+                    disabled={inExam}
                   >
                     Excluir
                   </button>
@@ -319,6 +460,7 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
                 type="button"
                 onClick={addOption}
                 className="text-[13px] font-medium text-primary cursor-pointer"
+                disabled={inExam}
               >
                 + Adicionar alternativa
               </button>
@@ -339,7 +481,7 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
             Voltar
           </button>
           <div>
-            {isEdit && (
+            {isEdit && !inExam && (
               <button
                 type="button"
                 onClick={() => themeId && setQuestionToDelete(questionId)}
@@ -352,17 +494,21 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
               <button
                 type="button"
                 onClick={() => onSubmit(null, true)}
+                disabled={uploadingImage}
                 className="rounded-[14px] bg-secondary px-4 py-2.5 text-[13px] font-semibold text-black hover:bg-secondary-hover disabled:opacity-50 cursor-pointer mr-3 border border-border"
               >
                 Salvar e adicionar outra
               </button>
             )}
-            <button
-              type="submit"
-              className="rounded-[14px] bg-primary px-4 py-2.5 text-[13px] font-semibold text-white hover:bg-primary-hover disabled:opacity-50 cursor-pointer"
-            >
-              {isEdit ? "Salvar alterações" : "Criar"}
-            </button>
+            {!inExam && (
+              <button
+                type="submit"
+                disabled={uploadingImage}
+                className="rounded-[14px] bg-primary px-4 py-2.5 text-[13px] font-semibold text-white hover:bg-primary-hover disabled:opacity-50 cursor-pointer"
+              >
+                {isEdit ? "Salvar alterações" : "Criar"}
+              </button>
+            )}
           </div>
         </div>
       </form>
