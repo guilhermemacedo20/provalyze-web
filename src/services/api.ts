@@ -7,32 +7,27 @@ export async function apiRequest<T>(
   options: { method?: string; body?: unknown } = {},
 ): Promise<T> {
   const token = getAccessToken();
-  try {
-    const response = await fetch(`${API_URL}${path}`, {
-      method: options.method ?? "GET",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token && { Authorization: `Bearer ${token}` }),
-      },
-      body: options.body ? JSON.stringify(options.body) : undefined,
-    });
 
-    if (response.status === 401 && token) {
-      clearSession();
-      if (typeof window !== "undefined") {
-        window.location.href = "/login";
-      }
-      throw new Error("Sessão expirada. Faça login novamente.");
-    }
+  const response = await fetch(`${API_URL}${path}`, {
+    method: options.method ?? "GET",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+    body: options.body ? JSON.stringify(options.body) : undefined,
+  });
 
-    if (!response.ok) {
-      throw new Error("Erro na requisição à API: " + response.statusText);
+  if (response.status === 401 && token) {
+    clearSession();
+    if (typeof window !== "undefined") {
+      window.location.href = "/login";
     }
-    return response.json() as Promise<T>;
-  } catch (error) {
-    console.error("Erro na requisição à API:", error);
-    throw new Error(
-      "Erro na requisição ao servidor. Por favor, tente novamente mais tarde.",
-    );
+    throw new Error("Sessão expirada. Faça login novamente.");
   }
+
+  if (!response.ok) {
+    throw new Error(await response.text());
+  }
+
+  return response.json() as Promise<T>;
 }
