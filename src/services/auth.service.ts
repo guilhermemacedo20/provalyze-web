@@ -78,4 +78,8 @@ export const authService = {
   me() {
     return apiRequest<User>("/auth/me");
   },
+
+  export() {
+    return apiRequest<unknown>("/auth/me/export");
+  },
 };
