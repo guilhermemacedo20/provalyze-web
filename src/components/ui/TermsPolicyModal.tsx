@@ -57,11 +57,23 @@ const PRIVACY_BLOCKS: Block[] = [
   {
     type: "bullets",
     items: [
-      "Respostas do aluno, nota, status de correção e eventos técnicos ocorridos durante a prova, necessário para apoiar a correção e a integridade da avaliação.",
+      "Respostas do aluno, nota, status de correção e eventos técnicos ocorridos durante a prova (troca de aba ou de janela, perda de foco, copiar, colar, recortar e abertura do menu de contexto), necessário para apoiar a correção e a integridade da avaliação.",
     ],
   },
 
   { type: "heading", text: "3. Finalidade do uso de dados e hipóteses legais" },
+  {
+    type: "bullets",
+    items: [
+      "Criar e autenticar a conta: execução de contrato (art. 7º, V).",
+      "Organizar cursos, matérias, turmas e vínculos: execução de contrato.",
+      "Criar/gerenciar questões e (quando implementado) avaliações: execução de contrato.",
+      "Corrigir avaliações e apresentar resultados: execução de contrato.",
+      "Redefinir senha esquecida: execução de contrato.",
+      "Segurança do sistema (ex.: tentativas de acesso malsucedidas): legítimo interesse (art. 7º, IX).",
+      "Apoiar a integridade da avaliação (eventos técnicos durante a prova): legítimo interesse (art. 7º, IX).",
+    ],
+  },
   {
     type: "paragraph",
     text: "Não usamos os dados coletados para fins de publicidade, venda a terceiros ou qualquer finalidade fora do funcionamento do próprio sistema.",
@@ -86,11 +98,25 @@ const PRIVACY_BLOCKS: Block[] = [
       "Oposição: o titular pode questionar esse tratamento pelo canal de comunicação informado, mas, por se tratar de proteção da própria conta, a oposição pode não ser acolhida quando comprometer a segurança do sistema.",
     ],
   },
+  {
+    type: "paragraph",
+    text: "O registro de eventos técnicos durante a realização das provas (troca de aba ou de janela, perda de foco, copiar, colar, recortar e abertura do menu de contexto) também se apoia no legítimo interesse da instituição de ensino e dos professores em preservar a integridade da avaliação (art. 7º, IX). Nesse caso:",
+  },
+  {
+    type: "bullets",
+    items: [
+      "Finalidade legítima: apoiar a integridade da avaliação, oferecendo ao professor indícios para analisar, com critério próprio, se houve conduta indevida durante a prova.",
+      "Necessidade: em uma prova online, sem supervisão presencial, não há outra forma de oferecer esse apoio sem registrar esses eventos. Registra-se somente o tipo do evento, a questão exibida e o momento em que ocorreu, sem capturar imagem, áudio, tela, teclas digitadas ou o conteúdo copiado ou colado.",
+      "Expectativa razoável do titular: o aluno é avisado antes de iniciar a prova. A tela de início lista os eventos registrados, informa que eles ficam ligados à sua tentativa e só libera o botão de iniciar depois que ele marca a caixa \"Estou ciente\".",
+      "Riscos e salvaguardas: o risco é um evento isolado, como uma troca de aba sem má-fé, ser interpretado como conduta indevida. As salvaguardas são: o registro ocorre apenas durante a prova; os eventos são apenas indícios e nunca geram penalidade automática, a decisão é sempre do professor; o acesso é restrito ao professor da turma; os dados não são compartilhados com terceiros; e são mantidos pelo mesmo prazo da prova associada.",
+      "Oposição: o titular pode questionar esse tratamento pelo canal de comunicação informado ou diretamente com o professor e a instituição, que avaliam o registro antes de qualquer consequência. Por se tratar de proteção da integridade da avaliação, a oposição pode não ser acolhida quando comprometer essa finalidade.",
+    ],
+  },
 
   { type: "heading", text: "5. Uso de inteligência artificial no sistema" },
   {
     type: "paragraph",
-    text: "O Provalyze utiliza inteligência artificial (Gemini, da Google) em duas frentes. Na correção de provas, para questões dissertativas, a resposta escrita pelo aluno é enviada ao serviço que sugere uma nota e uma justificativa, essa sugestão nunca é definitiva por si só, sendo sempre submetida à revisão e aprovação do professor responsável antes de valer como nota final. Na análise de desempenho, a IA também é usada para identificar lacunas de aprendizagem por tema e gerar recomendações pedagógicas para o professor, além de recomendações personalizadas de estudo para o próprio aluno após concluir uma prova, nesse caso, com base em dados agregados de desempenho (acertos e erros por tema), não no conteúdo literal das respostas dissertativas.",
+    text: "O Provalyze utiliza inteligência artificial (Gemini, da Google) em duas frentes. Na correção de provas, para questões dissertativas, a resposta escrita pelo aluno é enviada ao serviço que sugere uma nota e uma justificativa, essa sugestão nunca é definitiva por si só, sendo sempre submetida à revisão e aprovação do professor responsável antes de valer como nota final. Na análise de desempenho, a IA é usada para identificar lacunas de aprendizagem da turma, recebendo os 5 temas com menor acerto e até 8 respostas por questão, sem nome, e-mail ou matrícula, e para gerar recomendações de estudo ao aluno, recebendo apenas percentuais de acerto por tema. O sistema não envia à IA nenhum dado além do estritamente necessário para cada finalidade.",
   },
 
   { type: "heading", text: "6. Com quem compartilhamos os dados" },
@@ -101,7 +127,7 @@ const PRIVACY_BLOCKS: Block[] = [
   {
     type: "bullets",
     items: [
-      "Gemini (Google): recebe a resposta do aluno em questões dissertativas, para sugerir nota e justificativa.",
+      "Gemini (Google): resposta sem identificação para sugerir nota; temas com menor acerto e até 8 respostas por questão, sem identificação, para as lacunas; percentuais por tema para as recomendações.",
       "Resend: recebe o e-mail do usuário e o código de redefinição de senha, para envio da mensagem de recuperação de conta.",
       "Vercel: hospeda o front-end da aplicação.",
       "Railway: hospeda o back-end e o banco de dados, processando todos os dados do sistema e variáveis utilizadas.",
@@ -116,7 +142,7 @@ const PRIVACY_BLOCKS: Block[] = [
   { type: "heading", text: "7. Transferência internacional de dados" },
   {
     type: "paragraph",
-    text: "Os fornecedores listados processam dados em servidores que podem estar localizados fora do Brasil. Isso caracteriza transferência internacional de dados, permitida pela LGPD desde que existam salvaguardas adequadas (art. 33), como cláusulas contratuais específicas ou adesão a padrões reconhecidos de proteção de dados.",
+    text: "Os fornecedores listados processam dados em servidores que podem estar localizados fora do Brasil. Isso caracteriza transferência internacional de dados, permitida pela LGPD desde que existam salvaguardas adequadas (art. 33) e seja observada a Resolução CD/ANPD nº 19/2024. As cláusulas-padrão contratuais da ANPD ficam a cargo da instituição controladora na implantação.",
   },
   {
     type: "bullets",
@@ -127,6 +153,10 @@ const PRIVACY_BLOCKS: Block[] = [
       "Cloudflare: empresa sediada nos Estados Unidos. Salvaguarda: DPA próprio, apoiado no EU-U.S. Data Privacy Framework e, subsidiariamente, em SCCs, utilizando servidores ao redor do mundo.",
       "Railway: utilizamos a base do servidor nos Estados Unidos. A empresa oferece DPA compatível com a GDPR, referenciando SCCs/Data Privacy Framework conforme aplicável.",
     ],
+  },
+  {
+    type: "paragraph",
+    text: "Esses itens são definidos como compromissos adicionais dos fornecedores.",
   },
 
   { type: "heading", text: "8. Como protegemos os dados" },
@@ -165,7 +195,7 @@ const PRIVACY_BLOCKS: Block[] = [
     type: "bullets",
     items: [
       "Enquanto a conta estiver ativa, os dados são mantidos para permitir o uso normal do sistema.",
-      "Ao solicitar a exclusão da conta, o nome e o e-mail são anonimizados. O histórico de turmas, alunos e, quando aplicável, de avaliações permanece registrado de forma anônima por um prazo de 5 anos, seguindo o padrão das instituições de ensino brasileiras, podendo ser revogado por término de contrato, para preservar a integridade dos dados acadêmicos da turma como um todo.",
+      "Ao solicitar a exclusão da conta, se não houver nenhum exame ou sessão realizada, a conta é excluída do sistema. Caso contrário, o nome e o e-mail são anonimizados e o histórico de turmas, alunos e, quando aplicável, de avaliações permanece registrado de forma anônima por um prazo de 5 anos, seguindo o padrão das instituições de ensino brasileiras, podendo ser revogado por término de contrato, para preservar a integridade dos dados acadêmicos da turma como um todo.",
     ],
   },
 
@@ -261,7 +291,7 @@ const TERMS_BLOCKS: Block[] = [
     items: [
       "Professores são responsáveis pelo conteúdo das questões e provas que criam.",
       "Alunos devem responder às avaliações com suas próprias respostas.",
-      "O sistema pode registrar eventos técnicos durante a realização de uma prova, com a finalidade de apoiar a integridade da avaliação de maneira generalizada, sem trazer dados do próprio usuário.",
+      "O sistema pode registrar eventos técnicos durante a realização de uma prova, com a finalidade de apoiar a integridade da avaliação de maneira generalizada.",
     ],
   },
 
