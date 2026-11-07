@@ -162,10 +162,22 @@ export type ExamOverview = {
   students: {
     id: string;
     name: string;
+    classId: string | null;
+    className: string;
     status: StudentExamStatus;
     score: number | null;
     durationMinutes: number | null;
   }[];
+  questions: { examQuestionId: string; correctRate: number | null }[];
+};
+
+export type ExamResult = {
+  classId: string | null;
+  className: string;
+  name: string;
+  status: StudentExamStatus;
+  score: number | null;
+  deliveredAt: string | null;
 };
 
 export type SaveExamPayload = {
@@ -235,8 +247,13 @@ export const examsService = {
     return apiRequest<ExamDetail>(`/exams/${id}`);
   },
 
-  getOverview(id: string) {
-    return apiRequest<ExamOverview>(`/exams/${id}/overview`);
+  getOverview(id: string, classId?: string) {
+    const query = classId ? `?classId=${encodeURIComponent(classId)}` : "";
+    return apiRequest<ExamOverview>(`/exams/${id}/overview${query}`);
+  },
+
+  getResults(id: string) {
+    return apiRequest<ExamResult[]>(`/exams/${id}/results`);
   },
 
   createExam(data: SaveExamPayload) {

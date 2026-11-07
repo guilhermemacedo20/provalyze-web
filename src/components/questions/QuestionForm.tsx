@@ -13,8 +13,7 @@ import { extractErrorMessage } from "@/lib/extract-error-message";
 import { QuestionImage } from "./QuestionImage";
 import { Theme, themesService } from "@/services/themes.service";
 import { Modal } from "../layout/Modal";
-
-const maxLabels = ["A", "B", "C", "D", "E", "F"];
+import { optionLabels } from "@/utils/optionLabels";
 
 const emptyOptions: QuestionOption[] = [
   { label: "A", text: "", isCorrect: true },
@@ -36,7 +35,7 @@ const QUESTION_IMAGE_MAX_BYTES = 1024 * 1024;
 const withLabels = (options: QuestionOption[]): QuestionOption[] => {
   return options.map((option, index) => ({
     ...option,
-    label: maxLabels[index],
+    label: optionLabels[index],
   }));
 };
 
@@ -455,7 +454,7 @@ export function QuestionForm({ questionId }: { questionId?: string }) {
                 )}
               </div>
             ))}
-            {options.length < maxLabels.length && (
+            {options.length < optionLabels.length && (
               <button
                 type="button"
                 onClick={addOption}

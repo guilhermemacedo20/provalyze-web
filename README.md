@@ -12,17 +12,18 @@ Interface do professor, aluno e administrador para utilização da plataforma de
 
 Versões do repositório.
 
-| Tecnologia   | Versão  | Uso                   |
-| ------------ | ------- | --------------------- |
-| Node.js      | 20+     | Runtime               |
-| Next.js      | 15.5.23 | App Router, Turbopack |
-| React        | 19.1.0  | UI                    |
-| TypeScript   | 5.x     | Tipagem               |
-| Tailwind CSS | 4.x     | Estilização           |
-| ESLint       | 9.x     | Lint                  |
-| lucide-react | 1.41.0  | Ícones do menu        |
-| vitejs       | 5.0.4   | Testes                |
-| recharts     | 3.1.0   | Criação de dashboards |
+| Tecnologia   | Versão  | Uso                               |
+| ------------ | ------- | --------------------------------- |
+| Node.js      | 20+     | Runtime                           |
+| Next.js      | 15.5.23 | App Router, Turbopack             |
+| React        | 19.1.0  | UI                                |
+| TypeScript   | 5.x     | Tipagem                           |
+| Tailwind CSS | 4.x     | Estilização                       |
+| ESLint       | 9.x     | Lint                              |
+| lucide-react | 1.41.0  | Ícones do menu                    |
+| vitejs       | 5.0.4   | Testes                            |
+| recharts     | 3.1.0   | Criação de dashboards             |
+| exceljs      | 4.4.0   | Criação e exportação de planilhas |
 
 Chamadas HTTP: `src/services/api.ts`.
 

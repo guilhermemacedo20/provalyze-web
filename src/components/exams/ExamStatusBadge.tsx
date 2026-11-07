@@ -10,7 +10,7 @@ const EXAM_STATUS: Record<
   ENDED: { label: "Encerrada", tone: "neutral" },
 };
 
-const STUDENT_STATUS: Record<
+export const STUDENT_STATUS: Record<
   StudentExamStatus,
   { label: string; tone: "success" | "purple" | "warning" | "neutral" }
 > = {
