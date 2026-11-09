@@ -44,6 +44,7 @@ describe("ExamRunner", () => {
         expiresAt={new Date(Date.now() + 60_000).toISOString()}
         onAnswer={onAnswer}
         onSubmit={onSubmit}
+        onTimeUp={vi.fn()}
       />,
     );
 

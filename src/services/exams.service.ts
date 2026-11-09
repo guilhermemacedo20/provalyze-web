@@ -75,6 +75,7 @@ export type StudentExamDetail = {
   finishedAt?: string | null;
   expiresAt?: string;
   durationMinutes?: number | null;
+  autoSubmit?: boolean;
   status?: string;
   questions?: ExamQuestion[];
   review?: ExamReviewQuestion[];
@@ -89,7 +90,8 @@ export type ExamEventType =
   | "CONTEXT_MENU";
 
 export type SubmitExamResult = {
-  status: string;
+  status?: "FINISHED";
+  message?: string;
   score: number;
   finishedAt: string;
   questions: ExamReviewQuestion[];
@@ -137,6 +139,7 @@ export type ExamDetail = {
   startsAt: string;
   endsAt: string;
   durationMinutes: number | null;
+  autoSubmit: boolean;
   targetScore: number;
   teacherName: string;
   classes: ExamClassDetail[];
@@ -186,6 +189,7 @@ export type SaveExamPayload = {
   endsAt: string;
   durationMinutes: number;
   totalScore: number;
+  autoSubmit: boolean;
   questions: { questionId: string; points: number }[];
   classIds: string[];
   publish?: boolean;

@@ -40,24 +40,28 @@ export function ExamRunner({
   questions,
   answers,
   expiresAt,
+  autoSubmit = true,
   classId,
   examId,
   submitting,
   error,
   onAnswer,
   onSubmit,
+  onTimeUp,
 }: {
   title: string;
   subjectName: string;
   questions: ExamQuestion[];
   answers: Draft;
   expiresAt?: string;
+  autoSubmit?: boolean;
   submitting: boolean;
   classId: string;
   examId: string;
   error: string | null;
   onAnswer: (question: ExamQuestion, value: Draft[string]) => void;
   onSubmit: () => void;
+  onTimeUp: () => void;
 }) {
   const [index, setIndex] = useState(0);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -70,6 +74,8 @@ export function ExamRunner({
   } | null>(null);
   const seconds = secondsLeft(expiresAt, now);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const autoSubmitted = useRef(false);
+  const timeUp = seconds === 0;
   const total = questions.length;
   const unanswered = questions.filter(
     (item) => !isAnswered(item, answers[item.id]),
@@ -82,8 +88,16 @@ export function ExamRunner({
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
       const target = event.target as HTMLElement | null;
-      if (target?.closest("input, textarea, select, [contenteditable]")) return;
+      if (
+        target?.closest(
+          'textarea, select, [contenteditable], input:not([type="radio"])',
+        )
+      ) {
+        return;
+      }
+      event.preventDefault();
       if (event.key === "ArrowRight") {
         setIndex((current) => Math.min(total - 1, current + 1));
       }
@@ -98,6 +112,14 @@ export function ExamRunner({
   useEffect(() => {
     scrollRef.current?.scrollTo?.({ top: 0 });
   }, [index]);
+
+  useEffect(() => {
+    if (!timeUp || autoSubmitted.current) return;
+    autoSubmitted.current = true;
+    setConfirmOpen(false);
+    if (autoSubmit) onSubmit();
+    else onTimeUp();
+  }, [timeUp, autoSubmit, onSubmit, onTimeUp]);
 
   questionRef.current = question;
   useEffect(() => {
@@ -159,7 +181,8 @@ export function ExamRunner({
         ? "bg-[#FEF3C7] text-[#92400E]"
         : "animate-pulse bg-[#FEE2E2] text-[#991B1B]";
 
-  const finish = () => (unanswered > 0 ? setConfirmOpen(true) : onSubmit());
+  const finish = () =>
+    unanswered > 0 && !timeUp ? setConfirmOpen(true) : onSubmit();
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-background">
@@ -179,7 +202,7 @@ export function ExamRunner({
             className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold tabular-nums ${timerTone}`}
           >
             <Clock className="size-4" aria-hidden />
-            {formatClock(seconds)}
+            {timeUp ? "Tempo esgotado" : formatClock(seconds)}
           </span>
         )}
         <button
@@ -257,6 +280,7 @@ export function ExamRunner({
                         type="radio"
                         name={question.id}
                         checked={selected}
+                        disabled={timeUp}
                         onChange={() =>
                           onAnswer(question, { optionId: option.id })
                         }
@@ -283,11 +307,21 @@ export function ExamRunner({
                     </label>
                   );
                 })}
+                {answered && !timeUp && (
+                  <button
+                    type="button"
+                    onClick={() => onAnswer(question, {})}
+                    className="self-end text-[13px] font-medium text-muted hover:text-danger hover:underline"
+                  >
+                    Limpar resposta
+                  </button>
+                )}
               </div>
             ) : (
               <div className="mt-6">
                 <textarea
                   value={content}
+                  readOnly={timeUp}
                   onChange={(event) =>
                     onAnswer(question, { content: event.target.value })
                   }
