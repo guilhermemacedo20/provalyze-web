@@ -31,6 +31,7 @@ const examDetail = {
   startsAt: "2026-06-01T10:00:00.000Z",
   endsAt: "2026-06-02T10:00:00.000Z",
   durationMinutes: 60,
+  autoSubmit: true,
   targetScore: 10,
   teacherName: "Prof",
   classes: [

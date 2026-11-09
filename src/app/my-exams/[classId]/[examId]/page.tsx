@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { examDraftKey } from "@/lib/auth-role-storage";
+import { extractErrorMessage } from "@/lib/extract-error-message";
 import {
   ExamQuestion,
   ExamReviewQuestion,
@@ -145,6 +146,10 @@ export default function TakeExamPage() {
         examId,
         payload,
       );
+      if (response.status !== "FINISHED") {
+        setError(response.message ?? "Não foi possível entregar a prova.");
+        return;
+      }
       localStorage.removeItem(examDraftKey(user.id, examId));
       setExam(null);
       setResult({
@@ -157,10 +162,24 @@ export default function TakeExamPage() {
       });
     } catch (submitError) {
       console.error("Erro ao entregar prova:", submitError);
-      setError("Não foi possível entregar a prova.");
+      setError(extractErrorMessage(submitError));
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleTimeUp = () => {
+    if (user) localStorage.removeItem(examDraftKey(user.id, examId));
+    setSummary((current) => current && { ...current, available: false });
+    setExam(
+      (current) =>
+        current && {
+          ...current,
+          available: false,
+          questions: undefined,
+          message: "Tempo da prova esgotado. A prova foi encerrada.",
+        },
+    );
   };
 
   if (loading) {
@@ -193,12 +212,14 @@ export default function TakeExamPage() {
         questions={exam.questions}
         answers={answers}
         expiresAt={exam.expiresAt}
+        autoSubmit={exam.autoSubmit}
         classId={classId}
         examId={examId}
         submitting={submitting}
         error={error}
         onAnswer={updateAnswer}
         onSubmit={handleSubmit}
+        onTimeUp={handleTimeUp}
       />
     );
   }

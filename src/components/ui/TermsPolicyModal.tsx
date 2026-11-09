@@ -165,7 +165,9 @@ const PRIVACY_BLOCKS: Block[] = [
     items: [
       "Senhas nunca são armazenadas em texto puro, apenas seu hash criptográfico.",
       "O acesso às funcionalidades do sistema exige autenticação por token e cada perfil só acessa o que sua função permite, essa verificação é feita no servidor, não apenas escondendo botões na tela.",
-      "Ao excluir uma conta, os dados pessoais identificáveis são substituídos por valores genéricos e o histórico acadêmico associado permanece no sistema, mas sem identificar a pessoa (anonimização).",
+      "Ao excluir uma conta, os dados pessoais identificáveis são substituídos por valores genéricos e o histórico acadêmico associado permanece no sistema, mas sem identificar a pessoa (pseudonimização).",
+      "O sistema limita as tentativas de login, cadastro e redefinição de senha por minuto, e o código de redefinição é bloqueado após cinco tentativas incorretas.",
+      "A comunicação com o sistema usa HTTPS, e a API só aceita requisições do navegador vindas do endereço oficial do Provalyze.",
     ],
   },
   {
@@ -195,7 +197,7 @@ const PRIVACY_BLOCKS: Block[] = [
     type: "bullets",
     items: [
       "Enquanto a conta estiver ativa, os dados são mantidos para permitir o uso normal do sistema.",
-      "Ao solicitar a exclusão da conta, se não houver nenhum exame ou sessão realizada, a conta é excluída do sistema. Caso contrário, o nome e o e-mail são anonimizados e o histórico de turmas, alunos e, quando aplicável, de avaliações permanece registrado de forma anônima por um prazo de 5 anos, seguindo o padrão das instituições de ensino brasileiras, podendo ser revogado por término de contrato, para preservar a integridade dos dados acadêmicos da turma como um todo.",
+      "Ao solicitar a exclusão da conta, se não houver prova realizada, a conta é excluída do sistema; caso contrário, o nome e o e-mail são pseudonimizados. O histórico de turmas, alunos e, quando aplicável, de avaliações permanece registrado de forma pseudonimizada por um prazo de 5 anos, seguindo o padrão das instituições de ensino brasileiras, podendo ser revogado por término de contrato, para preservar a integridade dos dados acadêmicos da turma como um todo. Ao fim desse prazo, esses registros e os logs com mais de 180 dias são excluídos automaticamente.",
     ],
   },
 
@@ -215,13 +217,13 @@ const PRIVACY_BLOCKS: Block[] = [
   },
   {
     type: "paragraph",
-    text: "Hoje, a exclusão/anonimização da conta pode ser feita diretamente pela tela de Configurações do sistema. Para os demais direitos, entre em contato pelo canal indicado.",
+    text: "Hoje, a exclusão da conta e a exportação dos dados (acesso e portabilidade) podem ser feitas diretamente pela tela de Configurações do sistema. Para os demais direitos, entre em contato pelo canal indicado.",
   },
 
   { type: "heading", text: "12. Cookies" },
   {
     type: "paragraph",
-    text: "O Provalyze não usa cookies para guardar informações, apenas é enviado o token de autorização nas requisições ao back-end. A sessão do usuário é mantida por um token salvo no armazenamento local do próprio navegador (localStorage), que só é lido pelo próprio sistema para confirmar que o usuário está autenticado.",
+    text: "O Provalyze não usa cookies para guardar informações, apenas é enviado o token de autorização nas requisições ao back-end. A sessão do usuário é mantida por um token salvo no armazenamento local do próprio navegador (localStorage), que só é lido pelo próprio sistema para confirmar que o usuário está autenticado. As respostas de uma prova em andamento também ficam salvas temporariamente no armazenamento local, para não se perderem se a página for recarregada, e são apagadas quando a entrega é confirmada.",
   },
 
   { type: "heading", text: "13. Uso por menores de idade" },
@@ -238,7 +240,7 @@ const PRIVACY_BLOCKS: Block[] = [
 
   { type: "heading", text: "15. Contato" },
   { type: "paragraph", text: "provalyze@gmail.com" },
-  { type: "paragraph", text: "Versão de setembro de 2026." },
+  { type: "paragraph", text: "Versão de novembro de 2026." },
 ];
 
 const TERMS_BLOCKS: Block[] = [
@@ -343,7 +345,7 @@ const TERMS_BLOCKS: Block[] = [
   { type: "heading", text: "13. Suspensão e encerramento" },
   {
     type: "paragraph",
-    text: "Uma conta pode ser suspensa ou encerrada em caso de uso indevido da plataforma, mediante decisão da administração/coordenação da instituição responsável. O encerramento de uma conta segue o mesmo processo de anonimização descrito na Política de Privacidade, podendo ser excluída totalmente caso não tenha dados relevantes gerados no sistema.",
+    text: "Uma conta pode ser suspensa ou encerrada em caso de uso indevido da plataforma, mediante decisão da administração/coordenação da instituição responsável. O encerramento de uma conta segue o mesmo processo de pseudonimização descrito na Política de Privacidade, podendo ser excluída totalmente caso não tenha dados relevantes gerados no sistema.",
   },
 
   { type: "heading", text: "14. Alterações destes Termos" },
@@ -354,7 +356,7 @@ const TERMS_BLOCKS: Block[] = [
 
   { type: "heading", text: "15. Lei aplicável" },
   { type: "paragraph", text: "Estes Termos são regidos pela legislação brasileira." },
-  { type: "paragraph", text: "Versão de setembro de 2026." },
+  { type: "paragraph", text: "Versão de novembro de 2026." },
 ];
 
 function renderBlock(block: Block, index: number) {

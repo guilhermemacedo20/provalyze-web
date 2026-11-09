@@ -100,6 +100,7 @@ describe("ExamWizard", () => {
       startsAt: "2026-06-01T10:00:00.000Z",
       endsAt: "2026-06-01T12:00:00.000Z",
       durationMinutes: 60,
+      autoSubmit: true,
       targetScore: 10,
       teacherName: "Prof",
       classes: [{ id: "c1", name: "Turma", subjectName: "Mat", courseName: "Eng", studentsCount: 1 }],

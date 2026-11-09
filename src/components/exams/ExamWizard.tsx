@@ -54,6 +54,7 @@ export function ExamWizard({ examId }: { examId?: string }) {
   const [totalScoreInput, setTotalScoreInput] = useState(
     String(EXAM_TOTAL_SCORE),
   );
+  const [autoSubmit, setAutoSubmit] = useState(true);
 
   // passo 2
   const [questions, setQuestions] = useState<SelectedQuestion[]>([]);
@@ -92,6 +93,7 @@ export function ExamWizard({ examId }: { examId?: string }) {
         setEndsAt(toLocalInput(exam.endsAt));
         setDuration(minutesToDuration(exam.durationMinutes));
         setTotalScoreInput(String(exam.targetScore).replace(".", ","));
+        setAutoSubmit(exam.autoSubmit);
         setQuestions(
           exam.questions.map((q) => ({
             questionId: q.questionId,
@@ -203,6 +205,7 @@ export function ExamWizard({ examId }: { examId?: string }) {
       endsAt: fromLocalInput(endsAt),
       durationMinutes: durationMinutes as number,
       totalScore: totalScore as number,
+      autoSubmit,
       questions: questions.map((q) => ({
         questionId: q.questionId,
         points: q.points as number,
@@ -366,6 +369,24 @@ export function ExamWizard({ examId }: { examId?: string }) {
               </p>
             </div>
           </div>
+
+          <label className="flex cursor-pointer items-start gap-3">
+            <input
+              type="checkbox"
+              checked={autoSubmit}
+              onChange={(e) => setAutoSubmit(e.target.checked)}
+              className="mt-0.5 size-4 accent-primary"
+            />
+            <span className="flex flex-col gap-0.5">
+              <span className="text-[13px] font-medium text-foreground">
+                Enviar a prova automaticamente quando o tempo acabar
+              </span>
+              <span className="text-[12px] text-muted">
+                Se desmarcado, o aluno precisa clicar em Finalizar prova para
+                enviar as respostas.
+              </span>
+            </span>
+          </label>
         </div>
       )}
 
@@ -465,6 +486,10 @@ export function ExamWizard({ examId }: { examId?: string }) {
             <Summary
               label="Tempo de prova"
               value={`${duration} (${durationMinutes} min)`}
+            />
+            <Summary
+              label="Envio automático"
+              value={autoSubmit ? "Sim" : "Não"}
             />
           </div>
 
