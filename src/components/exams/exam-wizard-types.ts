@@ -5,7 +5,8 @@ export const MAX_TOTAL_SCORE = 1000;
 
 export type SelectedQuestion = {
   questionId: string;
-  points: number | null; 
+  points: number | null;
+  autoPoints?: boolean;
   statement: string;
   themeId: string;
   themeName: string;

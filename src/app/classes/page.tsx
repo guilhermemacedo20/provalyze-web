@@ -4,6 +4,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { SchoolClass, classesService } from "@/services/classes.service";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { Pagination } from "@/components/ui/Pagination";
+import { paginate } from "@/lib/list-utils";
+
+const CLASSES_PER_PAGE = 9;
 
 function formatAverage(value: number | null) {
   if (value === null) return "";
@@ -13,6 +17,7 @@ function formatAverage(value: number | null) {
 export default function ClassesAdminPage() {
   const [classes, setClasses] = useState<SchoolClass[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
 
   const [deleteTarget, setDeleteTarget] = useState<SchoolClass | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -32,6 +37,12 @@ export default function ClassesAdminPage() {
   useEffect(() => {
     fetchClasses();
   }, []);
+
+  const {
+    items: pagedClasses,
+    currentPage,
+    totalPages,
+  } = paginate(classes, page, CLASSES_PER_PAGE);
 
   const requestDelete = (schoolClass: SchoolClass) => setDeleteTarget(schoolClass);
 
@@ -95,7 +106,7 @@ export default function ClassesAdminPage() {
               </tr>
             )}
             {!loading &&
-              classes.map((schoolClass) => (
+              pagedClasses.map((schoolClass) => (
                 <tr key={schoolClass.id} className="border-b border-border last:border-b-0">
                   <td className="px-5 py-3.5 font-semibold text-foreground">
                     {schoolClass.name}
@@ -131,6 +142,17 @@ export default function ClassesAdminPage() {
           </tbody>
         </table>
       </div>
+
+      {!loading && (
+        <div className="mt-5">
+          <Pagination
+            page={currentPage}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            label="Paginação das turmas"
+          />
+        </div>
+      )}
 
       <ConfirmDialog
         open={deleteTarget !== null}

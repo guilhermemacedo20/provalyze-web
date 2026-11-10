@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { Pagination } from "@/components/ui/Pagination";
 import {
   ExamListItem,
   ExamStatus,
@@ -11,9 +12,12 @@ import {
 } from "@/services/exams.service";
 import { formatPeriod, pluralize } from "@/lib/exam-format";
 import { extractErrorMessage } from "@/lib/extract-error-message";
+import { paginate } from "@/lib/list-utils";
 import { ExamStatusBadge } from "./ExamStatusBadge";
 
 type Tab = "ALL" | ExamStatus;
+
+const EXAMS_PER_PAGE = 10;
 
 const TABS: { key: Tab; label: string }[] = [
   { key: "ALL", label: "Todas" },
@@ -43,6 +47,7 @@ export function ExamListTeacher() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("ALL");
+  const [page, setPage] = useState(1);
 
   const [deleteTarget, setDeleteTarget] = useState<ExamListItem | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -77,6 +82,11 @@ export function ExamListTeacher() {
   }, [exams]);
 
   const visible = exams.filter((e) => tab === "ALL" || e.status === tab);
+  const {
+    items: pagedExams,
+    currentPage,
+    totalPages,
+  } = paginate(visible, page, EXAMS_PER_PAGE);
 
   const confirmDelete = async () => {
     if (!deleteTarget) return;
@@ -115,7 +125,10 @@ export function ExamListTeacher() {
             type="button"
             role="tab"
             aria-selected={tab === key}
-            onClick={() => setTab(key)}
+            onClick={() => {
+              setTab(key);
+              setPage(1);
+            }}
             className={`cursor-pointer rounded-md px-3.5 py-1.5 text-[13px] font-medium transition-colors ${
               tab === key
                 ? "bg-primary text-white"
@@ -139,7 +152,7 @@ export function ExamListTeacher() {
       )}
 
       <div className="flex flex-col gap-4">
-        {visible.map((exam) => (
+        {pagedExams.map((exam) => (
           <div
             key={exam.id}
             className="flex items-center gap-5 rounded-[22px] border border-border bg-surface px-6 py-5 shadow-[0px_1px_3px_0px_rgba(13,20,38,0.06)]"
@@ -185,6 +198,17 @@ export function ExamListTeacher() {
           </div>
         ))}
       </div>
+
+      {!loading && (
+        <div className="mt-5">
+          <Pagination
+            page={currentPage}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            label="Paginação das provas"
+          />
+        </div>
+      )}
 
       <ConfirmDialog
         open={deleteTarget !== null}

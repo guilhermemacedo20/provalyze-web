@@ -8,6 +8,7 @@ import { Theme, themesService } from "@/services/themes.service";
 import { formatPoints, pluralize } from "@/lib/exam-format";
 import { extractErrorMessage } from "@/lib/extract-error-message";
 import { compareNames, matchesSearch, paginate } from "@/lib/list-utils";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Pagination } from "@/components/ui/Pagination";
 import { QuestionPreviewModal } from "./QuestionPreviewModal";
 import {
@@ -265,15 +266,21 @@ function SelectedPanel({
   const [distributeMessage, setDistributeMessage] = useState<string | null>(
     null,
   );
+  const [confirmClearOpen, setConfirmClearOpen] = useState(false);
 
   const sum = sumPoints(selected);
   const remaining = round2(totalScore - sum);
   const withoutPoints = selected.filter((q) => q.points === null).length;
+  const hasDistributed = selected.some(
+    (q) => q.autoPoints && q.points !== null,
+  );
 
   const setPoints = (questionId: string, points: number | null) => {
     setDistributeMessage(null);
     onChange(
-      selected.map((q) => (q.questionId === questionId ? { ...q, points } : q)),
+      selected.map((q) =>
+        q.questionId === questionId ? { ...q, points, autoPoints: false } : q,
+      ),
     );
   };
 
@@ -284,7 +291,23 @@ function SelectedPanel({
       return;
     }
     setDistributeMessage(null);
-    onChange(result);
+    onChange(
+      result.map((q, index) =>
+        selected[index].points === null && q.points !== null
+          ? { ...q, autoPoints: true }
+          : q,
+      ),
+    );
+  };
+
+  const clearDistributed = () => {
+    setDistributeMessage(null);
+    setConfirmClearOpen(false);
+    onChange(
+      selected.map((q) =>
+        q.autoPoints ? { ...q, points: null, autoPoints: false } : q,
+      ),
+    );
   };
 
   return (
@@ -336,16 +359,27 @@ function SelectedPanel({
 
       {selected.length > 0 && (
         <div className="mb-4">
-          <button
-            type="button"
-            onClick={distribute}
-            className="w-full cursor-pointer rounded-md border border-primary px-3 py-2 text-[12px] font-semibold text-primary hover:bg-primary-light/40"
-          >
-            Distribuir igualmente
-            {withoutPoints > 0 && withoutPoints < selected.length
-              ? ` o restante (${withoutPoints} sem pontos)`
-              : ""}
-          </button>
+          <div className="flex items-stretch gap-2">
+            <button
+              type="button"
+              onClick={distribute}
+              className="min-w-0 flex-1 cursor-pointer rounded-md border border-primary px-3 py-2 text-[12px] font-semibold text-primary hover:bg-primary-light/40"
+            >
+              Distribuir igualmente
+              {withoutPoints > 0 && withoutPoints < selected.length
+                ? ` o restante (${withoutPoints} sem pontos)`
+                : ""}
+            </button>
+            {hasDistributed && (
+              <button
+                type="button"
+                onClick={() => setConfirmClearOpen(true)}
+                className="shrink-0 cursor-pointer rounded-md border border-border px-3 py-2 text-[12px] font-semibold text-muted hover:border-danger hover:text-danger"
+              >
+                Limpar pontuação
+              </button>
+            )}
+          </div>
           {distributeMessage && (
             <p className="mt-2 text-[12px] text-danger">{distributeMessage}</p>
           )}
@@ -378,6 +412,15 @@ function SelectedPanel({
           {formatPoints(remaining)}
         </span>
       </div>
+
+      <ConfirmDialog
+        open={confirmClearOpen}
+        title="Limpar a pontuação?"
+        message="Serão apagados apenas os pontos distribuídos automaticamente. Os pontos que você digitou continuam como estão."
+        confirmLabel="Limpar"
+        onConfirm={clearDistributed}
+        onCancel={() => setConfirmClearOpen(false)}
+      />
     </aside>
   );
 }

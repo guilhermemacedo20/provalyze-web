@@ -14,6 +14,7 @@ import {
   initials,
 } from "@/lib/exam-format";
 import { extractErrorMessage } from "@/lib/extract-error-message";
+import { Pagination } from "@/components/ui/Pagination";
 import { ExamStatusBadge, StudentStatusBadge } from "./ExamStatusBadge";
 import { round2, typeLabel } from "./exam-wizard-types";
 import {
@@ -26,6 +27,7 @@ import {
 type Tab = "overview" | "questions" | "performance";
 
 const cardShadow = "shadow-[0px_1px_3px_0px_rgba(13,20,38,0.06)]";
+const STUDENTS_PER_PAGE = 10;
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
@@ -49,6 +51,7 @@ export function ExamDetailTeacher({ examId }: { examId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("overview");
   const [classFilter, setClassFilter] = useState("");
+  const [studentPage, setStudentPage] = useState(1);
 
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
@@ -160,6 +163,16 @@ export function ExamDetailTeacher({ examId }: { examId: string }) {
   const pointsTotal = round2(exam.targetScore);
   const pointsDiff = round2(pointsTotal - pointsSum);
   const pointsOk = pointsDiff === 0;
+
+  const studentTotalPages = Math.max(
+    1,
+    Math.ceil(overview.students.length / STUDENTS_PER_PAGE),
+  );
+  const currentStudentPage = Math.min(studentPage, studentTotalPages);
+  const pagedStudents = overview.students.slice(
+    (currentStudentPage - 1) * STUDENTS_PER_PAGE,
+    currentStudentPage * STUDENTS_PER_PAGE,
+  );
 
   return (
     <div className="px-10 py-9">
@@ -285,7 +298,10 @@ export function ExamDetailTeacher({ examId }: { examId: string }) {
             Turma
             <select
               value={classFilter}
-              onChange={(e) => setClassFilter(e.target.value)}
+              onChange={(e) => {
+                setClassFilter(e.target.value);
+                setStudentPage(1);
+              }}
               className="rounded-md border border-border bg-surface px-3 py-1.5 text-[13px] text-foreground"
             >
               <option value="">Todas</option>
@@ -350,7 +366,7 @@ export function ExamDetailTeacher({ examId }: { examId: string }) {
                     </td>
                   </tr>
                 )}
-                {overview.students.map((student) => (
+                {pagedStudents.map((student) => (
                   <tr
                     key={student.id}
                     className="border-b border-border last:border-b-0"
@@ -405,6 +421,15 @@ export function ExamDetailTeacher({ examId }: { examId: string }) {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          <div className="mt-4">
+            <Pagination
+              page={currentStudentPage}
+              totalPages={studentTotalPages}
+              onPageChange={setStudentPage}
+              label="Paginação dos alunos"
+            />
           </div>
         </>
       )}
