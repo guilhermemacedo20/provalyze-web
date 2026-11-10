@@ -168,10 +168,7 @@ function StudentDashboard({ name }: { name: string }) {
     classesService
       .listStudentClasses()
       .then(async (classes) => {
-        const visible = classes.filter((schoolClass) => !schoolClass.hidden);
-        setSubtitle(
-          visible[0]?.courseName ?? classes[0]?.courseName ?? "",
-        );
+        setSubtitle(classes.length ? classes[0].courseName : "");
         const groups = await Promise.all(
           classes.map((schoolClass) =>
             examsService.listClassExams(schoolClass.id),

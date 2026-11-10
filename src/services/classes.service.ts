@@ -9,7 +9,6 @@ export type SchoolClass = {
   courseName: string;
   studentsCount: number;
   averageScore: number | null;
-  hidden?: boolean;
 };
 
 export type ClassStudent = {
@@ -35,13 +34,6 @@ export const classesService = {
 
   listStudentClasses() {
     return apiRequest<SchoolClass[]>("/classes/student-classes");
-  },
-
-  setStudentClassVisibility(classId: string, hidden: boolean) {
-    return apiRequest<{ id: string; hidden: boolean }>(
-      `/classes/student-classes/${classId}/visibility`,
-      { method: "PATCH", body: { hidden } },
-    );
   },
 
   joinClass(code: string) {
