@@ -69,12 +69,6 @@ export const authService = {
     });
   },
 
-  deleteAccount() {
-    return apiRequest<{ message: string }>("/user/delete", {
-      method: "DELETE",
-    });
-  },
-
   me() {
     return apiRequest<User>("/auth/me");
   },
