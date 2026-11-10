@@ -37,6 +37,18 @@ function buildQuestions(total: number) {
   }));
 }
 
+function buildSelected(points: (number | null)[], distributed: number[] = []) {
+  return points.map((value, index) => ({
+    questionId: `q${index + 1}`,
+    points: value,
+    ...(distributed.includes(index) ? { autoPoints: true } : {}),
+    statement: `Questão ${String(index + 1).padStart(2, "0")}`,
+    themeId: "t1",
+    themeName: "Lógica",
+    type: "MULTIPLE_CHOICE" as const,
+  }));
+}
+
 describe("QuestionPicker", () => {
   it("lista temas do banco de questões", async () => {
     vi.mocked(themesService.listThemes).mockResolvedValue([
@@ -293,5 +305,125 @@ describe("QuestionPicker", () => {
 
     await user.click(screen.getByRole("button", { name: "Fechar" }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  describe("pontuação distribuída", () => {
+    const renderPicker = (
+      points: (number | null)[],
+      distributed: number[] = [],
+      onChange = vi.fn(),
+    ) => {
+      vi.mocked(themesService.listThemes).mockResolvedValue([]);
+      vi.mocked(questionsService.listQuestions).mockResolvedValue([]);
+
+      render(
+        <QuestionPicker
+          selected={buildSelected(points, distributed)}
+          onChange={onChange}
+          openTheme={null}
+          onOpenTheme={vi.fn()}
+          totalScore={10}
+        />,
+      );
+      return onChange;
+    };
+
+    it("não mostra o botão de limpar quando os pontos foram digitados", async () => {
+      renderPicker([5, 3]);
+
+      await waitFor(() =>
+        expect(screen.getAllByLabelText("Pontos da questão")).toHaveLength(2),
+      );
+      expect(
+        screen.queryByRole("button", { name: "Limpar pontuação" }),
+      ).not.toBeInTheDocument();
+    });
+
+    it("marca como distribuídas só as questões que receberam pontos", async () => {
+      const user = userEvent.setup();
+      const onChange = renderPicker([5, null, null]);
+
+      await user.click(
+        await screen.findByRole("button", { name: /Distribuir igualmente/ }),
+      );
+
+      expect(onChange).toHaveBeenCalledTimes(1);
+      const next = onChange.mock.calls[0][0];
+      expect(next[0]).toMatchObject({ questionId: "q1", points: 5 });
+      expect(next[0].autoPoints).toBeUndefined();
+      expect(next[1]).toMatchObject({
+        questionId: "q2",
+        points: 2.5,
+        autoPoints: true,
+      });
+      expect(next[2]).toMatchObject({
+        questionId: "q3",
+        points: 2.5,
+        autoPoints: true,
+      });
+    });
+
+    it("limpa só os pontos distribuídos e mantém os digitados", async () => {
+      const user = userEvent.setup();
+      const onChange = renderPicker([5, 2.5, 2.5], [1, 2]);
+
+      await user.click(
+        await screen.findByRole("button", { name: "Limpar pontuação" }),
+      );
+      expect(screen.getByText("Limpar a pontuação?")).toBeInTheDocument();
+      expect(onChange).not.toHaveBeenCalled();
+
+      await user.click(screen.getByRole("button", { name: "Limpar" }));
+
+      expect(onChange).toHaveBeenCalledWith([
+        expect.objectContaining({ questionId: "q1", points: 5 }),
+        expect.objectContaining({
+          questionId: "q2",
+          points: null,
+          autoPoints: false,
+        }),
+        expect.objectContaining({
+          questionId: "q3",
+          points: null,
+          autoPoints: false,
+        }),
+      ]);
+      expect(
+        screen.queryByText("Limpar a pontuação?"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("não altera nada quando cancela a confirmação", async () => {
+      const user = userEvent.setup();
+      const onChange = renderPicker([5, 2.5], [1]);
+
+      await user.click(
+        await screen.findByRole("button", { name: "Limpar pontuação" }),
+      );
+      await user.click(screen.getByRole("button", { name: "Cancelar" }));
+
+      expect(onChange).not.toHaveBeenCalled();
+      expect(
+        screen.queryByText("Limpar a pontuação?"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("trata como digitado o valor que o professor edita depois de distribuir", async () => {
+      const user = userEvent.setup();
+      const onChange = renderPicker([5, 2.5], [1]);
+
+      const inputs = await screen.findAllByLabelText("Pontos da questão");
+      await user.clear(inputs[1]);
+      await user.type(inputs[1], "7");
+
+      expect(onChange).toHaveBeenLastCalledWith([
+        expect.objectContaining({ questionId: "q1", points: 5 }),
+        expect.objectContaining({
+          questionId: "q2",
+          points: 7,
+          autoPoints: false,
+        }),
+      ]);
+    });
   });
 });
