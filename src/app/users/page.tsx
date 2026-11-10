@@ -114,11 +114,15 @@ export default function UsersPage() {
   const deleteUserMessage = (user: User | null): string => {
     if (!user) return "";
 
-    if (user.role === "ADMIN") {
-      return `Tem certeza que deseja excluir o usuário "${user.name}"? Os dados pessoais dele serão anonimizados.`;
+    if (user.role === "ADMIN" || user.role === "COORDINATOR") {
+      return `Tem certeza que deseja excluir o usuário "${user.name}"? A conta será removida do sistema.`;
     }
 
-    return `Tem certeza que deseja excluir o usuário "${user.name}"? Os dados pessoais dele serão anonimizados, mas o histórico de provas é preservado.`;
+    if (user.role === "TEACHER") {
+      return `Tem certeza que deseja excluir o usuário "${user.name}"? Nome e e-mail serão pseudonimizados e as turmas, questões e provas dele são preservadas.`;
+    }
+
+    return `Tem certeza que deseja excluir o usuário "${user.name}"? Se ele já tiver provas, nome e e-mail serão pseudonimizados e o histórico de provas é preservado; caso contrário, a conta é removida.`;
   };
 
   const countFor = (key: Role | "ALL") =>

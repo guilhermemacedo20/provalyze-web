@@ -43,7 +43,7 @@ function DeleteAccountMessage({ role }: { role?: User["role"] }) {
             <li>
               Se você já fez provas, seu nome e seu e-mail são substituídos por
               valores genéricos. As provas e respostas continuam registradas de
-              forma anônima por <strong>5 anos</strong>, para preservar a
+              forma pseudonimizada por <strong>5 anos</strong>, para preservar a
               integridade dos dados da turma.
             </li>
           </ul>
@@ -60,7 +60,7 @@ function DeleteAccountMessage({ role }: { role?: User["role"] }) {
         <>
           <div>
             <p className="font-semibold text-foreground">
-              Dados que serão anonimizados:
+              Dados que serão pseudonimizados:
             </p>
             <ul className="mt-1 list-disc pl-5">
               <li>Seu nome completo.</li>
@@ -78,7 +78,7 @@ function DeleteAccountMessage({ role }: { role?: User["role"] }) {
             </p>
             <p className="mt-1">
               O histórico acadêmico (turmas e avaliações) fica registrado de
-              forma anônima por <strong>5 anos</strong>, para preservar a
+              forma pseudonimizada por <strong>5 anos</strong>, para preservar a
               integridade dos dados da turma.
             </p>
           </div>
