@@ -202,6 +202,7 @@ export type CorrectionQuestion = {
   answerId: string | null;
   type: QuestionType;
   statement: string;
+  imageUrl: string | null;
   themeName: string;
   maxScore: number;
   options: { label: string; text: string }[];

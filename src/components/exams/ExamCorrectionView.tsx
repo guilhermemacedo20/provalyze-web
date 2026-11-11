@@ -14,6 +14,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { QuestionImage } from "@/components/questions/QuestionImage";
 import { aiService } from "@/services/ai.service";
 import {
   CorrectionQuestion,
@@ -644,6 +645,15 @@ export function ExamCorrectionView({
               <h1 className="whitespace-pre-wrap break-words text-lg font-semibold leading-relaxed text-foreground sm:text-xl">
                 {question.statement}
               </h1>
+              {question.imageUrl && (
+                <div className="mt-5 flex justify-center">
+                  <QuestionImage
+                    src={question.imageUrl}
+                    alt={`Imagem da questão ${question.number}`}
+                    className="max-h-80 max-w-full rounded-md object-contain"
+                  />
+                </div>
+              )}
 
               {question.type === "MULTIPLE_CHOICE" ? (
                 <MultipleChoiceReview question={question} />
