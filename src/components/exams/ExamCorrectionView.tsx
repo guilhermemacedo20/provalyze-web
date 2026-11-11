@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   ChevronRight,
   LoaderCircle,
+  Minus,
   Sparkles,
   X,
   type LucideIcon,
@@ -27,7 +28,13 @@ import { IntegrityTimeline } from "./IntegrityTimeline";
 
 type AiStatus = "loading" | "error";
 type AiState = Record<string, AiStatus>;
-type QuestionState = "correct" | "wrong" | "loading" | "suggested" | "pending";
+type QuestionState =
+  | "correct"
+  | "partial"
+  | "wrong"
+  | "loading"
+  | "suggested"
+  | "pending";
 
 function isCorrected(question: CorrectionQuestion) {
   return question.gradeStatus !== "PENDING";
@@ -38,7 +45,8 @@ function questionState(
   ai: AiState,
 ): QuestionState {
   if (isCorrected(question)) {
-    return question.score >= question.maxScore - 0.001 ? "correct" : "wrong";
+    if (question.score >= question.maxScore - 0.001) return "correct";
+    return question.score > 0 ? "partial" : "wrong";
   }
   if (question.answerId && ai[question.answerId] === "loading") {
     return "loading";
@@ -55,6 +63,11 @@ const STATE_META: Record<
     label: "Correta",
     tile: "border border-[#86EFAC] bg-[#DCFCE7] text-[#166534]",
     Icon: Check,
+  },
+  partial: {
+    label: "Parcial",
+    tile: "border border-[#FDE68A] bg-[#FFFBEB] text-[#854D0E]",
+    Icon: Minus,
   },
   wrong: {
     label: "Errada",

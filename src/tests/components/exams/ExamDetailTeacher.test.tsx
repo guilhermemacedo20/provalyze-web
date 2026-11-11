@@ -146,4 +146,43 @@ describe("ExamDetailTeacher", () => {
       expect(examsService.getOverview).toHaveBeenLastCalledWith("e1", "c2");
     });
   });
+
+  it("pagina a lista de alunos da visão geral", async () => {
+    vi.mocked(examsService.getOverview).mockResolvedValue({
+      ...overview,
+      students: Array.from({ length: 12 }, (_, index) => ({
+        id: `s${index + 1}`,
+        name: `Aluno ${String(index + 1).padStart(2, "0")}`,
+        classId: "c1",
+        className: "Turma A",
+        status: "NOT_STARTED" as const,
+        score: null,
+        durationMinutes: null,
+      })),
+    });
+    const user = userEvent.setup();
+
+    render(<ExamDetailTeacher examId="e1" />);
+
+    expect(await screen.findByText("Aluno 01")).toBeInTheDocument();
+    expect(screen.getByText("Aluno 10")).toBeInTheDocument();
+    expect(screen.queryByText("Aluno 11")).not.toBeInTheDocument();
+    expect(screen.getByText("Página 1 de 2")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Próxima página" }));
+
+    expect(screen.getByText("Aluno 11")).toBeInTheDocument();
+    expect(screen.getByText("Aluno 12")).toBeInTheDocument();
+    expect(screen.queryByText("Aluno 01")).not.toBeInTheDocument();
+    expect(screen.getByText("Página 2 de 2")).toBeInTheDocument();
+  });
+
+  it("não mostra a paginação quando cabe em uma página", async () => {
+    render(<ExamDetailTeacher examId="e1" />);
+    await waitFor(() => screen.getByText("Prova A"));
+
+    expect(
+      screen.queryByRole("navigation", { name: "Paginação dos alunos" }),
+    ).not.toBeInTheDocument();
+  });
 });

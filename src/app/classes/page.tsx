@@ -5,6 +5,10 @@ import Link from "next/link";
 import { SchoolClass, classesService } from "@/services/classes.service";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { extractErrorMessage } from "@/lib/extract-error-message";
+import { Pagination } from "@/components/ui/Pagination";
+import { paginate } from "@/lib/list-utils";
+
+const CLASSES_PER_PAGE = 9;
 
 function formatAverage(value: number | null) {
   if (value === null) return "";
@@ -14,6 +18,7 @@ function formatAverage(value: number | null) {
 export default function ClassesAdminPage() {
   const [classes, setClasses] = useState<SchoolClass[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
 
   const [deleteTarget, setDeleteTarget] = useState<SchoolClass | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -34,6 +39,12 @@ export default function ClassesAdminPage() {
   useEffect(() => {
     fetchClasses();
   }, []);
+
+  const {
+    items: pagedClasses,
+    currentPage,
+    totalPages,
+  } = paginate(classes, page, CLASSES_PER_PAGE);
 
   const requestDelete = (schoolClass: SchoolClass) => {
     setDeleteError(null);
@@ -60,9 +71,7 @@ export default function ClassesAdminPage() {
       <div className="mb-5 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Turmas</h1>
-          <p className="mt-1 text-sm text-muted">
-            Todas as turmas
-          </p>
+          <p className="mt-1 text-sm text-muted">Todas as turmas</p>
         </div>
         <Link
           href="/classes/new"
@@ -101,17 +110,26 @@ export default function ClassesAdminPage() {
               </tr>
             )}
             {!loading &&
-              classes.map((schoolClass) => (
-                <tr key={schoolClass.id} className="border-b border-border last:border-b-0">
+              pagedClasses.map((schoolClass) => (
+                <tr
+                  key={schoolClass.id}
+                  className="border-b border-border last:border-b-0"
+                >
                   <td className="px-5 py-3.5 font-semibold text-foreground">
                     {schoolClass.name}
                   </td>
-                  <td className="px-5 py-3.5 font-mono text-muted">{schoolClass.joinCode}</td>
-                  <td className="px-5 py-3.5 text-muted">{schoolClass.teacherName}</td>
+                  <td className="px-5 py-3.5 font-mono text-muted">
+                    {schoolClass.joinCode}
+                  </td>
+                  <td className="px-5 py-3.5 text-muted">
+                    {schoolClass.teacherName}
+                  </td>
                   <td className="px-5 py-3.5 text-muted">
                     {schoolClass.subjectName} - {schoolClass.courseName}
                   </td>
-                  <td className="px-5 py-3.5 text-muted">{schoolClass.studentsCount}</td>
+                  <td className="px-5 py-3.5 text-muted">
+                    {schoolClass.studentsCount}
+                  </td>
                   <td className="px-5 py-3.5 text-muted">
                     {formatAverage(schoolClass.averageScore)}
                   </td>
@@ -137,6 +155,17 @@ export default function ClassesAdminPage() {
           </tbody>
         </table>
       </div>
+
+      {!loading && (
+        <div className="mt-5">
+          <Pagination
+            page={currentPage}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            label="Paginação das turmas"
+          />
+        </div>
+      )}
 
       <ConfirmDialog
         open={deleteTarget !== null}

@@ -2,6 +2,8 @@ import Link from "next/link";
 import { ExamReviewQuestion } from "@/services/exams.service";
 import { formatPoints } from "@/lib/exam-format";
 
+type ScoreLevel = "full" | "partial" | "zero";
+
 function usedTime(startedAt?: string | null, finishedAt?: string | null) {
   if (!startedAt || !finishedAt) return "Pendente";
   const minutes = Math.max(
@@ -44,17 +46,58 @@ function reviewStatus(question: ExamReviewQuestion) {
   return { label: "Corrigida pelo professor", className: "text-[#16A34A]" };
 }
 
-function answerStyle(question: ExamReviewQuestion, pending: boolean) {
-  if (pending) {
-    return "border-[#E2E8F0]";
+function scoreLevel(question: ExamReviewQuestion): ScoreLevel {
+  const max = question.maxScore;
+  if (max !== undefined && max > 0) {
+    if (question.score >= max - 0.001) return "full";
+    return question.score > 0 ? "partial" : "zero";
   }
-  if (question.isCorrect) {
-    return "border-[#BBF7D0] bg-[#F0FDF4]";
-  }
-  if (question.score > 0) {
-    return "border-[#FDE68A] bg-[#FFFBEB]";
-  }
-  return "border-[#FECACA] bg-[#FEF2F2]";
+  if (question.isCorrect) return "full";
+  return question.score > 0 ? "partial" : "zero";
+}
+
+const LEVEL_STYLE: Record<ScoreLevel, string> = {
+  full: "border-[#BBF7D0] bg-[#F0FDF4]",
+  partial: "border-[#FDE68A] bg-[#FFFBEB]",
+  zero: "border-[#FECACA] bg-[#FEF2F2]",
+};
+
+const LEGEND_ITEMS = [
+  { key: "full", label: "Pontuação completa", swatch: LEVEL_STYLE.full },
+  {
+    key: "partial",
+    label: "Pontuação parcial (acertou, mas sem a nota máxima)",
+    swatch: LEVEL_STYLE.partial,
+  },
+  { key: "zero", label: "Sem pontuação", swatch: LEVEL_STYLE.zero },
+];
+
+function ScoreLegend({ showPending }: { showPending: boolean }) {
+  return (
+    <ul
+      aria-label="Legenda das cores"
+      className="mb-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-muted"
+    >
+      {LEGEND_ITEMS.map((item) => (
+        <li key={item.key} className="flex items-center gap-1.5">
+          <span
+            aria-hidden="true"
+            className={`size-3.5 shrink-0 rounded border ${item.swatch}`}
+          />
+          {item.label}
+        </li>
+      ))}
+      {showPending && (
+        <li className="flex items-center gap-1.5">
+          <span
+            aria-hidden="true"
+            className="size-3.5 shrink-0 rounded border border-[#E2E8F0] bg-white"
+          />
+          Aguardando correção
+        </li>
+      )}
+    </ul>
+  );
 }
 
 export function ExamResult({
@@ -77,6 +120,10 @@ export function ExamResult({
   const correct = review.filter((question) => question.isCorrect).length;
   const themes = themeStats(review);
   const details = review.filter((question) => question.statement);
+  const hasPending = details.some(
+    (question) =>
+      question.type === "OPEN_ENDED" && question.gradeStatus === "PENDING",
+  );
 
   const sentAt = finishedAt
     ? new Date(finishedAt).toLocaleTimeString("pt-BR", {
@@ -171,13 +218,15 @@ export function ExamResult({
 
       {details.length > 0 && (
         <section className="mb-6  rounded-2xl border border-[#E2E8F0] px-6 py-5">
-          <h2 className="mb-4 font-semibold">Correção das questões</h2>
+          <h2 className="mb-3 font-semibold">Correção das questões</h2>
+          <ScoreLegend showPending={hasPending} />
           <ul className="flex flex-col">
             {details.map((question) => {
               const status = reviewStatus(question);
               const pending =
                 question.type === "OPEN_ENDED" &&
                 question.gradeStatus === "PENDING";
+              const level = scoreLevel(question);
 
               return (
                 <li
@@ -203,7 +252,10 @@ export function ExamResult({
                   </p>
 
                   <div
-                    className={`mt-3 rounded-xl border px-4 py-3 ${answerStyle(question, pending)}`}
+                    data-score-level={pending ? "pending" : level}
+                    className={`mt-3 rounded-xl border px-4 py-3 ${
+                      pending ? "border-[#E2E8F0]" : LEVEL_STYLE[level]
+                    }`}
                   >
                     <p className="text-xs font-semibold tracking-wide text-muted">
                       SUA RESPOSTA

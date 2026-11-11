@@ -3,11 +3,15 @@
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { Pagination } from "@/components/ui/Pagination";
+import { paginate } from "@/lib/list-utils";
 import {
   StudentClassExams,
   StudentExam,
   examsService,
 } from "@/services/exams.service";
+
+const EXAMS_PER_PAGE = 5;
 
 function formatSchedule(exam: StudentExam) {
   const start = new Date(exam.startsAt);
@@ -44,6 +48,8 @@ export default function ClassExamsPage() {
   const { classId } = useParams<{ classId: string }>();
   const [data, setData] = useState<StudentClassExams | null>(null);
   const [loading, setLoading] = useState(true);
+  const [upcomingPage, setUpcomingPage] = useState(1);
+  const [finishedPage, setFinishedPage] = useState(1);
 
   useEffect(() => {
     examsService
@@ -72,8 +78,16 @@ export default function ClassExamsPage() {
     );
   }
 
-  const upcoming = data.exams.filter((exam) => !exam.finished);
-  const finished = data.exams.filter((exam) => exam.finished);
+  const upcoming = paginate(
+    data.exams.filter((exam) => !exam.finished),
+    upcomingPage,
+    EXAMS_PER_PAGE,
+  );
+  const finished = paginate(
+    data.exams.filter((exam) => exam.finished),
+    finishedPage,
+    EXAMS_PER_PAGE,
+  );
 
   return (
     <div className="px-10 py-9">
@@ -89,8 +103,8 @@ export default function ClassExamsPage() {
       <section className="mb-10">
         <h2 className="mb-4 text-lg font-semibold">Próximas avaliações</h2>
         <div className="flex max-w-xl flex-col gap-4">
-          {upcoming.length > 0 ? (
-            upcoming.map((exam) => (
+          {upcoming.items.length > 0 ? (
+            upcoming.items.map((exam) => (
               <ExamCard
                 key={exam.id}
                 exam={exam}
@@ -116,13 +130,21 @@ export default function ClassExamsPage() {
             <p className="text-sm text-muted">Nenhuma prova disponível.</p>
           )}
         </div>
+        <div className="mt-4 max-w-xl">
+          <Pagination
+            page={upcoming.currentPage}
+            totalPages={upcoming.totalPages}
+            onPageChange={setUpcomingPage}
+            label="Paginação das próximas avaliações"
+          />
+        </div>
       </section>
 
       <section>
         <h2 className="mb-4 text-lg font-semibold">Finalizadas</h2>
         <div className="flex max-w-xl flex-col gap-4">
-          {finished.length > 0 ? (
-            finished.map((exam) => (
+          {finished.items.length > 0 ? (
+            finished.items.map((exam) => (
               <ExamCard
                 key={exam.id}
                 exam={exam}
@@ -139,6 +161,14 @@ export default function ClassExamsPage() {
           ) : (
             <p className="text-sm text-muted">Nenhuma prova finalizada.</p>
           )}
+        </div>
+        <div className="mt-4 max-w-xl">
+          <Pagination
+            page={finished.currentPage}
+            totalPages={finished.totalPages}
+            onPageChange={setFinishedPage}
+            label="Paginação das provas finalizadas"
+          />
         </div>
       </section>
 
