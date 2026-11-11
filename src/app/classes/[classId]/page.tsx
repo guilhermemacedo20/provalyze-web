@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ClassDetail, classesService } from "@/services/classes.service";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { extractErrorMessage } from "@/lib/extract-error-message";
 
 export default function ClassDetailPage() {
   const { classId } = useParams<{ classId: string }>();
@@ -16,10 +17,12 @@ export default function ClassDetailPage() {
   // controla o modal de confirmação de excluir a turma inteira.
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // controla o modal de confirmação de remover um aluno específico da turma.
   const [removeTarget, setRemoveTarget] = useState<{ id: string; name: string } | null>(null);
   const [removing, setRemoving] = useState(false);
+  const [removeError, setRemoveError] = useState<string | null>(null);
 
   const fetchClass = useCallback(async () => {
     try {
@@ -38,11 +41,13 @@ export default function ClassDetailPage() {
 
   const confirmDeleteClass = async () => {
     setDeleting(true);
+    setDeleteError(null);
     try {
       await classesService.deleteClass(classId);
       router.push("/classes");
     } catch (error) {
       console.error("Erro ao excluir turma:", error);
+      setDeleteError(extractErrorMessage(error));
       setDeleting(false);
     }
   };
@@ -50,12 +55,14 @@ export default function ClassDetailPage() {
   const confirmRemoveStudent = async () => {
     if (!removeTarget) return;
     setRemoving(true);
+    setRemoveError(null);
     try {
       await classesService.removeStudent(classId, removeTarget.id);
       setRemoveTarget(null);
       await fetchClass();
     } catch (error) {
       console.error("Erro ao remover aluno:", error);
+      setRemoveError(extractErrorMessage(error));
     } finally {
       setRemoving(false);
     }
@@ -94,7 +101,10 @@ export default function ClassDetailPage() {
           </Link>
           <button
             type="button"
-            onClick={() => setConfirmingDelete(true)}
+            onClick={() => {
+              setDeleteError(null);
+              setConfirmingDelete(true);
+            }}
             className="rounded-md border border-danger px-4 py-2.5 text-sm font-semibold text-danger hover:bg-danger/10"
           >
             Excluir turma
@@ -149,7 +159,10 @@ export default function ClassDetailPage() {
                   <td className="px-5 py-3.5 text-right">
                     <button
                       type="button"
-                      onClick={() => setRemoveTarget({ id: student.id, name: student.name })}
+                      onClick={() => {
+                        setRemoveError(null);
+                        setRemoveTarget({ id: student.id, name: student.name });
+                      }}
                       className="text-muted hover:text-danger"
                     >
                       Excluir
@@ -172,6 +185,7 @@ export default function ClassDetailPage() {
         open={confirmingDelete}
         title="Excluir turma"
         message={`Tem certeza que deseja excluir a turma "${schoolClass?.name}"?`}
+        error={deleteError}
         confirming={deleting}
         onConfirm={confirmDeleteClass}
         onCancel={() => setConfirmingDelete(false)}
@@ -181,6 +195,7 @@ export default function ClassDetailPage() {
         open={removeTarget !== null}
         title="Remover aluno da turma"
         message={`Tem certeza que deseja remover "${removeTarget?.name}" desta turma?`}
+        error={removeError}
         confirming={removing}
         onConfirm={confirmRemoveStudent}
         onCancel={() => setRemoveTarget(null)}

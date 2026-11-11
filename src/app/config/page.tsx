@@ -119,6 +119,7 @@ export default function ConfigPage() {
   const [confirmingDeleteAccount, setConfirmingDeleteAccount] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   useEffect(() => {
     authService
@@ -204,6 +205,7 @@ export default function ConfigPage() {
   };
 
   const exportMe = async () => {
+    setExportError(null);
     try {
       const data = await authService.export();
       const blob = new Blob([JSON.stringify(data, null, 2)], {
@@ -219,6 +221,7 @@ export default function ConfigPage() {
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Erro ao exportar dados:", error);
+      setExportError(extractErrorMessage(error));
     }
   };
 
@@ -266,6 +269,10 @@ export default function ConfigPage() {
           </div>
         </div>
       </div>
+
+      {exportError && (
+        <p className="mb-3 text-right text-[13px] text-danger">{exportError}</p>
+      )}
 
       <div className="flex justify-end gap-3">
         <button

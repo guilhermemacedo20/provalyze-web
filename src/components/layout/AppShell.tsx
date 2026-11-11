@@ -61,7 +61,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     router.replace("/login");
   };
 
-  const mustAcceptTerms = user.termsAcceptedAt === null;
+  const mustAcceptTerms =
+    user.requiresTermsAcceptance ?? user.termsAcceptedAt === null;
 
   return (
     <div className="flex min-h-screen bg-background">

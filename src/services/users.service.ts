@@ -11,6 +11,7 @@ export type User = {
   createdAt: string;
   termsAcceptedAt?: string | null;
   termsVersion?: string | null;
+  requiresTermsAcceptance?: boolean;
 };
 
 export const usersService = {

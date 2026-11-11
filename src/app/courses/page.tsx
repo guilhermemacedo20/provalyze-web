@@ -25,6 +25,7 @@ export default function CoursesPage() {
   // referente ao modal de confirmação de exclusão.
   const [deleteTarget, setDeleteTarget] = useState<Course | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // busca toda a lista de cursos novamente.
   const fetchCourses = async () => {
@@ -67,7 +68,10 @@ export default function CoursesPage() {
   };
 
   // abre o modal de confirmação, guardando qual curso será excluído.
-  const requestDelete = (course: Course) => setDeleteTarget(course);
+  const requestDelete = (course: Course) => {
+    setDeleteError(null);
+    setDeleteTarget(course);
+  };
 
   // executa a exclusão de verdade, chamada pelo botão de confirmar do modal.
   const confirmDelete = async () => {
@@ -79,6 +83,7 @@ export default function CoursesPage() {
       await fetchCourses();
     } catch (error) {
       console.error("Erro ao excluir curso:", error);
+      setDeleteError(extractErrorMessage(error));
     } finally {
       setDeleting(false);
     }
@@ -227,6 +232,7 @@ export default function CoursesPage() {
         open={deleteTarget !== null}
         title="Excluir curso"
         message={`Tem certeza que deseja excluir o curso "${deleteTarget?.name}"? Essa ação também remove todas as matérias e turmas vinculadas a ele.`}
+        error={deleteError}
         confirming={deleting}
         onConfirm={confirmDelete}
         onCancel={() => setDeleteTarget(null)}

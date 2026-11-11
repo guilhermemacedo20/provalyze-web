@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { Course, coursesService } from "@/services/courses.service";
 import { Subject, subjectsService } from "@/services/subjects.service";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { extractErrorMessage } from "@/lib/extract-error-message";
 import { Pagination } from "@/components/ui/Pagination";
 import { compareNames, matchesSearch, paginate } from "@/lib/list-utils";
 
@@ -28,6 +29,7 @@ export default function CourseSubjectsPage() {
 
   const [deleteTarget, setDeleteTarget] = useState<Subject | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const fetchCourse = useCallback(async () => {
     try {
@@ -78,7 +80,10 @@ export default function CourseSubjectsPage() {
     }
   };
 
-  const requestDelete = (subject: Subject) => setDeleteTarget(subject);
+  const requestDelete = (subject: Subject) => {
+    setDeleteError(null);
+    setDeleteTarget(subject);
+  };
 
   const confirmDelete = async () => {
     if (!deleteTarget) return;
@@ -89,6 +94,7 @@ export default function CourseSubjectsPage() {
       await fetchSubjects();
     } catch (error) {
       console.error("Erro ao excluir matéria:", error);
+      setDeleteError(extractErrorMessage(error));
     } finally {
       setDeleting(false);
     }
@@ -243,6 +249,7 @@ export default function CourseSubjectsPage() {
         open={deleteTarget !== null}
         title="Excluir matéria"
         message={`Tem certeza que deseja excluir a matéria "${deleteTarget?.name}"?`}
+        error={deleteError}
         confirming={deleting}
         onConfirm={confirmDelete}
         onCancel={() => setDeleteTarget(null)}

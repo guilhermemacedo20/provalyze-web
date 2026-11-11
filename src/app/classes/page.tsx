@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { SchoolClass, classesService } from "@/services/classes.service";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { extractErrorMessage } from "@/lib/extract-error-message";
 
 function formatAverage(value: number | null) {
   if (value === null) return "";
@@ -16,6 +17,7 @@ export default function ClassesAdminPage() {
 
   const [deleteTarget, setDeleteTarget] = useState<SchoolClass | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const fetchClasses = async () => {
     try {
@@ -33,7 +35,10 @@ export default function ClassesAdminPage() {
     fetchClasses();
   }, []);
 
-  const requestDelete = (schoolClass: SchoolClass) => setDeleteTarget(schoolClass);
+  const requestDelete = (schoolClass: SchoolClass) => {
+    setDeleteError(null);
+    setDeleteTarget(schoolClass);
+  };
 
   const confirmDelete = async () => {
     if (!deleteTarget) return;
@@ -44,6 +49,7 @@ export default function ClassesAdminPage() {
       await fetchClasses();
     } catch (error) {
       console.error("Erro ao excluir turma:", error);
+      setDeleteError(extractErrorMessage(error));
     } finally {
       setDeleting(false);
     }
@@ -136,6 +142,7 @@ export default function ClassesAdminPage() {
         open={deleteTarget !== null}
         title="Excluir turma"
         message={`Tem certeza que deseja excluir a turma "${deleteTarget?.name}"?`}
+        error={deleteError}
         confirming={deleting}
         onConfirm={confirmDelete}
         onCancel={() => setDeleteTarget(null)}

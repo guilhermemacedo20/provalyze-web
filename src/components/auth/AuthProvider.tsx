@@ -74,6 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           ...user,
           termsAcceptedAt: result.termsAcceptedAt,
           termsVersion: result.termsVersion,
+          requiresTermsAcceptance: false,
         };
         const token = getAccessToken();
         if (token) saveSession(token, updated);

@@ -166,7 +166,7 @@ const PRIVACY_BLOCKS: Block[] = [
       "Senhas nunca são armazenadas em texto puro, apenas seu hash criptográfico.",
       "O acesso às funcionalidades do sistema exige autenticação por token e cada perfil só acessa o que sua função permite, essa verificação é feita no servidor, não apenas escondendo botões na tela.",
       "Ao excluir uma conta, os dados pessoais identificáveis são substituídos por valores genéricos e o histórico acadêmico associado permanece no sistema, mas sem identificar a pessoa (pseudonimização).",
-      "O sistema limita as tentativas de login, cadastro e redefinição de senha por minuto, e o código de redefinição é bloqueado após cinco tentativas incorretas.",
+      "O código de redefinição de senha é bloqueado após cinco tentativas incorretas e expira em 10 minutos.",
       "A comunicação com o sistema usa HTTPS, e a API só aceita requisições do navegador vindas do endereço oficial do Provalyze.",
     ],
   },
