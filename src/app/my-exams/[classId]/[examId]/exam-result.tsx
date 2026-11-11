@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { QuestionImage } from "@/components/questions/QuestionImage";
 import { ExamReviewQuestion } from "@/services/exams.service";
 import { formatPoints } from "@/lib/exam-format";
 
@@ -250,6 +251,15 @@ export function ExamResult({
                   <p className={`mt-1 text-xs ${status.className}`}>
                     {question.themeName} · {status.label}
                   </p>
+                  {question.imageUrl && (
+                    <div className="mt-3 flex justify-center">
+                      <QuestionImage
+                        src={question.imageUrl}
+                        alt={`Imagem da questão ${question.number}`}
+                        className="max-h-64 max-w-full rounded-md object-contain"
+                      />
+                    </div>
+                  )}
 
                   <div
                     data-score-level={pending ? "pending" : level}

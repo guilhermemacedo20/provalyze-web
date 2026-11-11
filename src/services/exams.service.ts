@@ -54,6 +54,7 @@ export type ExamReviewQuestion = {
   gradeStatus: string;
   number?: number;
   statement?: string;
+  imageUrl?: string | null;
   maxScore?: number;
   teacherFeedback?: string | null;
   studentAnswer?: string;
