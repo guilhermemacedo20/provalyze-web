@@ -20,9 +20,16 @@ export default function ClassDetailPage() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // controla o modal de confirmação de remover um aluno específico da turma.
-  const [removeTarget, setRemoveTarget] = useState<{ id: string; name: string } | null>(null);
+  const [removeTarget, setRemoveTarget] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const [removing, setRemoving] = useState(false);
   const [removeError, setRemoveError] = useState<string | null>(null);
+
+  const [confirmingResetCode, setConfirmingResetCode] = useState(false);
+  const [resetting, setResetting] = useState(false);
+  const [resetError, setResetError] = useState<string | null>(null);
 
   const fetchClass = useCallback(async () => {
     try {
@@ -68,11 +75,31 @@ export default function ClassDetailPage() {
     }
   };
 
+  const confirmResetCode = async () => {
+    setResetting(true);
+    setResetError(null);
+    try {
+      const { joinCode } = await classesService.resetJoinCode(classId);
+      setSchoolClass((current) =>
+        current ? { ...current, joinCode } : current,
+      );
+      setConfirmingResetCode(false);
+    } catch (error) {
+      console.error("Erro ao gerar novo código:", error);
+      setResetError(extractErrorMessage(error));
+    } finally {
+      setResetting(false);
+    }
+  };
+
   if (!loading && !schoolClass) {
     return (
       <div className="px-10 py-9">
         <p className="text-muted">Turma não encontrada.</p>
-        <Link href="/classes" className="font-medium text-primary hover:underline">
+        <Link
+          href="/classes"
+          className="font-medium text-primary hover:underline"
+        >
           Voltar para Turmas
         </Link>
       </div>
@@ -115,8 +142,18 @@ export default function ClassDetailPage() {
       {schoolClass && (
         <p className="mb-6 text-sm text-muted">
           {schoolClass.subjectName} · {schoolClass.students.length} alunos ·{" "}
-          {schoolClass.courseName} · Professor(a) {schoolClass.teacherName} · Código:{" "}
-          <span className="font-mono">{schoolClass.joinCode}</span>
+          {schoolClass.courseName} · Professor(a) {schoolClass.teacherName} ·
+          Código: <span className="font-mono">{schoolClass.joinCode}</span>
+          <button
+            type="button"
+            onClick={() => {
+              setResetError(null);
+              setConfirmingResetCode(true);
+            }}
+            className="ml-2 inline-flex cursor-pointer items-center rounded-md border border-border px-2 py-0.5 align-middle text-xs font-medium text-primary transition-colors hover:border-primary hover:bg-primary-light"
+          >
+            Gerar novo código
+          </button>
         </p>
       )}
 
@@ -146,7 +183,10 @@ export default function ClassDetailPage() {
             )}
             {!loading &&
               schoolClass?.students.map((student) => (
-                <tr key={student.id} className="border-b border-border last:border-b-0">
+                <tr
+                  key={student.id}
+                  className="border-b border-border last:border-b-0"
+                >
                   <td className="px-5 py-3.5 font-medium text-foreground">
                     <Link
                       href={`/classes/${classId}/students/${student.id}`}
@@ -189,6 +229,17 @@ export default function ClassDetailPage() {
         confirming={deleting}
         onConfirm={confirmDeleteClass}
         onCancel={() => setConfirmingDelete(false)}
+      />
+
+      <ConfirmDialog
+        open={confirmingResetCode}
+        title="Gerar novo código"
+        message="O código atual deixará de funcionar e os alunos que ainda não entraram precisarão do novo código. Os alunos já matriculados continuam na turma."
+        error={resetError}
+        confirmLabel="Gerar código"
+        confirming={resetting}
+        onConfirm={confirmResetCode}
+        onCancel={() => setConfirmingResetCode(false)}
       />
 
       <ConfirmDialog

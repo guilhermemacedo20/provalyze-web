@@ -56,6 +56,12 @@ export const classesService = {
     });
   },
 
+  resetJoinCode(id: string) {
+    return apiRequest<{ id: string; joinCode: string }>(`/classes/${id}/join-code`, {
+      method: "PATCH",
+    });
+  },
+
   getClass(id: string) {
     return apiRequest<ClassDetail>(`/classes/${id}`);
   },
