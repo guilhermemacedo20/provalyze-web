@@ -1,4 +1,5 @@
 import { apiRequest } from "./api";
+import { getBrowserId } from "@/lib/browser-id";
 import type { QuestionType } from "./questions.service";
 
 export type StudentExam = {
@@ -88,7 +89,8 @@ export type ExamEventType =
   | "CUT"
   | "TAB_SWITCH"
   | "WINDOW_BLUR"
-  | "CONTEXT_MENU";
+  | "CONTEXT_MENU"
+  | "BROWSER_CHANGE";
 
 export type SubmitExamResult = {
   status?: "FINISHED";
@@ -303,7 +305,7 @@ export const examsService = {
 
   getStudentExam(classId: string, examId: string) {
     return apiRequest<StudentExamDetail>(
-      `/classes-exams/${classId}/exams/${examId}`,
+      `/classes-exams/${classId}/exams/${examId}?browserId=${encodeURIComponent(getBrowserId())}`,
     );
   },
 
