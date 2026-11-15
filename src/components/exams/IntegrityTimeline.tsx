@@ -23,6 +23,7 @@ const EVENT_TEXT: Record<ExamEventType, string> = {
   TAB_SWITCH: "Aluno trocou de aba durante a avaliação.",
   WINDOW_BLUR: "Aluno perdeu o foco da avaliação.",
   CONTEXT_MENU: "Abriu o menu do botão direito.",
+  BROWSER_CHANGE: "Aluno abriu a avaliação em outro navegador ou dispositivo.",
 };
 
 function formatTime(iso: string) {

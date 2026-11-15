@@ -6,6 +6,7 @@ import {
   ExamDetail,
   ExamOverview,
   examsService,
+  StudentExamStatus,
 } from "@/services/exams.service";
 import {
   formatFullPeriod,
@@ -15,7 +16,11 @@ import {
 } from "@/lib/exam-format";
 import { extractErrorMessage } from "@/lib/extract-error-message";
 import { Pagination } from "@/components/ui/Pagination";
-import { ExamStatusBadge, StudentStatusBadge } from "./ExamStatusBadge";
+import {
+  ExamStatusBadge,
+  STUDENT_STATUS,
+  StudentStatusBadge,
+} from "./ExamStatusBadge";
 import { round2, typeLabel } from "./exam-wizard-types";
 import {
   buildResultRows,
@@ -28,6 +33,14 @@ type Tab = "overview" | "questions" | "performance";
 
 const cardShadow = "shadow-[0px_1px_3px_0px_rgba(13,20,38,0.06)]";
 const STUDENTS_PER_PAGE = 10;
+const OVERVIEW_REFRESH_MS = 60000;
+const STATUS_OPTIONS: StudentExamStatus[] = [
+  "IN_PROGRESS",
+  "NOT_STARTED",
+  "FINISHED",
+  "GRADED",
+  "EXPIRED",
+];
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
@@ -51,7 +64,10 @@ export function ExamDetailTeacher({ examId }: { examId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("overview");
   const [classFilter, setClassFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StudentExamStatus | "">("");
   const [studentPage, setStudentPage] = useState(1);
+  const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
+  const [autoRefresh, setAutoRefresh] = useState(true);
 
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
@@ -66,6 +82,7 @@ export function ExamDetailTeacher({ examId }: { examId: string }) {
       ]);
       setExam(examData);
       setOverview(overviewData);
+      setUpdatedAt(new Date());
       setError(null);
     } catch (err) {
       setError(extractErrorMessage(err));
@@ -77,6 +94,34 @@ export function ExamDetailTeacher({ examId }: { examId: string }) {
   useEffect(() => {
     load();
   }, [load]);
+
+  const isPublished = exam?.status === "PUBLISHED";
+  const hasPendingStudents =
+    overview?.students.some(
+      (student) =>
+        student.status === "NOT_STARTED" || student.status === "IN_PROGRESS",
+    ) ?? false;
+  const canAutoRefresh = isPublished && hasPendingStudents;
+
+  useEffect(() => {
+    if (!canAutoRefresh || !autoRefresh || tab !== "overview") {
+      return;
+    }
+    const timer = window.setInterval(async () => {
+      if (document.hidden) {
+        return;
+      }
+      try {
+        setOverview(
+          await examsService.getOverview(examId, classFilter || undefined),
+        );
+        setUpdatedAt(new Date());
+      } catch (err) {
+        console.error("Erro ao atualizar a visão geral:", err);
+      }
+    }, OVERVIEW_REFRESH_MS);
+    return () => window.clearInterval(timer);
+  }, [canAutoRefresh, autoRefresh, tab, examId, classFilter]);
 
   const publish = async () => {
     setPublishing(true);
@@ -164,12 +209,17 @@ export function ExamDetailTeacher({ examId }: { examId: string }) {
   const pointsDiff = round2(pointsTotal - pointsSum);
   const pointsOk = pointsDiff === 0;
 
+  const statusCount = (status: StudentExamStatus) =>
+    overview.students.filter((student) => student.status === status).length;
+  const filteredStudents = overview.students.filter(
+    (student) => !statusFilter || student.status === statusFilter,
+  );
   const studentTotalPages = Math.max(
     1,
-    Math.ceil(overview.students.length / STUDENTS_PER_PAGE),
+    Math.ceil(filteredStudents.length / STUDENTS_PER_PAGE),
   );
   const currentStudentPage = Math.min(studentPage, studentTotalPages);
-  const pagedStudents = overview.students.slice(
+  const pagedStudents = filteredStudents.slice(
     (currentStudentPage - 1) * STUDENTS_PER_PAGE,
     currentStudentPage * STUDENTS_PER_PAGE,
   );
@@ -334,11 +384,58 @@ export function ExamDetailTeacher({ examId }: { examId: string }) {
               label="Alunos"
               value={String(overview.stats.studentsCount)}
             />
-            <StatCard label="Média" value={formatScore(overview.stats.average)} />
+            <StatCard
+              label="Média"
+              value={formatScore(overview.stats.average)}
+            />
             <StatCard
               label="Taxa de conclusão"
               value={`${overview.stats.completionRate}%`}
             />
+          </div>
+
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <label className="flex items-center gap-2 text-[13px] text-muted">
+              Status
+              <select
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value as StudentExamStatus | "");
+                  setStudentPage(1);
+                }}
+                className="rounded-md border border-border bg-surface px-3 py-1.5 text-[13px] text-foreground"
+              >
+                <option value="">Todos ({overview.students.length})</option>
+                {STATUS_OPTIONS.map((status) => (
+                  <option key={status} value={status}>
+                    {STUDENT_STATUS[status].label} ({statusCount(status)})
+                  </option>
+                ))}
+              </select>
+            </label>
+            {isPublished && (
+              <div className="flex items-center gap-3 text-[12px] text-muted">
+                {canAutoRefresh ? (
+                  <label className="flex cursor-pointer items-center gap-1.5">
+                    <input
+                      type="checkbox"
+                      checked={autoRefresh}
+                      onChange={(e) => setAutoRefresh(e.target.checked)}
+                      className="cursor-pointer accent-primary"
+                    />
+                    Atualizar automaticamente a cada{" "}
+                    {OVERVIEW_REFRESH_MS / 1000} segundos
+                  </label>
+                ) : (
+                  <span>Todos os alunos já concluíram a prova</span>
+                )}
+                {updatedAt && (
+                  <span>
+                    · Última atualização {updatedAt.toLocaleTimeString("pt-BR")}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
           <div
@@ -356,13 +453,15 @@ export function ExamDetailTeacher({ examId }: { examId: string }) {
                 </tr>
               </thead>
               <tbody>
-                {overview.students.length === 0 && (
+                {filteredStudents.length === 0 && (
                   <tr>
                     <td
                       colSpan={6}
                       className="px-5 py-6 text-center text-muted"
                     >
-                      Nenhum aluno nas turmas desta prova.
+                      {overview.students.length === 0
+                        ? "Nenhum aluno nas turmas desta prova."
+                        : "Nenhum aluno com esse status."}
                     </td>
                   </tr>
                 )}
@@ -466,7 +565,9 @@ export function ExamDetailTeacher({ examId }: { examId: string }) {
                   <td className="break-words px-5 py-3.5 font-medium text-foreground">
                     {q.statement}
                   </td>
-                  <td className="px-5 py-3.5 text-muted">{typeLabel(q.type)}</td>
+                  <td className="px-5 py-3.5 text-muted">
+                    {typeLabel(q.type)}
+                  </td>
                   <td className="px-5 py-3.5 text-muted">{q.themeName}</td>
                   <td className="px-5 py-3.5 text-muted">
                     {formatPoints(q.points)}
