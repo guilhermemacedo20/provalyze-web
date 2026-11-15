@@ -71,6 +71,7 @@ export type StudentExamHistory = {
   subjectName: string;
   finishedAt: string | null;
   score: number | null;
+  pending: boolean;
 };
 
 export type StudentAnswerOutcomes = { correct: number; wrong: number };

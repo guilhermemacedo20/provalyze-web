@@ -207,9 +207,13 @@ export default function StudentAnalyticsPage() {
                       : ""}
                   </span>
                 </p>
-                <p className="shrink-0 font-semibold text-foreground">
-                  {formatAverage(exam.score, loading)}
-                </p>
+                {exam.pending ? (
+                  <p className="shrink-0 text-muted">Aguardando correção</p>
+                ) : (
+                  <p className="shrink-0 font-semibold text-foreground">
+                    {formatAverage(exam.score, loading)}
+                  </p>
+                )}
               </li>
             ))}
           </ul>
