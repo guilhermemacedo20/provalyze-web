@@ -10,6 +10,7 @@ export type SchoolClass = {
   studentsCount: number;
   averageScore: number | null;
   hidden?: boolean;
+  pendingRequestsCount?: number;
 };
 
 export type ClassStudent = {
@@ -28,6 +29,12 @@ export type ClassDetail = {
   students: ClassStudent[];
 };
 
+export type JoinRequest = {
+  id: string;
+  createdAt: string;
+  student: ClassStudent;
+};
+
 export const classesService = {
   listClasses() {
     return apiRequest<SchoolClass[]>("/classes");
@@ -38,13 +45,13 @@ export const classesService = {
   },
 
   joinClass(code: string) {
-    return apiRequest<void>("/classes/join", {
+    return apiRequest<{ status: "PENDING" }>("/classes/join", {
       method: "POST",
       body: { code },
     });
   },
 
-    hideClass(id: string) {
+  hideClass(id: string) {
     return apiRequest<{ hidden: boolean }>(`/classes/${id}/hide`, {
       method: "PATCH",
     });
@@ -64,6 +71,24 @@ export const classesService = {
 
   getClass(id: string) {
     return apiRequest<ClassDetail>(`/classes/${id}`);
+  },
+
+  listJoinRequests(classId: string) {
+    return apiRequest<JoinRequest[]>(`/classes/${classId}/join-requests`);
+  },
+
+  approveJoinRequests(classId: string, requestIds: string[]) {
+    return apiRequest<{ approved: number }>(
+      `/classes/${classId}/join-requests/approve`,
+      { method: "POST", body: { requestIds } },
+    );
+  },
+
+  rejectJoinRequests(classId: string, requestIds: string[]) {
+    return apiRequest<{ rejected: number }>(
+      `/classes/${classId}/join-requests/reject`,
+      { method: "POST", body: { requestIds } },
+    );
   },
 
   createClass(data: { name: string; subjectId: string; teacherId: string }) {
