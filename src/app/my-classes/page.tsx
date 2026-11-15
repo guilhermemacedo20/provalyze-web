@@ -57,6 +57,7 @@ export default function MyClassesPage() {
   const [joinError, setJoinError] = useState<string | null>(null);
   const [hiddenOpen, setHiddenOpen] = useState(false);
   const [visibilityError, setVisibilityError] = useState<string | null>(null);
+  const [joinNotice, setJoinNotice] = useState<string | null>(null);
 
   const fetchClasses = async () => {
     try {
@@ -92,6 +93,9 @@ export default function MyClassesPage() {
     try {
       await classesService.joinClass(joinCode);
       closeJoin();
+      setJoinNotice(
+        "Solicitação enviada! A matéria aparece aqui assim que o professor aprovar sua entrada.",
+      );
       await fetchClasses();
     } catch (error) {
       console.error("Erro ao entrar na sala:", error);
@@ -134,13 +138,33 @@ export default function MyClassesPage() {
           <h1 className="text-2xl font-bold text-foreground">Matérias</h1>
           <button
             type="button"
-            onClick={() => setJoinOpen(true)}
+            onClick={() => {
+              setJoinNotice(null);
+              setJoinOpen(true);
+            }}
             className="cursor-pointer rounded-md border bg-[#16A34A] px-4 py-2 text-white"
           >
             Entrar
           </button>
         </div>
       </div>
+
+      {joinNotice && (
+        <div
+          role="status"
+          className="mx-8 mb-4 flex items-start justify-between gap-4 rounded-md border border-[#BBF7D0] bg-[#F0FDF4] px-4 py-3 text-sm text-[#166534]"
+        >
+          <span>{joinNotice}</span>
+          <button
+            type="button"
+            aria-label="Fechar aviso"
+            onClick={() => setJoinNotice(null)}
+            className="cursor-pointer font-semibold"
+          >
+            X
+          </button>
+        </div>
+      )}
 
       {visibilityError && (
         <p className="mb-4 px-8 text-sm text-danger">{visibilityError}</p>
