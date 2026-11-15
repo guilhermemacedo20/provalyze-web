@@ -46,25 +46,29 @@ describe("ClassExamsPage - paginação", () => {
     vi.clearAllMocks();
   });
 
-  it("pagina próximas avaliações e finalizadas de forma independente", async () => {
+  it("pagina próximas avaliações e finalizadas de 10 em 10, de forma independente", async () => {
     vi.mocked(examsService.listClassExams).mockResolvedValue({
       classId: "c1",
       className: "Turma A",
       subjectName: "Matemática",
       courseName: "Engenharia",
       exams: [
-        ...Array.from({ length: 7 }, (_, i) => buildExam(`Futura ${i + 1}`, false)),
-        ...Array.from({ length: 6 }, (_, i) => buildExam(`Antiga ${i + 1}`, true)),
+        ...Array.from({ length: 12 }, (_, i) =>
+          buildExam(`Futura ${i + 1}`, false),
+        ),
+        ...Array.from({ length: 11 }, (_, i) =>
+          buildExam(`Antiga ${i + 1}`, true),
+        ),
       ],
     });
     const user = userEvent.setup();
     render(<ClassExamsPage />);
 
     await waitFor(() => screen.getByText("Futura 1"));
-    expect(screen.getByText("Futura 5")).toBeInTheDocument();
-    expect(screen.queryByText("Futura 6")).not.toBeInTheDocument();
-    expect(screen.getByText("Antiga 5")).toBeInTheDocument();
-    expect(screen.queryByText("Antiga 6")).not.toBeInTheDocument();
+    expect(screen.getByText("Futura 10")).toBeInTheDocument();
+    expect(screen.queryByText("Futura 11")).not.toBeInTheDocument();
+    expect(screen.getByText("Antiga 10")).toBeInTheDocument();
+    expect(screen.queryByText("Antiga 11")).not.toBeInTheDocument();
 
     const upcomingNav = screen.getByRole("navigation", {
       name: "Paginação das próximas avaliações",
@@ -73,8 +77,8 @@ describe("ClassExamsPage - paginação", () => {
       within(upcomingNav).getByRole("button", { name: "Próxima página" }),
     );
 
-    expect(screen.getByText("Futura 6")).toBeInTheDocument();
-    expect(screen.getByText("Futura 7")).toBeInTheDocument();
+    expect(screen.getByText("Futura 11")).toBeInTheDocument();
+    expect(screen.getByText("Futura 12")).toBeInTheDocument();
     expect(screen.queryByText("Futura 1")).not.toBeInTheDocument();
     // a seção de finalizadas continua na página 1
     expect(screen.getByText("Antiga 1")).toBeInTheDocument();
@@ -86,7 +90,7 @@ describe("ClassExamsPage - paginação", () => {
       within(finishedNav).getByRole("button", { name: "Próxima página" }),
     );
 
-    expect(screen.getByText("Antiga 6")).toBeInTheDocument();
+    expect(screen.getByText("Antiga 11")).toBeInTheDocument();
     expect(screen.queryByText("Antiga 1")).not.toBeInTheDocument();
   });
 });
