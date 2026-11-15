@@ -117,6 +117,17 @@ export default function ClassesAdminPage() {
                 >
                   <td className="px-5 py-3.5 font-semibold text-foreground">
                     {schoolClass.name}
+                    {(schoolClass.pendingRequestsCount ?? 0) > 0 && (
+                      <Link
+                        href={`/classes/${schoolClass.id}`}
+                        className="ml-2 inline-flex rounded-full bg-[#fef1dd] px-2 py-0.5 text-[11px] font-semibold text-warning hover:opacity-80"
+                      >
+                        {schoolClass.pendingRequestsCount}{" "}
+                        {schoolClass.pendingRequestsCount === 1
+                          ? "pendente"
+                          : "pendentes"}
+                      </Link>
+                    )}
                   </td>
                   <td className="px-5 py-3.5 font-mono text-muted">
                     {schoolClass.joinCode}

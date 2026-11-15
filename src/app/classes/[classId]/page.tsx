@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { ClassDetail, classesService } from "@/services/classes.service";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { extractErrorMessage } from "@/lib/extract-error-message";
+import { JoinRequestsPanel } from "@/components/classes/JoinRequestsPanel";
 
 export default function ClassDetailPage() {
   const { classId } = useParams<{ classId: string }>();
@@ -155,6 +156,10 @@ export default function ClassDetailPage() {
             Gerar novo código
           </button>
         </p>
+      )}
+
+      {schoolClass && (
+        <JoinRequestsPanel classId={classId} onApproved={fetchClass} />
       )}
 
       <div className="overflow-hidden rounded-lg border border-border bg-surface shadow-sm">
