@@ -32,6 +32,10 @@ export const authService = {
     });
   },
 
+  terms() {
+    return apiRequest<{ version: string }>("/auth/terms");
+  },
+
   acceptTerms() {
     return apiRequest<AcceptTermsResponse>("/auth/accept-terms", {
       method: "POST",
