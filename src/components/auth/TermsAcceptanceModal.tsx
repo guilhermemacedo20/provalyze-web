@@ -4,13 +4,16 @@ import { useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { TermsPolicyModal } from "@/components/ui/TermsPolicyModal";
 import { extractErrorMessage } from "@/lib/extract-error-message";
+import { useTermsVersion } from "@/lib/terms";
 
 type TermsAcceptanceModalProps = {
   onLogout: () => void;
 };
 
 export function TermsAcceptanceModal({ onLogout }: TermsAcceptanceModalProps) {
-  const { acceptTerms } = useAuth();
+  const { user, acceptTerms } = useAuth();
+  const isUpdate = Boolean(user?.termsAcceptedAt);
+  const version = useTermsVersion();
   const [checked, setChecked] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -46,8 +49,9 @@ export function TermsAcceptanceModal({ onLogout }: TermsAcceptanceModalProps) {
             Termos de Uso e Política de Privacidade
           </h2>
           <p className="mt-2 text-sm text-muted">
-            Para continuar usando o Provalyze, é necessário ler e aceitar os
-            nossos termos.
+            {isUpdate
+              ? `Os Termos de Uso e a Política de Privacidade foram atualizados${version ? ` para a versão ${version}` : ""}. Para continuar usando o Provalyze, é necessário ler e aceitar a nova versão.`
+              : "Para continuar usando o Provalyze, é necessário ler e aceitar os nossos termos."}
           </p>
 
           <div className="mt-4 flex flex-col gap-1 text-sm">

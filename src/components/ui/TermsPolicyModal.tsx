@@ -2,6 +2,7 @@
 
 import { useLayoutEffect, useRef } from "react";
 import { X } from "lucide-react";
+import { termsVersionLabel, useTermsVersion } from "@/lib/terms";
 
 type Section = "terms" | "privacy";
 
@@ -240,7 +241,6 @@ const PRIVACY_BLOCKS: Block[] = [
 
   { type: "heading", text: "15. Contato" },
   { type: "paragraph", text: "provalyze@gmail.com" },
-  { type: "paragraph", text: "Versão de novembro de 2026." },
 ];
 
 const TERMS_BLOCKS: Block[] = [
@@ -356,7 +356,6 @@ const TERMS_BLOCKS: Block[] = [
 
   { type: "heading", text: "15. Lei aplicável" },
   { type: "paragraph", text: "Estes Termos são regidos pela legislação brasileira." },
-  { type: "paragraph", text: "Versão de novembro de 2026." },
 ];
 
 function renderBlock(block: Block, index: number) {
@@ -407,6 +406,7 @@ export function TermsPolicyModal({
   const scrollRef = useRef<HTMLDivElement>(null);
   const positions = useRef<Record<Section, number>>({ terms: 0, privacy: 0 });
   const wasOpen = useRef(false);
+  const version = useTermsVersion();
 
   // Ao abrir o modal, cada aba volta a começar do topo.
   if (open && !wasOpen.current) {
@@ -422,7 +422,10 @@ export function TermsPolicyModal({
 
   if (!open) return null;
 
-  const blocks = section === "terms" ? TERMS_BLOCKS : PRIVACY_BLOCKS;
+  const blocks: Block[] = [
+    ...(section === "terms" ? TERMS_BLOCKS : PRIVACY_BLOCKS),
+    { type: "paragraph", text: termsVersionLabel(version) },
+  ];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-6">

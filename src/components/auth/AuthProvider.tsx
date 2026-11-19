@@ -8,6 +8,7 @@ import {
   saveSession,
 } from "@/lib/auth-role-storage";
 import { authService } from "@/services/auth.service";
+import { TERMS_REQUIRED_EVENT } from "@/services/api";
 import { User } from "@/services/users.service";
 
 type AuthContextValue = {
@@ -50,6 +51,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
       })
       .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    function handleTermsRequired() {
+      setUser((current) =>
+        current ? { ...current, requiresTermsAcceptance: true } : current,
+      );
+    }
+    window.addEventListener(TERMS_REQUIRED_EVENT, handleTermsRequired);
+    return () =>
+      window.removeEventListener(TERMS_REQUIRED_EVENT, handleTermsRequired);
   }, []);
 
   const value = useMemo<AuthContextValue>(

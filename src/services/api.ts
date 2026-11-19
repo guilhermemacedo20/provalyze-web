@@ -1,5 +1,7 @@
 import { clearSession, getAccessToken } from "@/lib/auth-role-storage";
 
+export const TERMS_REQUIRED_EVENT = "terms-required";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3333/api";
 
 export async function apiRequest<T>(
@@ -26,7 +28,19 @@ export async function apiRequest<T>(
   }
 
   if (!response.ok) {
-    throw new Error(await response.text());
+    const text = await response.text();
+    if (response.status === 403 && typeof window !== "undefined") {
+      let code: unknown = null;
+      try {
+        code = JSON.parse(text).code;
+      } catch {
+        code = null;
+      }
+      if (code === "TERMS_NOT_ACCEPTED") {
+        window.dispatchEvent(new Event(TERMS_REQUIRED_EVENT));
+      }
+    }
+    throw new Error(text);
   }
 
   return response.json() as Promise<T>;
