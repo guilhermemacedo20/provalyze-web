@@ -29,7 +29,10 @@ describe("exam-format", () => {
     process.env.TZ = "UTC";
     const start = "2026-06-01T10:00:00.000Z";
     const end = "2026-06-01T12:00:00.000Z";
-    expect(formatPeriod(start, end)).toBe("01/06 10h00 : 12h00");
+    expect(formatPeriod(start, end)).toBe("01/06/2026 10h00 : 12h00");
+    expect(formatPeriod(start, "2026-06-03T12:00:00.000Z")).toBe(
+      "01/06/2026 10h00 : 03/06/2026 12h00",
+    );
     expect(formatDateTime(start)).toContain("01/06/2026");
     expect(fromLocalInput("2026-06-01T10:00")).toMatch(/2026-06-01T/);
     expect(toLocalInput(start)).toMatch(/2026-06-01T/);

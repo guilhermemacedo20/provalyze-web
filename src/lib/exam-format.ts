@@ -61,10 +61,11 @@ export function formatDateTime(iso: string): string {
 export function formatPeriod(startsAtIso: string, endsAtIso: string): string {
   const s = new Date(startsAtIso);
   const e = new Date(endsAtIso);
-  const day = (d: Date) => `${pad(d.getDate())}/${pad(d.getMonth() + 1)}`;
+  const day = (d: Date) =>
+    `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
   const hour = (d: Date) => `${pad(d.getHours())}h${pad(d.getMinutes())}`;
 
-  const sameDay = day(s) === day(e) && s.getFullYear() === e.getFullYear();
+  const sameDay = day(s) === day(e);
   return sameDay
     ? `${day(s)} ${hour(s)} : ${hour(e)}`
     : `${day(s)} ${hour(s)} : ${day(e)} ${hour(e)}`;
